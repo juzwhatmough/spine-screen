@@ -41,6 +41,9 @@ README.md            plain-English deploy instructions (no-code friendly)
 - **Signature element**: each book is an index-card-style card with a
   genre-coloured tab; marking a book "read" triggers a stamp animation
 - Mobile-first — Juz reads and manages this primarily on her phone
+- Full component states, breakpoints, animation timings, and known gaps
+  (accessibility, edge cases) are documented in **`DESIGN_SPEC.md`** —
+  read that before touching any styling.
 
 ## Content model
 
