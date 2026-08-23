@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Shelf — A Reading List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F1ECE1;
+    --paper-2:#E9E2D2;
+    --ink:#22261F;
+    --ink-soft:#4A4E42;
+    --spine:#7A2E27;
+    --spine-2:#9C4136;
+    --brass:#AD8A4E;
+    --sage:#5F6E56;
+    --line: rgba(34,38,31,0.16);
+    --card-shadow: 0 1px 0 rgba(34,38,31,0.06), 0 8px 20px -14px rgba(34,38,31,0.35);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background: var(--brass); color:var(--paper); }
+
+  /* ---------- Header ---------- */
+  header{
+    position:relative;
+    padding:64px 24px 40px;
+    background:
+      radial-gradient(1200px 300px at 20% -10%, rgba(122,46,39,0.08), transparent 60%),
+      var(--paper);
+    border-bottom:2px solid var(--ink);
+    overflow:hidden;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--spine);
+    margin:0 0 14px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(38px, 7vw, 66px);
+    line-height:0.98;
+    letter-spacing:-0.01em;
+    margin:0 0 16px;
+    max-width:780px;
+  }
+  h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--spine);
+  }
+  .sub{
+    font-size:17px;
+    color:var(--ink-soft);
+    max-width:560px;
+    line-height:1.55;
+    margin:0;
+  }
+  .spine-strip{
+    position:absolute;
+    top:0; right:0; bottom:0;
+    width:14px;
+    background:repeating-linear-gradient(
+      180deg,
+      var(--spine) 0 34px,
+      var(--brass) 34px 40px,
+      var(--sage) 40px 68px,
+      var(--ink) 68px 72px
+    );
+    opacity:0.9;
+  }
+
+  /* ---------- Stats bar ---------- */
+  .stats{
+    display:flex;
+    gap:28px;
+    flex-wrap:wrap;
+    padding:18px 24px;
+    background:var(--paper-2);
+    border-bottom:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.03em;
+    color:var(--ink-soft);
+  }
+  .stats b{ color:var(--ink); font-weight:500; }
+
+  /* ---------- Shelf nav ---------- */
+  nav.shelves{
+    position:sticky; top:0; z-index:20;
+    display:flex;
+    gap:0;
+    overflow-x:auto;
+    background:var(--ink);
+    padding:0 8px;
+    scrollbar-width:none;
+  }
+  nav.shelves::-webkit-scrollbar{display:none;}
+  nav.shelves button{
+    flex:0 0 auto;
+    background:none;
+    border:none;
+    color:rgba(241,236,225,0.55);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    padding:15px 16px;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  nav.shelves button:hover{ color:rgba(241,236,225,0.85); }
+  nav.shelves button.active{
+    color:var(--paper);
+    border-bottom-color:var(--brass);
+  }
+
+  main{ max-width:1080px; margin:0 auto; padding:8px 24px 100px; }
+
+  section.shelf{ padding:56px 0 8px; border-top:1px solid var(--line); }
+  section.shelf:first-of-type{ border-top:none; }
+
+  .shelf-head{
+    display:flex;
+    align-items:baseline;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+  }
+  .shelf-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    padding:3px 9px;
+    border-radius:2px;
+    color:var(--paper);
+  }
+  .shelf-head h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(26px,3.6vw,34px);
+    margin:0;
+  }
+  .shelf-note{
+    font-size:15px;
+    color:var(--ink-soft);
+    max-width:640px;
+    line-height:1.6;
+    margin:8px 0 32px;
+  }
+
+  /* ---------- Author group ---------- */
+  .author-group{ margin-bottom:40px; }
+  .author-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:8px;
+    margin-bottom:16px;
+  }
+  .author-row h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-style:italic;
+    font-size:20px;
+    margin:0;
+  }
+  .author-why{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:right;
+    max-width:280px;
+    line-height:1.5;
+  }
+
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+    gap:14px;
+  }
+
+  /* ---------- Card ---------- */
+  .card{
+    position:relative;
+    background:#FBF8F1;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:16px 16px 14px;
+    box-shadow:var(--card-shadow);
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
+    display:flex;
+    flex-direction:column;
+    min-height:150px;
+  }
+  .card:hover{ transform:translateY(-2px); }
+  .card:focus-visible{ outline:2px solid var(--spine); outline-offset:2px; }
+  .card::before{
+    content:'';
+    position:absolute;
+    top:10px; left:-1px;
+    width:5px; height:22px;
+    background:var(--tagcolor, var(--spine));
+    border-radius:0 2px 2px 0;
+  }
+  .card .kind{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--tagcolor, var(--spine));
+    margin-bottom:8px;
+  }
+  .card .title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:17px;
+    line-height:1.25;
+    margin:0 0 4px;
+  }
+  .card .author{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+  }
+  .card .hook{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin:0;
+    flex-grow:1;
+  }
+  .card .foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px dashed var(--line);
+  }
+  .card .status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .right-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .thumbs{
+    display:none;
+    gap:4px;
+  }
+  .card.read .thumbs{ display:flex; }
+  .thumb-btn{
+    border:1px solid var(--line);
+    background:transparent;
+    border-radius:2px;
+    padding:2px 6px;
+    line-height:1.4;
+    font-size:12px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    transition:transform .1s ease, background .1s ease, border-color .1s ease;
+  }
+  .thumb-btn:hover{ transform:translateY(-1px); }
+  .thumb-btn.active.up{ background:var(--sage); border-color:var(--sage); }
+  .thumb-btn.active.down{ background:var(--spine); border-color:var(--spine); }
+  .stamp{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    font-weight:500;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:4px 8px;
+    border-radius:2px;
+    border:1.5px solid var(--sage);
+    color:var(--sage);
+    background:transparent;
+  }
+  .card.read{ background:#F3F0E6; }
+  .card.read .stamp{
+    border-color:var(--spine);
+    color:#fff;
+    background:var(--spine);
+    animation:stampIn .28s ease;
+  }
+  .card.read .title{ text-decoration:line-through; text-decoration-color:rgba(34,38,31,0.35); }
+  @keyframes stampIn{
+    0%{ transform:scale(1.6) rotate(-8deg); opacity:0; }
+    60%{ transform:scale(0.95) rotate(2deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0); }
+  }
+
+  .subhead{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:22px 0 10px;
+  }
+  .subhead-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    margin:22px 0 10px;
+  }
+  .subhead-row .subhead{ margin:0; }
+  .refresh-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    padding:8px 14px;
+    border-radius:2px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .refresh-btn:hover{ background:var(--spine); }
+  .refresh-btn:disabled{ opacity:0.55; cursor:wait; }
+
+  footer{
+    text-align:center;
+    padding:40px 24px 60px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    letter-spacing:0.04em;
+  }
+
+  @media (max-width:640px){
+    header{ padding:48px 20px 32px; }
+    .spine-strip{ width:9px; }
+    .author-row{ flex-direction:column; align-items:flex-start; }
+    .author-why{ text-align:left; max-width:none; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="spine-strip"></div>
+  <p class="eyebrow">Personal reading list · Est. Aug 2026</p>
+  <h1>The <em>To-Read</em> Shelf</h1>
+  <p class="sub">Your favourite authors, more of their own work, and the writers I think you'll fall for next — sorted the way a good bookshop shelves them, by genre rather than app.</p>
+</header>
+
+<div class="stats" id="stats"></div>
+
+<nav class="shelves" id="shelfNav"></nav>
+
+<main id="main"></main>
+
+<footer>Tap a card to mark it read, then 👍 or 👎 it · Tap "More suggestions" on any shelf for fresh picks based on your ratings · Progress is saved on this device</footer>
+
+<script>
+const STORAGE_KEY_PREFIX = 'reading-list:';
+
+const shelves = [
+  {
+    id: 'wartime',
+    tag: 'WWII & Historical Fiction',
+    color: '#7A2E27',
+    note: "Your list actually spans three authors — worth knowing so you can find more of each. Robotham wrote both German Midwife and Secret Messenger; Tattooist of Auschwitz is Heather Morris; Alice Network is Kate Quinn. Kristin Hannah lives here too.",
+    groups: [
+      {
+        author: 'Mandy Robotham',
+        why: 'German Midwife & Secret Messenger → both yours already',
+        books: [
+          { title:'The German Midwife', author:'Mandy Robotham', hook:'A midwife pulled into Hitler\'s inner circle to deliver Eva Braun\'s baby. Published in the UK/Australia as "A Woman of War" — search that title if your library has no luck.', status:'want' },
+          { title:'The Secret Messenger', author:'Mandy Robotham', hook:'A Venice typist leads a double life as a resistance courier by night.', status:'want' },
+          { title:'The Berlin Girl', author:'Mandy Robotham', hook:'A British journalist reporting from Berlin as war closes in.', status:'more' },
+          { title:'The Girl Behind the Wall', author:'Mandy Robotham', hook:'A city divided — a woman trapped in East Berlin when the Wall goes up overnight.', status:'more' },
+          { title:'The Resistance Girl', author:'Mandy Robotham', hook:'Occupied Norway, a radio operator, and a dangerous underground network.', status:'more' },
+          { title:'The War Pianist', author:'Mandy Robotham', hook:'A Morse code operative moves between Blitz-era London and Nazi-occupied Amsterdam.', status:'more' },
+        ]
+      },
+      {
+        author: 'Heather Morris',
+        why: 'wrote Tattooist of Auschwitz',
+        books: [
+          { title:'The Tattooist of Auschwitz', author:'Heather Morris', hook:'Based on the true story of a prisoner forced to tattoo fellow inmates.', status:'want' },
+          { title:"Cilka's Journey", author:'Heather Morris', hook:'A companion novel following a young survivor into a Siberian gulag.', status:'more' },
+          { title:'Three Sisters', author:'Heather Morris', hook:'The true story that closes out the Auschwitz trilogy.', status:'more' },
+        ]
+      },
+      {
+        author: 'Kate Quinn',
+        why: 'wrote Alice Network',
+        books: [
+          { title:'The Alice Network', author:'Kate Quinn', hook:'A WWI spy ring and a 1947 hunt for a missing cousin collide.', status:'want' },
+          { title:'The Rose Code', author:'Kate Quinn', hook:'Three Bletchley Park codebreakers and the traitor among them.', status:'more' },
+          { title:'The Huntress', author:'Kate Quinn', hook:'A Nazi hunter chases a wartime killer across three decades.', status:'more' },
+          { title:'The Diamond Eye', author:'Kate Quinn', hook:'A Soviet sniper credited with 309 kills becomes an unlikely wartime celebrity.', status:'more' },
+        ]
+      },
+      {
+        author: 'Kristin Hannah',
+        why: 'your pick',
+        books: [
+          { title:'The Nightingale', author:'Kristin Hannah', hook:'Two sisters, two very different kinds of resistance in occupied France.', status:'more' },
+          { title:'The Women', author:'Kristin Hannah', hook:'A nurse\'s tour in Vietnam and the homecoming nobody prepared her for.', status:'more' },
+          { title:'The Four Winds', author:'Kristin Hannah', hook:'A mother\'s fight to survive the Dust Bowl and save her family.', status:'more' },
+          { title:'The Great Alone', author:'Kristin Hannah', hook:'A family starts over in 1970s Alaska, chasing freedom and running from something darker.', status:'more' },
+          { title:'Winter Garden', author:'Kristin Hannah', hook:'Two estranged sisters uncover their cold Russian mother\'s hidden wartime past.', status:'more' },
+          { title:'Firefly Lane', author:'Kristin Hannah', hook:'A thirty-year friendship, the book behind the Netflix series you already loved.', status:'more' },
+          { title:'Home Front', author:'Kristin Hannah', hook:'A mother deployed to Iraq leaves her marriage and daughters to hold things together at home.', status:'more' },
+        ]
+      }
+    ],
+    similar: [
+      { name:'Pam Jenoff', pick:'The Woman with the Blue Star', hook:'A Polish-Jewish teen hidden in the city sewers befriends the sewer worker\'s daughter above.' },
+      { name:'Martha Hall Kelly', pick:'Lilac Girls', hook:'Three women — a socialite, a Polish teen, and a Nazi doctor — collide during and after the war.' },
+      { name:'Georgia Hunter', pick:'We Were the Lucky Ones', hook:'A Polish-Jewish family scattered across five continents, based on the author\'s own history.' },
+    ]
+  },
+  {
+    id: 'literary',
+    tag: 'Literary Fiction',
+    color: '#5F6E56',
+    note: "Quieter, character-driven, beautifully written — books you'll want to underline.",
+    groups: [
+      {
+        author: "Maggie O'Farrell",
+        why: 'Hamnet → start here',
+        books: [
+          { title:'Hamnet', author:"Maggie O'Farrell", hook:"Shakespeare's wife and the death of their young son, imagined with devastating tenderness.", status:'want' },
+          { title:'The Marriage Portrait', author:"Maggie O'Farrell", hook:'A 16th-century Italian duchess married off and, it\'s rumoured, murdered within a year.', status:'more' },
+          { title:"Instructions for a Heatwave", author:"Maggie O'Farrell", hook:'A father vanishes during a 1976 London heatwave and pulls his family back together.', status:'more' },
+        ]
+      },
+      {
+        author: 'Wally Lamb',
+        why: 'River Is Waiting → start here',
+        books: [
+          { title:'River Is Waiting', author:'Wally Lamb', hook:"A father's worst mistake and the long, hard road back to his children.", status:'want' },
+          { title:"She's Come Undone", author:'Wally Lamb', hook:"One woman's messy, funny, moving coming of age across four decades.", status:'more' },
+          { title:'I Know This Much Is True', author:'Wally Lamb', hook:'Identical twins, one lost to schizophrenia, and the brother trying to save him.', status:'more' },
+        ]
+      }
+    ],
+    similar: [
+      { name:'Ann Patchett', pick:'Tom Lake', hook:'A mother tells her daughters the story of the summer she almost became someone else.' },
+      { name:'Elizabeth Strout', pick:'Olive Kitteridge', hook:'A prickly, unforgettable retired teacher, seen through the small-town lives around her.' },
+      { name:'Anthony Doerr', pick:'All the Light We Cannot See', hook:'A blind French girl and a German boy, on either side of the same war — ties nicely to your wartime shelf.' },
+    ]
+  },
+  {
+    id: 'thriller',
+    tag: 'Psychological Thriller & Domestic Suspense',
+    color: '#AD8A4E',
+    note: "Twisty, character-driven suspense — several of these are Melbourne-set, like the ones you love.",
+    groups: [
+      {
+        author: 'Christian White',
+        why: 'your pick — start here',
+        books: [
+          { title:'The Nowhere Child', author:'Christian White', hook:'A Melbourne photographer learns she may be a child kidnapped from Kentucky decades ago.', status:'more' },
+          { title:'The Wife and the Widow', author:'Christian White', hook:'Two women, one island, one body, and a secret that ties them together. Won the Ned Kelly Award for Best Crime Novel.', status:'more' },
+          { title:'Wild Place', author:'Christian White', hook:'A missing teen and a satanic-panic scare grip an idyllic 1989 Melbourne suburb.', status:'more' },
+          { title:'The Ledge', author:'Christian White', hook:'Four friends, one dare gone wrong on a cliff edge, and a secret they\'ve kept for years. Named QBD Book of the Year.', status:'more' },
+          { title:'The Long Night', author:'Christian White', hook:'His most recent novel (2025) — a fresh psychological thriller from the same twisty, domestic-suspense playbook.', status:'more' },
+        ]
+      },
+      {
+        author: 'Sally Hepworth',
+        why: 'Mad Mabel → start here',
+        books: [
+          { title:'Mad Mabel', author:'Sally Hepworth', hook:"Australia's youngest convicted murderer, 66 years later, with one more secret to keep.", status:'want' },
+          { title:'The Good Sister', author:'Sally Hepworth', hook:'Twin sisters, one dark act, and a family built on what never got said.', status:'more' },
+          { title:'The Mother-in-Law', author:'Sally Hepworth', hook:'A beloved mother-in-law is found dead — and everyone had a reason.', status:'more' },
+        ]
+      },
+      {
+        author: 'Freida McFadden',
+        why: 'your pick — start here',
+        books: [
+          { title:'The Housemaid', author:'Freida McFadden', hook:'A live-in housekeeper, a picture-perfect family, and nothing is what it looks like.', status:'want' },
+          { title:"The Housemaid's Secret", author:'Freida McFadden', hook:'Millie is back — this time working for a family with a secret that could destroy them.', status:'want' },
+          { title:'The Housemaid Is Watching', author:'Freida McFadden', hook:'The trilogy\'s finale — Millie moves into a new house with old, unsettled danger next door.', status:'want' },
+          { title:"The Housemaid's Wedding", author:'Freida McFadden', hook:'A short story bridging books two and three — Millie\'s wedding day doesn\'t go to plan.', status:'more' },
+          { title:'The Wife Upstairs', author:'Freida McFadden', hook:'A live-in caregiver is drawn into an elegant household hiding a bedridden wife\'s dark secret.', status:'want' },
+          { title:'Never Lie', author:'Freida McFadden', hook:'A newlywed couple snowed in at a remote estate piece together tapes from a therapist who vanished.', status:'want' },
+          { title:'The Coworker', author:'Freida McFadden', hook:'An accountant\'s strange daily routine breaks — and her cubicle neighbour suspects something\'s badly wrong.', status:'want' },
+          { title:'The Teacher', author:'Freida McFadden', hook:'A new hire, a scandal-scarred school, and a secret worth killing for.', status:'more' },
+        ]
+      },
+      {
+        author: 'Michelle Frances',
+        why: 'The Girlfriend → your pick',
+        books: [
+          { title:'The Girlfriend', author:'Michelle Frances', hook:'A gallery-owning mother and her son\'s new girlfriend are locked in a quiet, escalating war for his loyalty — until a lie changes everything. Now an Amazon Prime series with Robin Wright.', status:'want' },
+        ]
+      }
+    ],
+    similar: [
+      { name:'Jane Harper', pick:'The Dry', hook:'A federal agent returns to his drought-stricken hometown to investigate a family\'s death.' },
+      { name:'Liane Moriarty', pick:'Big Little Lies', hook:'Already a favourite of yours on screen — the book that started it, sharper and darker.' },
+      { name:'J.P. Pomare', pick:'Tell Me Lies', hook:'A Melbourne therapist\'s client is accused of murder, and her own secrets start to surface.' },
+    ]
+  },
+  {
+    id: 'comedy',
+    tag: 'Contemporary Comedy & Family Life',
+    color: '#7A2E27',
+    note: "Sharp, funny, warm — the ones that make you laugh out loud on public transport.",
+    groups: [
+      {
+        author: 'Gill Sims',
+        why: 'your pick — start here',
+        books: [
+          { title:'Why Mummy Drinks', author:'Gill Sims', hook:'A Sunday Times bestseller on the chaos, wine, and love of modern motherhood.', status:'more' },
+          { title:'Why Mummy Swears', author:'Gill Sims', hook:'The sequel — school runs, marriage, and the true meaning of "fine."', status:'more' },
+          { title:"Why Mummy's Sloshed", author:'Gill Sims', hook:'Divorce, dating, and toddlers — Ellen\'s life gets messier still.', status:'more' },
+          { title:"Why Mummy Doesn't Give a ****!", author:'Gill Sims', hook:'Mummy turns 39 and decides she\'s done people-pleasing.', status:'more' },
+          { title:'Why Mummy Drinks at Christmas', author:'Gill Sims', hook:'Burnt dinner, chaos, and Aunt Louisa\'s festive inappropriateness — the Christmas instalment.', status:'more' },
+          { title:'Why Mummy Drinks on Holiday', author:'Gill Sims', hook:'Ellen\'s vision of a perfect family holiday meets reality. The sixth and most recent Why Mummy novel.', status:'more' },
+          { title:'The Saturday Night Sauvignon Sisterhood', author:'Gill Sims', hook:'A standalone — Claire\'s husband is having an affair with her best friend, so she builds a new circle of friends over wine instead.', status:'more' },
+        ]
+      },
+      {
+        author: 'Allison Pearson',
+        why: 'How Hard Can It Be? → your pick',
+        books: [
+          { title:'How Hard Can It Be?', author:'Allison Pearson', hook:'Kate Reddy at 49 — perimenopause, teenagers, an ageing father, and a husband having his own crisis. The funniest, most accurate account of this exact stage of life.', status:'want' },
+          { title:"I Don't Know How She Does It", author:'Allison Pearson', hook:'The original novel — Kate Reddy juggling a City job and small kids, twenty years before the sequel catches up with her.', status:'more' },
+        ]
+      },
+      {
+        author: 'Marian Keyes',
+        why: 'The Break → your pick',
+        books: [
+          { title:'The Break', author:'Marian Keyes', hook:'Her husband announces he wants a six-month "break" to go travelling. Wickedly funny and sharp on marriage and self-worth in your late 40s.', status:'want' },
+          { title:'Again, Rachel', author:'Marian Keyes', hook:'Warm, sharp Irish wit — addiction, family and second chances done with real heart.', status:'more' },
+        ]
+      },
+      {
+        author: 'Kirsten Miller',
+        why: 'The Change → your pick',
+        books: [
+          { title:'The Change', author:'Kirsten Miller', hook:'Three women going through menopause discover it comes with unexpected power — witty with teeth, a bit of magical realism.', status:'want' },
+        ]
+      }
+    ],
+    similar: [
+      { name:'Sophie Kinsella', pick:'The Burnout', hook:'A woman escapes to a crumbling seaside hotel and finds herself instead.' },
+      { name:'Adele Parks', pick:'Just My Luck', hook:'A lottery win, a marriage, and the friendships that curdle over money.' },
+    ]
+  },
+  {
+    id: 'nonfiction',
+    tag: 'Narrative Nonfiction',
+    color: '#5F6E56',
+    note: "True stories, reported and written like novels.",
+    groups: [
+      {
+        author: 'Andrea Elliott',
+        why: 'Invisible Child → start here',
+        books: [
+          { title:'Invisible Child', author:'Andrea Elliott', hook:'Eight years following one homeless girl in New York — a Pulitzer-winning piece of journalism.', status:'want' },
+        ]
+      }
+    ],
+    similar: [
+      { name:'Matthew Desmond', pick:'Evicted', hook:'Eight families, one Milwaukee city, and the machinery of poverty and eviction.' },
+      { name:'Katherine Boo', pick:'Behind the Beautiful Forevers', hook:'Life and death in a Mumbai slum in the shadow of luxury hotels — three years of reporting.' },
+      { name:'Barbara Demick', pick:'Nothing to Envy', hook:'Ordinary lives inside North Korea, told through six defectors.' },
+    ]
+  }
+];
+
+// ---------- Render ----------
+const main = document.getElementById('main');
+const nav = document.getElementById('shelfNav');
+let allBookCount = 0, wantCount = 0;
+
+shelves.forEach((shelf, si) => {
+  // nav button
+  const btn = document.createElement('button');
+  btn.textContent = shelf.tag;
+  btn.dataset.target = shelf.id;
+  if(si===0) btn.classList.add('active');
+  btn.onclick = () => {
+    document.getElementById(shelf.id).scrollIntoView({behavior:'smooth', block:'start'});
+  };
+  nav.appendChild(btn);
+
+  const section = document.createElement('section');
+  section.className = 'shelf';
+  section.id = shelf.id;
+  section.style.setProperty('--tagcolor', shelf.color);
+
+  section.innerHTML = `
+    <div class="shelf-head">
+      <span class="shelf-tag" style="background:${shelf.color}">${shelf.tag}</span>
+      <h2>${shelf.tag}</h2>
+    </div>
+    <p class="shelf-note">${shelf.note}</p>
+  `;
+
+  const shelfExistingTitles = new Set();
+
+  shelf.groups.forEach(group => {
+    const g = document.createElement('div');
+    g.className = 'author-group';
+    g.innerHTML = `
+      <div class="author-row">
+        <h3>${group.author}</h3>
+        <span class="author-why">${group.why}</span>
+      </div>
+      <div class="cards"></div>
+    `;
+    const cardsWrap = g.querySelector('.cards');
+    group.books.forEach(b => {
+      allBookCount++;
+      shelfExistingTitles.add(b.title.toLowerCase());
+      const card = makeCard(b, shelf.color, group.author);
+      cardsWrap.appendChild(card);
+    });
+    section.appendChild(g);
+  });
+
+  const shelfAuthors = shelf.groups.map(g => g.author);
+
+  // similar authors (seed content) + AI refresh area
+  const subheadRow = document.createElement('div');
+  subheadRow.className = 'subhead-row';
+  subheadRow.innerHTML = `
+    <span class="subhead">More to explore</span>
+    <button type="button" class="refresh-btn">🔄 More suggestions</button>
+  `;
+  section.appendChild(subheadRow);
+
+  const cardsWrap = document.createElement('div');
+  cardsWrap.className = 'cards';
+  (shelf.similar || []).forEach(s => {
+    allBookCount++;
+    shelfExistingTitles.add(s.pick.toLowerCase());
+    const card = makeCard({title:s.pick, author:s.name, hook:s.hook, status:'discover'}, shelf.color, s.name);
+    cardsWrap.appendChild(card);
+  });
+  section.appendChild(cardsWrap);
+
+  const refreshBtn = subheadRow.querySelector('.refresh-btn');
+  refreshBtn.addEventListener('click', () => fetchMoreSuggestions(shelf, shelfAuthors, cardsWrap, shelfExistingTitles, refreshBtn));
+
+  main.appendChild(section);
+});
+
+function kindLabel(status){
+  if(status==='want') return 'From your list';
+  if(status==='more') return 'More by this author';
+  if(status==='ai-known') return 'More by this author';
+  if(status==='ai') return 'Suggested for you';
+  return 'New to you';
+}
+
+const STORAGE_KEY_PREFIX_LOCAL_CACHE = {}; // key -> {read, rating, title, author}, populated as cards load
+
+function makeCard(book, color, authorKey){
+  const key = STORAGE_KEY_PREFIX + (authorKey+':'+book.title).toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.tabIndex = 0;
+  card.style.setProperty('--tagcolor', color);
+  card.innerHTML = `
+    <div class="kind">${kindLabel(book.status)}</div>
+    <p class="title">${book.title}</p>
+    <p class="author">${book.author}</p>
+    <p class="hook">${book.hook}</p>
+    <div class="foot">
+      <span class="status">To read</span>
+      <div class="right-controls">
+        <div class="thumbs">
+          <button type="button" class="thumb-btn up" title="I liked this" aria-label="Thumbs up">👍</button>
+          <button type="button" class="thumb-btn down" title="Not for me" aria-label="Thumbs down">👎</button>
+        </div>
+        <span class="stamp">Mark read</span>
+      </div>
+    </div>
+  `;
+  const statusEl = card.querySelector('.status');
+  const stampEl = card.querySelector('.stamp');
+  const upBtn = card.querySelector('.thumb-btn.up');
+  const downBtn = card.querySelector('.thumb-btn.down');
+
+  let state = { read:false, rating:null };
+
+  function render(){
+    card.classList.toggle('read', state.read);
+    statusEl.textContent = state.read ? 'Read' : 'To read';
+    stampEl.textContent = state.read ? 'Read ✓' : 'Mark read';
+    upBtn.classList.toggle('active', state.rating === 'up');
+    downBtn.classList.toggle('active', state.rating === 'down');
+  }
+
+  function persist(){
+    const payload = JSON.stringify({ read: state.read, rating: state.rating, title: book.title, author: book.author });
+    STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author };
+    try { localStorage.setItem(key, payload); } catch(e){ /* storage unavailable */ }
+  }
+
+  // load saved state (handles legacy plain "true"/"false" values from earlier versions)
+  try {
+    const raw = localStorage.getItem(key);
+    if(raw){
+      try {
+        const parsed = JSON.parse(raw);
+        state.read = !!parsed.read;
+        state.rating = parsed.rating || null;
+      } catch(e){
+        state.read = raw === 'true';
+      }
+      STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author };
+    }
+  } catch(e){ /* storage unavailable */ }
+
+  function toggleRead(){
+    state.read = !state.read;
+    if(!state.read) state.rating = null; // clear rating if unmarking as read
+    render();
+    persist();
+  }
+
+  function setRating(r, evt){
+    evt.stopPropagation();
+    state.rating = (state.rating === r) ? null : r;
+    render();
+    persist();
+  }
+
+  card.addEventListener('click', toggleRead);
+  card.addEventListener('keydown', (e) => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleRead(); }});
+  upBtn.addEventListener('click', (e) => setRating('up', e));
+  downBtn.addEventListener('click', (e) => setRating('down', e));
+
+  render();
+  return card;
+}
+
+// ---------- Feedback-aware AI suggestions ----------
+function getFeedbackSummary(){
+  const liked = [], disliked = [];
+  Object.values(STORAGE_KEY_PREFIX_LOCAL_CACHE).forEach(entry => {
+    if(entry.rating === 'up') liked.push(entry);
+    else if(entry.rating === 'down') disliked.push(entry);
+  });
+  return { liked, disliked };
+}
+
+async function fetchMoreSuggestions(shelf, shelfAuthors, cardsWrap, existingTitles, btn){
+  btn.disabled = true;
+  btn.textContent = 'Finding more…';
+  try {
+    const { liked, disliked } = await getFeedbackSummary();
+    const likedStr = liked.length ? liked.map(b => `${b.title} by ${b.author}`).join('; ') : 'none rated yet';
+    const dislikedStr = disliked.length ? disliked.map(b => `${b.title} by ${b.author}`).join('; ') : 'none rated yet';
+    const avoidStr = Array.from(existingTitles).join('; ') || 'none';
+    const authorsStr = shelfAuthors.join(', ');
+
+    const prompt = `You are a book recommendation engine inside a personal reading-list app.
+Genre shelf: "${shelf.tag}".
+Authors already on this shelf, whose other books the reader may not have discovered yet: ${authorsStr}.
+Reader gave a thumbs up (after reading) to: ${likedStr}.
+Reader gave a thumbs down (after reading) to: ${dislikedStr}.
+Do not suggest any of these titles, already shown on this shelf: ${avoidStr}.
+Suggest exactly 4 books for this shelf, as a mix:
+- At least 2 should be other novels by the authors already on this shelf (${authorsStr}) that are not in the "already shown" list.
+- The rest can be from new authors similar in style/genre, leaning toward what the reader rated up and away from anything similar to what they rated down.
+Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly this shape:
+[{"title":"...","author":"...","hook":"one sentence, under 20 words, no spoilers"}]`;
+
+    const response = await fetch("/api/suggest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await response.json();
+    if(!response.ok){
+      throw new Error(data.error || 'Request failed');
+    }
+    const items = data.items || [];
+
+    items.forEach(it => {
+      if(!it.title || !it.author) return;
+      const norm = it.title.toLowerCase();
+      if(existingTitles.has(norm)) return;
+      existingTitles.add(norm);
+      allBookCount++;
+      const isKnownAuthor = shelfAuthors.some(a => a.toLowerCase() === it.author.toLowerCase());
+      const kind = isKnownAuthor ? 'ai-known' : 'ai';
+      const card = makeCard({ title: it.title, author: it.author, hook: it.hook || '', status: kind }, shelf.color, it.author);
+      cardsWrap.appendChild(card);
+    });
+
+    if(!items.length){
+      alert('No new suggestions came back — try again in a moment.');
+    }
+  } catch(err){
+    console.error(err);
+    alert('Could not fetch new suggestions right now — please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 More suggestions';
+  }
+}
+
+document.getElementById('stats').innerHTML =
+  `<span><b>${shelves.length}</b> shelves</span><span><b>${allBookCount}</b> titles</span><span>Tap a card to mark it read, then rate it — your ratings shape "More suggestions"</span>`;
+
+// active nav highlight on scroll
+const sections = shelves.map(s => document.getElementById(s.id));
+const navButtons = Array.from(nav.children);
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      const idx = sections.indexOf(entry.target);
+      navButtons.forEach(b => b.classList.remove('active'));
+      if(idx>-1) navButtons[idx].classList.add('active');
+    }
+  });
+}, { rootMargin: '-40% 0px -55% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
