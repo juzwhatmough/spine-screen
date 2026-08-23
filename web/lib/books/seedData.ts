@@ -1,0 +1,86 @@
+import type { SourceStatus } from "@/types/database";
+
+export type SeedBook = {
+  title: string;
+  author: string;
+  genre: string;
+  hook: string;
+  source_status: SourceStatus;
+};
+
+// Juz's 70-book library, re-derived directly from the `shelves` array in
+// the-to-read-shelf/index.html (flattened: groups[].books[] + similar[]).
+// Already fact-checked per that project's CLAUDE.md — do not regenerate
+// hooks or re-attribute authors without the same care that data got.
+export const JUZ_SEED_BOOKS: SeedBook[] = [
+  { title: "The German Midwife", author: "Mandy Robotham", genre: "WWII & Historical Fiction", hook: "A midwife pulled into Hitler's inner circle to deliver Eva Braun's baby. Published in the UK/Australia as \"A Woman of War\" — search that title if your library has no luck.", source_status: "want" },
+  { title: "The Secret Messenger", author: "Mandy Robotham", genre: "WWII & Historical Fiction", hook: "A Venice typist leads a double life as a resistance courier by night.", source_status: "want" },
+  { title: "The Berlin Girl", author: "Mandy Robotham", genre: "WWII & Historical Fiction", hook: "A British journalist reporting from Berlin as war closes in.", source_status: "more" },
+  { title: "The Girl Behind the Wall", author: "Mandy Robotham", genre: "WWII & Historical Fiction", hook: "A city divided — a woman trapped in East Berlin when the Wall goes up overnight.", source_status: "more" },
+  { title: "The Resistance Girl", author: "Mandy Robotham", genre: "WWII & Historical Fiction", hook: "Occupied Norway, a radio operator, and a dangerous underground network.", source_status: "more" },
+  { title: "The War Pianist", author: "Mandy Robotham", genre: "WWII & Historical Fiction", hook: "A Morse code operative moves between Blitz-era London and Nazi-occupied Amsterdam.", source_status: "more" },
+  { title: "The Tattooist of Auschwitz", author: "Heather Morris", genre: "WWII & Historical Fiction", hook: "Based on the true story of a prisoner forced to tattoo fellow inmates.", source_status: "want" },
+  { title: "Cilka's Journey", author: "Heather Morris", genre: "WWII & Historical Fiction", hook: "A companion novel following a young survivor into a Siberian gulag.", source_status: "more" },
+  { title: "Three Sisters", author: "Heather Morris", genre: "WWII & Historical Fiction", hook: "The true story that closes out the Auschwitz trilogy.", source_status: "more" },
+  { title: "The Alice Network", author: "Kate Quinn", genre: "WWII & Historical Fiction", hook: "A WWI spy ring and a 1947 hunt for a missing cousin collide.", source_status: "want" },
+  { title: "The Rose Code", author: "Kate Quinn", genre: "WWII & Historical Fiction", hook: "Three Bletchley Park codebreakers and the traitor among them.", source_status: "more" },
+  { title: "The Huntress", author: "Kate Quinn", genre: "WWII & Historical Fiction", hook: "A Nazi hunter chases a wartime killer across three decades.", source_status: "more" },
+  { title: "The Diamond Eye", author: "Kate Quinn", genre: "WWII & Historical Fiction", hook: "A Soviet sniper credited with 309 kills becomes an unlikely wartime celebrity.", source_status: "more" },
+  { title: "The Nightingale", author: "Kristin Hannah", genre: "WWII & Historical Fiction", hook: "Two sisters, two very different kinds of resistance in occupied France.", source_status: "more" },
+  { title: "The Women", author: "Kristin Hannah", genre: "WWII & Historical Fiction", hook: "A nurse's tour in Vietnam and the homecoming nobody prepared her for.", source_status: "more" },
+  { title: "The Four Winds", author: "Kristin Hannah", genre: "WWII & Historical Fiction", hook: "A mother's fight to survive the Dust Bowl and save her family.", source_status: "more" },
+  { title: "The Great Alone", author: "Kristin Hannah", genre: "WWII & Historical Fiction", hook: "A family starts over in 1970s Alaska, chasing freedom and running from something darker.", source_status: "more" },
+  { title: "Winter Garden", author: "Kristin Hannah", genre: "WWII & Historical Fiction", hook: "Two estranged sisters uncover their cold Russian mother's hidden wartime past.", source_status: "more" },
+  { title: "Firefly Lane", author: "Kristin Hannah", genre: "WWII & Historical Fiction", hook: "A thirty-year friendship, the book behind the Netflix series you already loved.", source_status: "more" },
+  { title: "Home Front", author: "Kristin Hannah", genre: "WWII & Historical Fiction", hook: "A mother deployed to Iraq leaves her marriage and daughters to hold things together at home.", source_status: "more" },
+  { title: "The Woman with the Blue Star", author: "Pam Jenoff", genre: "WWII & Historical Fiction", hook: "A Polish-Jewish teen hidden in the city sewers befriends the sewer worker's daughter above.", source_status: "discover" },
+  { title: "Lilac Girls", author: "Martha Hall Kelly", genre: "WWII & Historical Fiction", hook: "Three women — a socialite, a Polish teen, and a Nazi doctor — collide during and after the war.", source_status: "discover" },
+  { title: "We Were the Lucky Ones", author: "Georgia Hunter", genre: "WWII & Historical Fiction", hook: "A Polish-Jewish family scattered across five continents, based on the author's own history.", source_status: "discover" },
+  { title: "Hamnet", author: "Maggie O'Farrell", genre: "Literary Fiction", hook: "Shakespeare's wife and the death of their young son, imagined with devastating tenderness.", source_status: "want" },
+  { title: "The Marriage Portrait", author: "Maggie O'Farrell", genre: "Literary Fiction", hook: "A 16th-century Italian duchess married off and, it's rumoured, murdered within a year.", source_status: "more" },
+  { title: "Instructions for a Heatwave", author: "Maggie O'Farrell", genre: "Literary Fiction", hook: "A father vanishes during a 1976 London heatwave and pulls his family back together.", source_status: "more" },
+  { title: "River Is Waiting", author: "Wally Lamb", genre: "Literary Fiction", hook: "A father's worst mistake and the long, hard road back to his children.", source_status: "want" },
+  { title: "She's Come Undone", author: "Wally Lamb", genre: "Literary Fiction", hook: "One woman's messy, funny, moving coming of age across four decades.", source_status: "more" },
+  { title: "I Know This Much Is True", author: "Wally Lamb", genre: "Literary Fiction", hook: "Identical twins, one lost to schizophrenia, and the brother trying to save him.", source_status: "more" },
+  { title: "Tom Lake", author: "Ann Patchett", genre: "Literary Fiction", hook: "A mother tells her daughters the story of the summer she almost became someone else.", source_status: "discover" },
+  { title: "Olive Kitteridge", author: "Elizabeth Strout", genre: "Literary Fiction", hook: "A prickly, unforgettable retired teacher, seen through the small-town lives around her.", source_status: "discover" },
+  { title: "All the Light We Cannot See", author: "Anthony Doerr", genre: "Literary Fiction", hook: "A blind French girl and a German boy, on either side of the same war — ties nicely to your wartime shelf.", source_status: "discover" },
+  { title: "The Nowhere Child", author: "Christian White", genre: "Psychological Thriller & Domestic Suspense", hook: "A Melbourne photographer learns she may be a child kidnapped from Kentucky decades ago.", source_status: "more" },
+  { title: "The Wife and the Widow", author: "Christian White", genre: "Psychological Thriller & Domestic Suspense", hook: "Two women, one island, one body, and a secret that ties them together. Won the Ned Kelly Award for Best Crime Novel.", source_status: "more" },
+  { title: "Wild Place", author: "Christian White", genre: "Psychological Thriller & Domestic Suspense", hook: "A missing teen and a satanic-panic scare grip an idyllic 1989 Melbourne suburb.", source_status: "more" },
+  { title: "The Ledge", author: "Christian White", genre: "Psychological Thriller & Domestic Suspense", hook: "Four friends, one dare gone wrong on a cliff edge, and a secret they've kept for years. Named QBD Book of the Year.", source_status: "more" },
+  { title: "The Long Night", author: "Christian White", genre: "Psychological Thriller & Domestic Suspense", hook: "His most recent novel (2025) — a fresh psychological thriller from the same twisty, domestic-suspense playbook.", source_status: "more" },
+  { title: "Mad Mabel", author: "Sally Hepworth", genre: "Psychological Thriller & Domestic Suspense", hook: "Australia's youngest convicted murderer, 66 years later, with one more secret to keep.", source_status: "want" },
+  { title: "The Good Sister", author: "Sally Hepworth", genre: "Psychological Thriller & Domestic Suspense", hook: "Twin sisters, one dark act, and a family built on what never got said.", source_status: "more" },
+  { title: "The Mother-in-Law", author: "Sally Hepworth", genre: "Psychological Thriller & Domestic Suspense", hook: "A beloved mother-in-law is found dead — and everyone had a reason.", source_status: "more" },
+  { title: "The Housemaid", author: "Freida McFadden", genre: "Psychological Thriller & Domestic Suspense", hook: "A live-in housekeeper, a picture-perfect family, and nothing is what it looks like.", source_status: "want" },
+  { title: "The Housemaid's Secret", author: "Freida McFadden", genre: "Psychological Thriller & Domestic Suspense", hook: "Millie is back — this time working for a family with a secret that could destroy them.", source_status: "want" },
+  { title: "The Housemaid Is Watching", author: "Freida McFadden", genre: "Psychological Thriller & Domestic Suspense", hook: "The trilogy's finale — Millie moves into a new house with old, unsettled danger next door.", source_status: "want" },
+  { title: "The Housemaid's Wedding", author: "Freida McFadden", genre: "Psychological Thriller & Domestic Suspense", hook: "A short story bridging books two and three — Millie's wedding day doesn't go to plan.", source_status: "more" },
+  { title: "The Wife Upstairs", author: "Freida McFadden", genre: "Psychological Thriller & Domestic Suspense", hook: "A live-in caregiver is drawn into an elegant household hiding a bedridden wife's dark secret.", source_status: "want" },
+  { title: "Never Lie", author: "Freida McFadden", genre: "Psychological Thriller & Domestic Suspense", hook: "A newlywed couple snowed in at a remote estate piece together tapes from a therapist who vanished.", source_status: "want" },
+  { title: "The Coworker", author: "Freida McFadden", genre: "Psychological Thriller & Domestic Suspense", hook: "An accountant's strange daily routine breaks — and her cubicle neighbour suspects something's badly wrong.", source_status: "want" },
+  { title: "The Teacher", author: "Freida McFadden", genre: "Psychological Thriller & Domestic Suspense", hook: "A new hire, a scandal-scarred school, and a secret worth killing for.", source_status: "more" },
+  { title: "The Girlfriend", author: "Michelle Frances", genre: "Psychological Thriller & Domestic Suspense", hook: "A gallery-owning mother and her son's new girlfriend are locked in a quiet, escalating war for his loyalty — until a lie changes everything. Now an Amazon Prime series with Robin Wright.", source_status: "want" },
+  { title: "The Dry", author: "Jane Harper", genre: "Psychological Thriller & Domestic Suspense", hook: "A federal agent returns to his drought-stricken hometown to investigate a family's death.", source_status: "discover" },
+  { title: "Big Little Lies", author: "Liane Moriarty", genre: "Psychological Thriller & Domestic Suspense", hook: "Already a favourite of yours on screen — the book that started it, sharper and darker.", source_status: "discover" },
+  { title: "Tell Me Lies", author: "J.P. Pomare", genre: "Psychological Thriller & Domestic Suspense", hook: "A Melbourne therapist's client is accused of murder, and her own secrets start to surface.", source_status: "discover" },
+  { title: "Why Mummy Drinks", author: "Gill Sims", genre: "Contemporary Comedy & Family Life", hook: "A Sunday Times bestseller on the chaos, wine, and love of modern motherhood.", source_status: "more" },
+  { title: "Why Mummy Swears", author: "Gill Sims", genre: "Contemporary Comedy & Family Life", hook: "The sequel — school runs, marriage, and the true meaning of \"fine.\"", source_status: "more" },
+  { title: "Why Mummy's Sloshed", author: "Gill Sims", genre: "Contemporary Comedy & Family Life", hook: "Divorce, dating, and toddlers — Ellen's life gets messier still.", source_status: "more" },
+  { title: "Why Mummy Doesn't Give a ****!", author: "Gill Sims", genre: "Contemporary Comedy & Family Life", hook: "Mummy turns 39 and decides she's done people-pleasing.", source_status: "more" },
+  { title: "Why Mummy Drinks at Christmas", author: "Gill Sims", genre: "Contemporary Comedy & Family Life", hook: "Burnt dinner, chaos, and Aunt Louisa's festive inappropriateness — the Christmas instalment.", source_status: "more" },
+  { title: "Why Mummy Drinks on Holiday", author: "Gill Sims", genre: "Contemporary Comedy & Family Life", hook: "Ellen's vision of a perfect family holiday meets reality. The sixth and most recent Why Mummy novel.", source_status: "more" },
+  { title: "The Saturday Night Sauvignon Sisterhood", author: "Gill Sims", genre: "Contemporary Comedy & Family Life", hook: "A standalone — Claire's husband is having an affair with her best friend, so she builds a new circle of friends over wine instead.", source_status: "more" },
+  { title: "How Hard Can It Be?", author: "Allison Pearson", genre: "Contemporary Comedy & Family Life", hook: "Kate Reddy at 49 — perimenopause, teenagers, an ageing father, and a husband having his own crisis. The funniest, most accurate account of this exact stage of life.", source_status: "want" },
+  { title: "I Don't Know How She Does It", author: "Allison Pearson", genre: "Contemporary Comedy & Family Life", hook: "The original novel — Kate Reddy juggling a City job and small kids, twenty years before the sequel catches up with her.", source_status: "more" },
+  { title: "The Break", author: "Marian Keyes", genre: "Contemporary Comedy & Family Life", hook: "Her husband announces he wants a six-month \"break\" to go travelling. Wickedly funny and sharp on marriage and self-worth in your late 40s.", source_status: "want" },
+  { title: "Again, Rachel", author: "Marian Keyes", genre: "Contemporary Comedy & Family Life", hook: "Warm, sharp Irish wit — addiction, family and second chances done with real heart.", source_status: "more" },
+  { title: "The Change", author: "Kirsten Miller", genre: "Contemporary Comedy & Family Life", hook: "Three women going through menopause discover it comes with unexpected power — witty with teeth, a bit of magical realism.", source_status: "want" },
+  { title: "The Burnout", author: "Sophie Kinsella", genre: "Contemporary Comedy & Family Life", hook: "A woman escapes to a crumbling seaside hotel and finds herself instead.", source_status: "discover" },
+  { title: "Just My Luck", author: "Adele Parks", genre: "Contemporary Comedy & Family Life", hook: "A lottery win, a marriage, and the friendships that curdle over money.", source_status: "discover" },
+  { title: "Invisible Child", author: "Andrea Elliott", genre: "Narrative Nonfiction", hook: "Eight years following one homeless girl in New York — a Pulitzer-winning piece of journalism.", source_status: "want" },
+  { title: "Evicted", author: "Matthew Desmond", genre: "Narrative Nonfiction", hook: "Eight families, one Milwaukee city, and the machinery of poverty and eviction.", source_status: "discover" },
+  { title: "Behind the Beautiful Forevers", author: "Katherine Boo", genre: "Narrative Nonfiction", hook: "Life and death in a Mumbai slum in the shadow of luxury hotels — three years of reporting.", source_status: "discover" },
+  { title: "Nothing to Envy", author: "Barbara Demick", genre: "Narrative Nonfiction", hook: "Ordinary lives inside North Korea, told through six defectors.", source_status: "discover" },
+];
