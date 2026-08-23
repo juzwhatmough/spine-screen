@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Shelf — A Reading List</title>
+<title>The Shelf — Books & Shows</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
     --spine-2:#9C4136;
     --brass:#AD8A4E;
     --sage:#5F6E56;
+    --warn:#C1652E;
     --line: rgba(34,38,31,0.16);
     --card-shadow: 0 1px 0 rgba(34,38,31,0.06), 0 8px 20px -14px rgba(34,38,31,0.35);
   }
@@ -84,6 +85,34 @@
     );
     opacity:0.9;
   }
+
+  /* ---------- View toggle (Books / Shows) ---------- */
+  .view-toggle{
+    display:flex;
+    gap:8px;
+    margin-top:24px;
+    position:relative;
+  }
+  .view-toggle button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    background:transparent;
+    border:1.5px solid var(--ink);
+    color:var(--ink);
+    padding:9px 16px;
+    border-radius:2px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .view-toggle button:hover{ background:rgba(34,38,31,0.06); }
+  .view-toggle button.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .view{ display:none; }
+  .view.active{ display:block; }
 
   /* ---------- Stats bar ---------- */
   .stats{
@@ -251,6 +280,17 @@
     margin:0;
     flex-grow:1;
   }
+  .card .warn-badge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    line-height:1.45;
+    color:var(--warn);
+    background:rgba(193,101,46,0.12);
+    border:1px solid rgba(193,101,46,0.35);
+    border-radius:2px;
+    padding:5px 7px;
+    margin:10px 0 0;
+  }
   .card .foot{
     display:flex;
     align-items:center;
@@ -374,18 +414,28 @@
 
 <header>
   <div class="spine-strip"></div>
-  <p class="eyebrow">Personal reading list · Est. Aug 2026</p>
-  <h1>The <em>To-Read</em> Shelf</h1>
-  <p class="sub">Your favourite authors, more of their own work, and the writers I think you'll fall for next — sorted the way a good bookshop shelves them, by genre rather than app.</p>
+  <p class="eyebrow">Personal library · Est. Aug 2026</p>
+  <h1>The <em>Shelf</em></h1>
+  <p class="sub">Books you're chasing next, and shows queued up across every app you pay for — sorted the way a good shelf would, by genre rather than platform.</p>
+  <div class="view-toggle" role="tablist">
+    <button type="button" class="active" data-view="books" role="tab" aria-selected="true">📚 Books</button>
+    <button type="button" data-view="shows" role="tab" aria-selected="false">📺 Shows</button>
+  </div>
 </header>
 
-<div class="stats" id="stats"></div>
+<div class="view active" id="view-books">
+  <div class="stats" id="statsBooks"></div>
+  <nav class="shelves" id="shelfNavBooks"></nav>
+  <main id="mainBooks"></main>
+</div>
 
-<nav class="shelves" id="shelfNav"></nav>
+<div class="view" id="view-shows">
+  <div class="stats" id="statsShows"></div>
+  <nav class="shelves" id="shelfNavShows"></nav>
+  <main id="mainShows"></main>
+</div>
 
-<main id="main"></main>
-
-<footer>Tap a card to mark it read, then 👍 or 👎 it · Tap "More suggestions" on any shelf for fresh picks based on your ratings · Progress is saved on this device</footer>
+<footer>Tap a card to mark it read or watched, then 👍 or 👎 it · Tap "More suggestions" on any book shelf for fresh picks based on your ratings · Progress is saved on this device</footer>
 
 <script>
 const STORAGE_KEY_PREFIX = 'reading-list:';
@@ -603,9 +653,9 @@ const shelves = [
   }
 ];
 
-// ---------- Render ----------
-const main = document.getElementById('main');
-const nav = document.getElementById('shelfNav');
+// ---------- Render: Books ----------
+const main = document.getElementById('mainBooks');
+const nav = document.getElementById('shelfNavBooks');
 let allBookCount = 0, wantCount = 0;
 
 shelves.forEach((shelf, si) => {
@@ -839,7 +889,7 @@ Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly th
   }
 }
 
-document.getElementById('stats').innerHTML =
+document.getElementById('statsBooks').innerHTML =
   `<span><b>${shelves.length}</b> shelves</span><span><b>${allBookCount}</b> titles</span><span>Tap a card to mark it read, then rate it — your ratings shape "More suggestions"</span>`;
 
 // active nav highlight on scroll
@@ -855,6 +905,276 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, { rootMargin: '-40% 0px -55% 0px' });
 sections.forEach(s => observer.observe(s));
+
+// ---------- Render: Shows ----------
+const WATCH_STORAGE_KEY_PREFIX = 'watch-list:';
+
+// Extracted from Juz's watchlist.html, verified against real AU streaming
+// availability. `note` is provenance/verification text, not marketing copy —
+// only surfaced on cards for titles that aren't currently streaming, where
+// it doubles as "here's where to actually find it."
+const shows = [
+  { title:"The Last Round", platform:"Prime Video", genre:"Drama", note:null, currentlyStreaming:true, hook:"A fighter chases redemption in one last, defining bout." },
+  { title:"Moonlight", platform:"Prime Video", genre:"Drama", note:"Also streaming on Stan.", currentlyStreaming:true, hook:"A boy's journey to manhood in three acts, tracing identity and love in Miami's Liberty City." },
+  { title:"The Marvelous Mrs. Maisel", platform:"Prime Video", genre:"Comedy", note:"2017–2023 · started before your 2020s window, but confirmed here.", currentlyStreaming:true, hook:"A 1950s housewife discovers a gift for stand-up comedy after her marriage implodes." },
+  { title:"A League of Their Own", platform:"Prime Video", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A women's pro baseball league gives a ragtag roster a shot at the game — and at reinventing themselves." },
+  { title:"The Fall", platform:"Prime Video", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A Belfast detective closes in on a meticulous serial killer in this tense procedural." },
+  { title:"Moonlight", platform:"Stan", genre:"Drama", note:"Also streaming on Prime Video.", currentlyStreaming:true, hook:"A boy's journey to manhood in three acts, tracing identity and love in Miami's Liberty City." },
+  { title:"Killing Eve", platform:"Stan", genre:"Thriller & Mystery", note:"All 4 seasons.", currentlyStreaming:true, hook:"An MI6 operative becomes obsessed with the elegant assassin she's hunting." },
+  { title:"The Loudest Voice", platform:"Stan", genre:"Drama", note:"Fell off Stan — now purchase/rent only via Apple TV Store or Fetch.", currentlyStreaming:false, hook:"The rise and fall of a media titan who built Fox News in his own image." },
+  { title:"Harlots", platform:"Stan", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"Rival madams battle for survival and power in the brothels of 18th-century London." },
+  { title:"The Great", platform:"Stan", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A darkly funny, wildly fictionalised account of Catherine the Great's rise to power." },
+  { title:"Ten Pound Poms", platform:"Stan", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"British families chase a fresh start Down Under as £10 migrants in 1950s Australia." },
+  { title:"A Good Girl's Guide to Murder", platform:"Stan", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A student's school project reopens her small town's most notorious unsolved murder." },
+  { title:"Everything I Know About Love", platform:"Stan", genre:"Drama", note:"by Dolly Alderton — Stan-exclusive.", currentlyStreaming:true, hook:"Two best friends navigate messy love lives and grown-up disappointments in their twenties." },
+  { title:"Dear Life", platform:"Stan", genre:"Drama", note:null, currentlyStreaming:true, hook:"A tender drama about the relationships that hold us together when everything else falls apart." },
+  { title:"Three Women", platform:"Stan", genre:"Drama", note:"by Lisa Taddeo.", currentlyStreaming:true, hook:"Three American women's private lives of desire and longing, drawn from years of real reporting." },
+  { title:"The First Lady", platform:"Stan", genre:"Drama", note:null, currentlyStreaming:true, hook:"An anthology tracing the private lives of three influential First Ladies, decades apart." },
+  { title:"The Tudors", platform:"Stan", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"Henry VIII's court, marriages and ruthless consolidation of power, across four seasons." },
+  { title:"The Split", platform:"Stan", genre:"Drama", note:null, currentlyStreaming:true, hook:"A family of divorce lawyers untangle their clients' marriages while their own family unravels." },
+  { title:"Sex Life", platform:"Netflix", genre:"Drama", note:null, currentlyStreaming:true, hook:"A married woman's old flame resurfaces, forcing her to question the life she chose." },
+  { title:"First They Killed My Father", platform:"Netflix", genre:"Drama", note:"Directed by Angelina Jolie. Netflix Original.", currentlyStreaming:true, hook:"A young girl survives the Khmer Rouge regime in Cambodia, seen entirely through a child's eyes." },
+  { title:"The Diplomat", platform:"Netflix", genre:"Thriller & Mystery", note:"All 3 seasons.", currentlyStreaming:true, hook:"A reluctant new US ambassador to London is thrust into an international crisis on day one." },
+  { title:"The Residence", platform:"Netflix", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A quirky detective investigates a murder inside the White House during a state dinner." },
+  { title:"The Empress", platform:"Netflix", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"A headstrong young woman becomes Empress of Austria and chafes against the rigid Habsburg court." },
+  { title:"Fool Me Once", platform:"Netflix", genre:"Thriller & Mystery", note:"Harlan Coben adaptation.", currentlyStreaming:true, hook:"A grieving widow spots her murdered husband alive on a hidden nanny-cam feed." },
+  { title:"The Stranger", platform:"Netflix", genre:"Thriller & Mystery", note:"Harlan Coben adaptation.", currentlyStreaming:true, hook:"A mysterious stranger's revelation unravels a seemingly ordinary man's entire life." },
+  { title:"Bodies", platform:"Netflix", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"The same murder victim turns up in the same London alley across four different eras." },
+  { title:"The Recruit", platform:"Netflix", genre:"Thriller & Mystery", note:"Cancelled after S2, but both seasons are up.", currentlyStreaming:true, hook:"A rookie CIA lawyer is dragged into a dangerous game after inheriting an asset's threat to expose the agency." },
+  { title:"The Watcher", platform:"Netflix", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A family's dream house comes with an anonymous stalker who insists it belongs to him." },
+  { title:"The Innocent", platform:"Netflix", genre:"Thriller & Mystery", note:"Spanish thriller.", currentlyStreaming:true, hook:"A man's carefully rebuilt life threatens to collapse when a past crime resurfaces." },
+  { title:"Stay Close", platform:"Netflix", genre:"Thriller & Mystery", note:"Harlan Coben adaptation.", currentlyStreaming:true, hook:"Three strangers' lives collide again when a buried secret from one reckless night resurfaces." },
+  { title:"The Sinner", platform:"Netflix", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A detective investigates when an ordinary woman commits a shocking, seemingly motiveless act of violence." },
+  { title:"The Good Nurse", platform:"Netflix", genre:"True Crime", note:"Jessica Chastain / Eddie Redmayne.", currentlyStreaming:true, hook:"A hospital nurse begins to suspect her trusted colleague is quietly killing patients." },
+  { title:"Margo's Got Money Troubles", platform:"Apple TV+", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A broke young single mother finds an unlikely way to keep herself and her baby afloat." },
+  { title:"Dickinson", platform:"Apple TV+", genre:"Comedy", note:"Season 3.", currentlyStreaming:true, hook:"A wildly anachronistic, poetic take on the young Emily Dickinson's inner and creative life." },
+  { title:"The Shrink Next Door", platform:"Apple TV+", genre:"Drama", note:null, currentlyStreaming:true, hook:"A mild-mannered man's therapist slowly takes over every corner of his life — based on a true story." },
+  { title:"We Crashed", platform:"Apple TV+", genre:"Drama", note:null, currentlyStreaming:true, hook:"The rise and spectacular collapse of WeWork, built on charisma and very little else." },
+  { title:"Pachinko", platform:"Apple TV+", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"A Korean family's fortunes and sacrifices ripple across four generations and two countries." },
+  { title:"The Essex Serpent", platform:"Apple TV+", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"A Victorian widow's fascination with a rumoured sea serpent draws her into a coastal town's secrets." },
+  { title:"Shantaram", platform:"Apple TV+", genre:"Drama", note:"Cancelled after S1, but the season is still up.", currentlyStreaming:true, hook:"An escaped convict reinvents himself in the slums and underworld of 1980s Bombay." },
+  { title:"Shrinking", platform:"Apple TV+", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A grieving therapist starts breaking every rule of his profession by telling clients exactly what he thinks." },
+  { title:"The Last Thing He Told Me", platform:"Apple TV+", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A woman's husband vanishes overnight, leaving her and his teenage daughter to uncover who he really was." },
+  { title:"Roar", platform:"Apple TV+", genre:"Drama", note:null, currentlyStreaming:true, hook:"A darkly funny, surreal anthology of women's lives, each episode its own kind of fable." },
+  { title:"Shining Girls", platform:"Apple TV+", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A woman hunts the man who attacked her — as her own reality keeps rearranging itself." },
+  { title:"City on Fire", platform:"Apple TV+", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A mysterious shooting in Central Park unravels the hidden connections between a wide cast of New Yorkers." },
+  { title:"Platonic", platform:"Apple TV+", genre:"Comedy", note:null, currentlyStreaming:true, hook:"Two old friends reconnect in their forties and immediately start upending each other's carefully ordered lives." },
+  { title:"The Crowded Room", platform:"Apple TV+", genre:"Drama", note:null, currentlyStreaming:true, hook:"A man's arrest for a shocking crime unravels a deeper, hidden psychological mystery." },
+  { title:"Judy", platform:"Apple TV+", genre:"Drama", note:"Not on Apple TV+ — rent/buy only in Australia right now.", currentlyStreaming:false, hook:"Judy Garland's turbulent final year, on the comeback trail in London." },
+  { title:"Lucky", platform:"Apple TV+", genre:"Thriller & Mystery", note:"2026 · Anya Taylor-Joy.", currentlyStreaming:true, hook:"A woman's ordinary life is upended when she becomes the target of a relentless pursuit." },
+  { title:"Slow Horses", platform:"Apple TV+", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"MI5's washed-up disgraces get one more shot at redemption from their squalid backwater office." },
+  { title:"Bad Sisters", platform:"Apple TV+", genre:"Comedy", note:null, currentlyStreaming:true, hook:"Five sisters are the prime suspects when their universally loathed brother-in-law turns up dead." },
+  { title:"The Buccaneers", platform:"Apple TV+", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"Wealthy young American women chase titled British husbands — and discover love is rarely that simple." },
+  { title:"Palm Royale", platform:"Apple TV+", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A woman claws her way into 1969 Palm Beach's most exclusive, cutthroat social circle." },
+  { title:"Ms. Marvel", platform:"Disney+", genre:"Sci-Fi & Fantasy", note:null, currentlyStreaming:true, hook:"A New Jersey teenager discovers she has superpowers — and a destiny bigger than her wildest fangirl dreams." },
+  { title:"Chris Hemsworth: A Road Trip to Remember", platform:"Disney+", genre:"Documentary", note:null, currentlyStreaming:true, hook:"Chris Hemsworth hits the road for a personal, adventure-driven documentary special." },
+  { title:"Am I Being Unreasonable?", platform:"SBS On Demand", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A woman's new friendship in a sleepy town hides a secret that could unravel everything." },
+  { title:"Safe Home", platform:"SBS On Demand", genre:"Drama", note:null, currentlyStreaming:true, hook:"A drama following the fallout when home stops feeling like the safest place to be." },
+  { title:"Blue Lights", platform:"SBS On Demand", genre:"Thriller & Mystery", note:"Free. Also on Stan.", currentlyStreaming:true, hook:"Three rookie police officers navigate the dangers of policing Belfast's toughest streets." },
+  { title:"The Old Man", platform:"SBS On Demand", genre:"Thriller & Mystery", note:"Free.", currentlyStreaming:true, hook:"A former CIA operative's quiet retirement ends when his past sends someone to kill him." },
+  { title:"Dark Winds", platform:"SBS On Demand", genre:"Thriller & Mystery", note:"Free.", currentlyStreaming:true, hook:"Two Navajo police officers investigate a double murder steeped in tribal fears in 1970s New Mexico." },
+  { title:"The Sixth Commandment", platform:"SBS On Demand", genre:"True Crime", note:"Free.", currentlyStreaming:true, hook:"A charismatic con man befriends two elderly neighbours with devastating, real-life consequences." },
+  { title:"Normal People", platform:"SBS On Demand", genre:"Romance", note:"Free.", currentlyStreaming:true, hook:"Two Irish teenagers' complicated, tender relationship follows them from school into university and beyond." },
+  { title:"Call My Agent!", platform:"SBS On Demand", genre:"Comedy", note:"Free.", currentlyStreaming:true, hook:"A Parisian talent agency's staff scramble to keep their demanding star clients happy — and each other in check." },
+  { title:"A Gentleman in Moscow", platform:"SBS On Demand", genre:"Period Drama", note:"Also on Paramount+.", currentlyStreaming:true, hook:"A Russian aristocrat is confined for decades to a grand Moscow hotel — and builds a life inside its walls." },
+  { title:"The Guernsey Literary and Potato Peel Pie Society", platform:"SBS On Demand", genre:"Period Drama", note:"Also on Stan.", currentlyStreaming:true, hook:"A London writer's correspondence with a wartime book club draws her into Guernsey's hidden Occupation history." },
+  { title:"Up All Night", platform:"9Now", genre:"Comedy", note:null, currentlyStreaming:true, hook:"Two new parents try to hold onto their old lives while barely surviving their newborn's sleep schedule." },
+  { title:"Carrie Diaries", platform:"9Now", genre:"Drama", note:null, currentlyStreaming:true, hook:"A teenage Carrie Bradshaw navigates high school, first loves and early ambitions in 1980s Manhattan." },
+  { title:"Savage River", platform:"ABC iview", genre:"Thriller & Mystery", note:"Free.", currentlyStreaming:true, hook:"A woman's return to her hometown after years in prison reopens old wounds — and a new murder." },
+  { title:"The Newsreader", platform:"ABC iview", genre:"Period Drama", note:"Free.", currentlyStreaming:true, hook:"Ambitious rivals navigate love and ego in a cutthroat 1980s Melbourne TV newsroom." },
+  { title:"Brooklyn", platform:"ABC iview", genre:"Romance", note:"2015 film. Free.", currentlyStreaming:true, hook:"A young Irish immigrant in 1950s New York is torn between the life she's built and the one she left behind." },
+  { title:"One Battle After Another", platform:"HBO Max", genre:"Thriller & Mystery", note:null, currentlyStreaming:true, hook:"A former revolutionary is drawn back into danger when his past resurfaces to threaten his daughter." },
+  { title:"The Last of Us", platform:"HBO Max", genre:"Drama", note:null, currentlyStreaming:true, hook:"A hardened smuggler is tasked with escorting a girl who may hold the cure to a fungal pandemic across a ruined America." },
+  { title:"And Just Like That, Season 2", platform:"HBO Max", genre:"Comedy", note:null, currentlyStreaming:true, hook:"Carrie and her friends navigate love, loss and New York life well into their fifties." },
+  { title:"Industry", platform:"HBO Max", genre:"Drama", note:null, currentlyStreaming:true, hook:"Ruthlessly ambitious graduates claw for survival and status inside a cutthroat London investment bank." },
+  { title:"The Undoing", platform:"HBO Max", genre:"Thriller & Mystery", note:"Nicole Kidman.", currentlyStreaming:true, hook:"A therapist's picture-perfect marriage unravels when her husband is implicated in a brutal murder." },
+  { title:"Sharp Objects", platform:"HBO Max", genre:"Thriller & Mystery", note:"Amy Adams.", currentlyStreaming:true, hook:"A troubled journalist returns to her hometown to investigate the murders of two young girls." },
+  { title:"The Last Anniversary", platform:"Binge", genre:"Thriller & Mystery", note:"by Liane Moriarty.", currentlyStreaming:true, hook:"A woman inherits a cottage on a tourist island — along with the decades-old unsolved mystery that made it famous." },
+  { title:"Hotel Portofino", platform:"Binge", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"An English family navigates scandal and shifting fortunes running a glamorous 1920s Italian hotel." },
+  { title:"Love & Death", platform:"Binge", genre:"True Crime", note:null, currentlyStreaming:true, hook:"A quiet Texas suburb is shattered by a shocking real-life axe murder among churchgoing friends." },
+  { title:"Marie Antoinette", platform:"Binge", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"A teenage archduchess becomes queen of France and collides head-on with the rigid excess of Versailles." },
+  { title:"Slip", platform:"Binge", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A dissatisfied woman starts slipping into alternate versions of her own life with different husbands." },
+  { title:"The Idol", platform:"Binge", genre:"Drama", note:"Also on HBO Max.", currentlyStreaming:true, hook:"A pop star on the comeback trail falls under the spell of a self-help guru with a dark side." },
+  { title:"Funny Woman", platform:"Binge", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A beauty queen turned aspiring comedian fights her way into 1960s British TV comedy." },
+  { title:"Based on a True Story", platform:"Binge", genre:"Comedy", note:null, currentlyStreaming:true, hook:"A struggling couple launches a true-crime podcast with an unlikely, uncomfortably close source." },
+  { title:"Strife", platform:"Binge", genre:"Drama", note:null, currentlyStreaming:true, hook:"A tense family drama about ambition, loyalty and the cost of holding it all together." },
+  { title:"Hamnet", platform:"Binge", genre:"Period Drama", note:"Streaming from 22 August 2026 — currently purchase/rent only until then.", currentlyStreaming:false, hook:"Shakespeare's wife and the loss of their young son, brought to the screen with devastating tenderness." },
+  { title:"Wolf Hall: The Mirror and the Light", platform:"Binge", genre:"Period Drama", note:"Both seasons.", currentlyStreaming:true, hook:"Thomas Cromwell's brilliant, precarious rise reaches its perilous final act in Henry VIII's court." },
+  { title:"Past Lives", platform:"Binge", genre:"Romance", note:"2023 film.", currentlyStreaming:true, hook:"Two childhood friends reunite decades later in New York, each wondering about the life they didn't choose." },
+  { title:"Miss Scarlet and The Duke", platform:"Unresolved", genre:"Thriller & Mystery", note:"Aired on Channel 7, but sources disagree on current AU streaming status — left unresolved rather than guess.", currentlyStreaming:false, hook:"Victorian London's first female private detective takes on cases no one thinks a woman can solve." },
+  { title:"The Gilded Age", platform:"Paramount+", genre:"Period Drama", note:null, currentlyStreaming:true, hook:"Old money and brash new fortunes collide on the same Manhattan street in 1880s New York." },
+  { title:"Nightingale", platform:"Not Currently Streaming", genre:"Period Drama", note:"by Kristin Hannah — the film adaptation isn't out until March 2027, so it's book-only for now.", currentlyStreaming:false, hook:"Two sisters find very different paths through the German occupation of France." },
+  { title:"State of the Union", platform:"Not Currently Streaming", genre:"Comedy", note:"Not actually on SBS despite an old listing — Apple TV Store rent/buy only right now.", currentlyStreaming:false, hook:"Married couples meet at the pub for a nervy pint before each marriage-counselling session." },
+  { title:"Mrs. Harris Goes to Paris", platform:"Not Currently Streaming", genre:"Comedy", note:"Left Netflix Australia — Apple TV/Prime Video Store rent/buy only.", currentlyStreaming:false, hook:"A London cleaner scrimps and saves for the one extravagant thing she's ever wanted: a Dior gown." },
+  { title:"The Holdovers", platform:"Not Currently Streaming", genre:"Comedy", note:"Never had a subscription option here — Apple TV/Prime Video Store rent/buy only.", currentlyStreaming:false, hook:"A prickly boarding-school teacher is stuck minding a lonely student over a bleak Christmas break." },
+];
+
+const showGenreOrder = ["Thriller & Mystery","Drama","Comedy","Period Drama","True Crime","Romance","Sci-Fi & Fantasy","Documentary"];
+const showGenreMeta = {
+  "Thriller & Mystery": { color:'#7A2E27', note:"Twisty procedurals, slow-burn conspiracies, and a few outright whodunits — scattered across just about every app you pay for." },
+  "Drama": { color:'#5F6E56', note:"The ones that sit with you after the credits roll — prestige dramas, character studies, based-on-a-true-story sagas." },
+  "Comedy": { color:'#AD8A4E', note:"Sharp, funny, sometimes-dark comedies for when you want to laugh instead of doom-scroll." },
+  "Period Drama": { color:'#9C4136', note:"Corsets, court intrigue, and history rendered in gorgeous detail — from Tudor England to 1920s Italy." },
+  "True Crime": { color:'#7A2E27', note:"Real cases, dramatised — somehow scarier for being true." },
+  "Romance": { color:'#5F6E56', note:"Slow-burn, will-they-won't-they — the kind that makes you miss being twenty-two." },
+  "Sci-Fi & Fantasy": { color:'#AD8A4E', note:"Superpowers and bigger-than-life stakes, for when realism isn't the assignment." },
+  "Documentary": { color:'#9C4136', note:"Real people, real stories, no script required." }
+};
+
+const showShelves = showGenreOrder.map(genre => ({
+  id: 'show-' + genre.toLowerCase().replace(/[^a-z0-9]+/g,'-'),
+  tag: genre,
+  color: showGenreMeta[genre].color,
+  note: showGenreMeta[genre].note,
+  items: shows.filter(s => s.genre === genre)
+})).filter(shelf => shelf.items.length > 0);
+
+const mainShows = document.getElementById('mainShows');
+const navShows = document.getElementById('shelfNavShows');
+let allShowCount = 0, notStreamingCount = 0;
+
+showShelves.forEach((shelf, si) => {
+  const btn = document.createElement('button');
+  btn.textContent = shelf.tag;
+  if(si===0) btn.classList.add('active');
+  btn.onclick = () => {
+    document.getElementById(shelf.id).scrollIntoView({behavior:'smooth', block:'start'});
+  };
+  navShows.appendChild(btn);
+
+  const section = document.createElement('section');
+  section.className = 'shelf';
+  section.id = shelf.id;
+  section.style.setProperty('--tagcolor', shelf.color);
+  section.innerHTML = `
+    <div class="shelf-head">
+      <span class="shelf-tag" style="background:${shelf.color}">${shelf.tag}</span>
+      <h2>${shelf.tag}</h2>
+    </div>
+    <p class="shelf-note">${shelf.note}</p>
+  `;
+
+  const cardsWrap = document.createElement('div');
+  cardsWrap.className = 'cards';
+  shelf.items.forEach(item => {
+    allShowCount++;
+    if(!item.currentlyStreaming) notStreamingCount++;
+    cardsWrap.appendChild(makeShowCard(item, shelf.color));
+  });
+  section.appendChild(cardsWrap);
+
+  mainShows.appendChild(section);
+});
+
+function makeShowCard(item, color){
+  const key = WATCH_STORAGE_KEY_PREFIX + (item.platform+':'+item.title).toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.tabIndex = 0;
+  card.style.setProperty('--tagcolor', color);
+  const warnBadge = !item.currentlyStreaming
+    ? `<p class="warn-badge">⚠ Not currently streaming — ${item.note || 'rent/buy only'}</p>`
+    : '';
+  card.innerHTML = `
+    <div class="kind">${item.platform}</div>
+    <p class="title">${item.title}</p>
+    <p class="hook">${item.hook}</p>
+    ${warnBadge}
+    <div class="foot">
+      <span class="status">To watch</span>
+      <div class="right-controls">
+        <div class="thumbs">
+          <button type="button" class="thumb-btn up" title="I liked this" aria-label="Thumbs up">👍</button>
+          <button type="button" class="thumb-btn down" title="Not for me" aria-label="Thumbs down">👎</button>
+        </div>
+        <span class="stamp">Mark watched</span>
+      </div>
+    </div>
+  `;
+  const statusEl = card.querySelector('.status');
+  const stampEl = card.querySelector('.stamp');
+  const upBtn = card.querySelector('.thumb-btn.up');
+  const downBtn = card.querySelector('.thumb-btn.down');
+
+  let state = { watched:false, rating:null };
+
+  // Reuses the .read class/animation for the "watched" state — same
+  // stamp/strikethrough/thumbs behaviour as books, just relabelled.
+  function render(){
+    card.classList.toggle('read', state.watched);
+    statusEl.textContent = state.watched ? 'Watched' : 'To watch';
+    stampEl.textContent = state.watched ? 'Watched ✓' : 'Mark watched';
+    upBtn.classList.toggle('active', state.rating === 'up');
+    downBtn.classList.toggle('active', state.rating === 'down');
+  }
+
+  function persist(){
+    const payload = JSON.stringify({ watched: state.watched, rating: state.rating, title: item.title, platform: item.platform });
+    try { localStorage.setItem(key, payload); } catch(e){ /* storage unavailable */ }
+  }
+
+  try {
+    const raw = localStorage.getItem(key);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      state.watched = !!parsed.watched;
+      state.rating = parsed.rating || null;
+    }
+  } catch(e){ /* storage unavailable */ }
+
+  function toggleWatched(){
+    state.watched = !state.watched;
+    if(!state.watched) state.rating = null;
+    render();
+    persist();
+  }
+
+  function setRating(r, evt){
+    evt.stopPropagation();
+    state.rating = (state.rating === r) ? null : r;
+    render();
+    persist();
+  }
+
+  card.addEventListener('click', toggleWatched);
+  card.addEventListener('keydown', (e) => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleWatched(); }});
+  upBtn.addEventListener('click', (e) => setRating('up', e));
+  downBtn.addEventListener('click', (e) => setRating('down', e));
+
+  render();
+  return card;
+}
+
+document.getElementById('statsShows').innerHTML =
+  `<span><b>${showShelves.length}</b> shelves</span><span><b>${allShowCount}</b> titles</span><span><b>${notStreamingCount}</b> not currently streaming</span><span>Tap a card to mark it watched, then rate it</span>`;
+
+const showSections = showShelves.map(s => document.getElementById(s.id));
+const showNavButtons = Array.from(navShows.children);
+const showObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      const idx = showSections.indexOf(entry.target);
+      showNavButtons.forEach(b => b.classList.remove('active'));
+      if(idx>-1) showNavButtons[idx].classList.add('active');
+    }
+  });
+}, { rootMargin: '-40% 0px -55% 0px' });
+showSections.forEach(s => showObserver.observe(s));
+
+// ---------- View toggle (Books / Shows) ----------
+const viewButtons = document.querySelectorAll('.view-toggle button');
+const views = { books: document.getElementById('view-books'), shows: document.getElementById('view-shows') };
+viewButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.view;
+    viewButtons.forEach(b => {
+      const isActive = b === btn;
+      b.classList.toggle('active', isActive);
+      b.setAttribute('aria-selected', isActive);
+    });
+    Object.entries(views).forEach(([key, el]) => el.classList.toggle('active', key === target));
+  });
+});
 </script>
 </body>
 </html>

@@ -6,12 +6,13 @@ design changes.
 
 ## Overview
 
-A single-page reading list organised into genre "shelves." Fluid,
-mobile-first layout (built with `clamp()` rather than a tablet/desktop
-breakpoint ladder) — one true breakpoint exists at 640px for a handful of
-layout tweaks; everything else scales continuously. Primary usage is a
-phone browser, so touch targets and thumb reach were prioritised over
-dense desktop layouts.
+A single-page app organised into genre "shelves," covering two sections —
+Books and Shows — switched via a toggle in the header. Fluid, mobile-first
+layout (built with `clamp()` rather than a tablet/desktop breakpoint
+ladder) — one true breakpoint exists at 640px for a handful of layout
+tweaks; everything else scales continuously. Primary usage is a phone
+browser, so touch targets and thumb reach were prioritised over dense
+desktop layouts.
 
 ## Design Tokens
 
@@ -22,9 +23,10 @@ dense desktop layouts.
 | `--ink` | `#22261F` | Primary text, nav background |
 | `--ink-soft` | `#4A4E42` | Secondary text, metadata |
 | `--spine` | `#7A2E27` | Primary accent (burgundy) — eyebrow text, active tab, thumbs-down |
-| `--spine-2` | `#9C4136` | Reserved secondary accent (defined, not currently used) |
+| `--spine-2` | `#9C4136` | Secondary accent — used as a shelf colour on the Shows side (Period Drama, Documentary); not used on Books |
 | `--brass` | `#AD8A4E` | Tertiary accent — active nav underline, selection highlight |
 | `--sage` | `#5F6E56` | Success/positive accent — thumbs-up, "read" stamp border |
+| `--warn` | `#C1652E` | Not-currently-streaming warning badge (Shows only) |
 | `--line` | `rgba(34,38,31,0.16)` | All hairline borders/dividers |
 | `--card-shadow` | `0 1px 0 rgba(34,38,31,.06), 0 8px 20px -14px rgba(34,38,31,.35)` | Card resting shadow |
 | card background | `#FBF8F1` | Unread card (slightly lighter than paper) |
@@ -65,7 +67,29 @@ since the current values weren't chosen against a scale.
 | Card colour tab | n/a | 4px-wide coloured bar, `::before` pseudo-element, colour set per-shelf via `--tagcolor` custom property |
 | Read stamp | default, `.read` | Border/text sage → on read, fills solid spine background, white text, plays `stampIn` animation |
 | Thumbs up/down | hidden (unread), visible (read), `.active` | Only rendered visible once card is `.read`; active state fills with sage (up) or spine (down) |
-| Refresh button ("🔄 More suggestions") | default, hover, `:disabled` | Disabled state used while the AI request is in flight; label swaps to "Finding more…" |
+| Refresh button ("🔄 More suggestions") | default, hover, `:disabled` | Disabled state used while the AI request is in flight; label swaps to "Finding more…" — Books shelves only |
+| View toggle ("📚 Books" / "📺 Shows") | default, hover, `.active` | Two buttons in the header; `.active` fills solid ink background. Toggling shows/hides `#view-books` / `#view-shows` via a `.view.active{ display:block }` rule — inactive view is fully unmounted from layout, not just visually hidden |
+| Warning badge ("⚠ Not currently streaming") | shown only when relevant | Shows-only. Small mono-text badge in `--warn` orange, rendered between the hook and the footer; text is the title's verification `note`, or a generic fallback if none |
+
+## Books vs. Shows card variants
+
+Both sections reuse the same `.card` component and the same read/rate
+interaction model, but differ in which fields populate it:
+
+| Field slot | Books | Shows |
+|---|---|---|
+| `.kind` (top label) | Status: "From your list" / "More by this author" / "Suggested for you" / "New to you" | Streaming platform (e.g. "Netflix," "Stan") |
+| `.author` line | Author name | *(not rendered — no equivalent field)* |
+| `.hook` | Enticing one-line blurb | Enticing one-line blurb (written to match Books' tone; the original data's `note` field was verification/provenance text, demoted — see below) |
+| Warning badge | *(n/a)* | Shown only when `currentlyStreaming` is `false` |
+| Footer status text | "To read" / "Read" | "To watch" / "Watched" |
+| Stamp button text | "Mark read" / "Read ✓" | "Mark watched" / "Watched ✓" |
+| `localStorage` key prefix | `reading-list:` | `watch-list:` |
+| AI refresh ("🔄 More suggestions") | Yes | No — not built |
+
+The Shows card's "watched" state reuses the `.card.read` CSS class and
+`stampIn` animation as-is (relabelled via JS, not restyled) — there's no
+separate `.card.watched` class in the CSS.
 
 ## States & Interactions
 
@@ -139,3 +163,12 @@ durations to `0.001ms` globally — already implemented, not a gap.
 - **Many "More suggestions" clicks**: cards only ever accumulate (no
   removal), so repeated clicks on the same shelf could produce a long
   scroll of AI cards — no pagination or collapse
+- **Duplicate show titles across platforms**: "Moonlight" appears twice
+  (Prime Video and Stan) with the same hook — intentional, faithful to
+  the source data, not a bug
+- **Shows source-data inconsistency, caught and fixed**: the seed data
+  listed "Nightingale" as `currently_streaming: true` despite its own
+  `note` saying the film isn't out until March 2027 and its platform
+  being "Not Currently Streaming" — corrected to `false` when building
+  the Shows shelf. Flagged to Juz; worth a similar sanity check on any
+  future data drops before they're wired in.
