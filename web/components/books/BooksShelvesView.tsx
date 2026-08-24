@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ShelfNav } from "./ShelfNav";
 import { BookShelf } from "./BookShelf";
-import { AddBookForm } from "./AddBookForm";
+import { AddBookFab } from "./AddBookFab";
 import { FilterBar } from "@/components/filters/FilterBar";
 import type { BookShelfData } from "@/lib/books/groupItems";
 
@@ -15,6 +15,9 @@ import type { BookShelfData } from "@/lib/books/groupItems";
 export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
   const [genre, setGenre] = useState("");
   const [author, setAuthor] = useState("");
+  // Tracks whichever shelf is currently in view (ShelfNav's scroll-spy),
+  // used only to pre-fill the Add-a-book modal's Genre field.
+  const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
   const authorOptions = useMemo(() => {
@@ -54,19 +57,23 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
         onClear={handleClear}
       />
 
-      <ShelfNav shelves={filtered.map((s) => ({ id: s.id, tag: s.tag }))} />
+      <ShelfNav
+        shelves={filtered.map((s) => ({ id: s.id, tag: s.tag }))}
+        onActiveChange={setActiveGenre}
+      />
 
       <main>
-        <AddBookForm />
         {filtered.length === 0 ? (
           <p className="empty-state">
             Nothing on your shelves matches that combination yet — try
-            clearing a filter, or add it above.
+            clearing a filter, or tap the + button to add something new.
           </p>
         ) : (
           filtered.map((shelf) => <BookShelf key={shelf.id} shelf={shelf} />)
         )}
       </main>
+
+      <AddBookFab activeGenre={activeGenre} />
     </>
   );
 }

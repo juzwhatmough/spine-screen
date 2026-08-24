@@ -69,8 +69,8 @@ the same `spine-screen` repo as the static site.
 - Any other email goes through a short Books onboarding (favourite
   authors, genres, a couple of loved/disliked books) before landing on
   their own book shelf. The Shows tab has no onboarding — it starts
-  empty, with an "Add a show" box always visible at the top to build it
-  up manually
+  empty, with a "+" button in the bottom-right corner to add your first
+  show
 
 ## What's different from the static version
 
@@ -80,10 +80,11 @@ the same `spine-screen` repo as the static site.
   auto-populates a starter shelf per genre they picked. Shows still has
   no onboarding — it starts empty for anyone but Juz
 - Both tabs now have: filters (Books: Author + Genre; Shows: Genre +
-  Streaming Service), a manual "Add a book"/"Add a show" form, and AI
-  "🔄 More suggestions" — Shows' AI picks never claim a real streaming
-  platform (there's no way to verify Australian availability yet), so
-  they show with an "Unconfirmed" badge instead
+  Streaming Service), a "+" button (bottom-right) that opens an
+  "Add a book"/"Add a show" popup, and AI "🔄 More suggestions" — Shows'
+  AI picks never claim a real streaming platform (there's no way to
+  verify Australian availability yet), so they show with an
+  "Unconfirmed" badge instead
 - Everything else — the card design, the read/watch + rate interaction —
   works the same way, same visual system
 

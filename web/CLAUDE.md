@@ -18,8 +18,9 @@ sits in the header of both.
 difference:** both have onboarding-free manual add forms, filters, and AI
 "🔄 More suggestions" — but Books' onboarding flow (new users answer a few
 questions and get an auto-seeded starter shelf) has no Shows equivalent.
-Non-Juz Shows users just land on an empty shelf with the always-visible
-"Add a show" form. Both tabs give Juz (matched by `JUZ_EMAIL`) a silent,
+Non-Juz Shows users just land on an empty shelf with the "Add a show" FAB
+(see "Add-a-book / Add-a-show: FAB + modal" below) as their only way in.
+Both tabs give Juz (matched by `JUZ_EMAIL`) a silent,
 automatic seed of her existing library on first visit — 70 books, 93
 shows — no UI shown to her either way.
 
@@ -74,13 +75,23 @@ app/
   api/books/suggest/route.ts            AI suggestions (real author, real book)
   api/shows/suggest/route.ts             AI suggestions (creator: "Unconfirmed", never a real platform)
 components/books/
-  BooksShelvesView.tsx                   CLIENT boundary: owns filter state, does the actual filtering,
-                                          renders FilterBar + ShelfNav + AddBookForm + shelves/empty-state
-  ShelfNav.tsx (shared with Shows), BookShelf.tsx, AuthorGroup.tsx, BookCard.tsx,
-  MoreSuggestions.tsx, AddBookForm.tsx
+  BooksShelvesView.tsx                   CLIENT boundary: owns filter state + the active-shelf tracking
+                                          used to pre-fill the Add modal's genre, does the actual filtering,
+                                          renders FilterBar + ShelfNav + shelves/empty-state + AddBookFab
+  ShelfNav.tsx (shared with Shows) — takes an onActiveChange callback, used only by the Fab's genre pre-fill
+  BookShelf.tsx, AuthorGroup.tsx, BookCard.tsx, MoreSuggestions.tsx
+  AddBookFab.tsx                          owns the modal's open/close state + the FAB's ref; wires Fab + Modal + AddBookForm
+  AddBookForm.tsx                         fields/validation/submit only now — no section wrapper, lives inside the Modal
 components/shows/
   ShowsShelvesView.tsx                   same pattern as BooksShelvesView.tsx (Genre + Platform)
-  ShowShelf.tsx, ShowCard.tsx, AddShowForm.tsx, MoreSuggestionsShow.tsx
+  ShowShelf.tsx, ShowCard.tsx, MoreSuggestionsShow.tsx
+  AddShowFab.tsx, AddShowForm.tsx         mirror the Books pair exactly
+components/ui/
+  Fab.tsx                                 generic fixed-position "+" button, forwardRef'd so callers can
+                                          pass it to Modal's returnFocusRef
+  Modal.tsx                               generic accessible modal (portal, focus trap, Esc/overlay-click
+                                          close, returns focus to whatever ref it's given on close) — both
+                                          Add-a-book and Add-a-show modals use this, don't build a second one
 components/filters/FilterBar.tsx        shared dropdown-row component — Books and Shows both use this,
                                           don't build a second filter UI
 components/onboarding/                 OnboardingForm, GenrePicker (Books only)
@@ -111,6 +122,43 @@ nothing forces them server-side. Filter dropdown options are always
 derived from the *full* unfiltered dataset (not narrowed by the other
 active filter) — a standard, simpler filter UX than trying to keep
 cross-filter option lists in sync.
+
+## Add-a-book / Add-a-show: FAB + modal
+
+Both forms moved out of the page flow into a fixed-position FAB +
+centered modal (`components/ui/Fab.tsx` + `components/ui/Modal.tsx`,
+generic and shared by both tabs — don't build a per-tab variant of
+either). `AddBookFab.tsx`/`AddShowFab.tsx` own the open/close state and a
+`ref` to the FAB button, which they pass to `Modal` as `returnFocusRef` —
+closing the modal (Esc, overlay click, or a successful submit calling
+`onSuccess`) always returns focus there.
+
+- **Genre pre-fill**: `ShelfNav` takes an `onActiveChange(tag)` callback,
+  fired from the same effect that already tracks scroll-spy `active`
+  state — it doesn't need that data for anything of its own, this is
+  purely for the Fab's benefit. `BooksShelvesView`/`ShowsShelvesView`
+  wire it straight to a `useState` setter (referentially stable, so it's
+  safe in `ShelfNav`'s effect dependency array without extra memoization)
+  and pass the result down as `AddBookFab`/`AddShowFab`'s `activeGenre`
+  prop. `AddBookForm`/`AddShowForm` read it only as a `useState`
+  initializer, not in an effect — safe because `Modal` unmounts its
+  children while closed, so the form remounts fresh (and re-reads
+  whatever the current active genre is) every time it opens.
+- **Portal + SSR**: `Modal` renders via `createPortal` to `document.body`,
+  gated on a client-only flag from `useSyncExternalStore` rather than the
+  more common `useState` + `useEffect(() => setMounted(true), [])`
+  pattern — this project's `eslint-config-next` flags that pattern as a
+  synchronous-setState-in-effect render cascade. `useSyncExternalStore`
+  expresses the same "are we past the initial SSR pass" check without
+  tripping it.
+- **Initial focus** lands on the first real form field, not the modal's
+  close button, even though the close button is earlier in DOM order —
+  `Modal` explicitly looks for `input, select, textarea` first before
+  falling back to the general focusable-element query.
+- Verified interactively (Fab click, Esc, overlay-click-vs-content-click,
+  Tab-trap wraparound in both directions, genre pre-fill, focus return)
+  against a throwaway test route before this was removed — not covered
+  by any automated test in the repo, there isn't a test setup here yet.
 
 ## Content model
 

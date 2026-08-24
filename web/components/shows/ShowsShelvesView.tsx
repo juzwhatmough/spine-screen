@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ShelfNav } from "@/components/books/ShelfNav";
 import { ShowShelf } from "./ShowShelf";
-import { AddShowForm } from "./AddShowForm";
+import { AddShowFab } from "./AddShowFab";
 import { FilterBar } from "@/components/filters/FilterBar";
 import type { ShowShelfData } from "@/lib/shows/groupItems";
 
@@ -14,6 +14,7 @@ import type { ShowShelfData } from "@/lib/shows/groupItems";
 export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
   const [genre, setGenre] = useState("");
   const [platform, setPlatform] = useState("");
+  const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
   const platformOptions = useMemo(() => {
@@ -53,19 +54,23 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
         onClear={handleClear}
       />
 
-      <ShelfNav shelves={filtered.map((s) => ({ id: s.id, tag: s.tag }))} />
+      <ShelfNav
+        shelves={filtered.map((s) => ({ id: s.id, tag: s.tag }))}
+        onActiveChange={setActiveGenre}
+      />
 
       <main>
-        <AddShowForm />
         {filtered.length === 0 ? (
           <p className="empty-state">
             Nothing on your shelves matches that combination yet — try
-            clearing a filter, or add it above.
+            clearing a filter, or tap the + button to add something new.
           </p>
         ) : (
           filtered.map((shelf) => <ShowShelf key={shelf.id} shelf={shelf} />)
         )}
       </main>
+
+      <AddShowFab activeGenre={activeGenre} />
     </>
   );
 }
