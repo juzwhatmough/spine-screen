@@ -58,19 +58,6 @@ export default async function BooksPage() {
         <TabNav active="books" />
       </header>
 
-      <div className="stats">
-        <span>
-          <b>{shelves.length}</b> shelves
-        </span>
-        <span>
-          <b>{rows.length}</b> titles
-        </span>
-        <span>
-          Tap a card to mark it read, then rate it — your ratings shape
-          &quot;Suggest more&quot;
-        </span>
-      </div>
-
       <BooksShelvesView shelves={shelves} />
 
       <footer>

@@ -75,17 +75,26 @@ app/
   api/books/suggest/route.ts            AI suggestions (real author, real book)
   api/shows/suggest/route.ts             AI suggestions (creator: "Unconfirmed", never a real platform)
 components/books/
-  BooksShelvesView.tsx                   CLIENT boundary: owns filter state + the active-shelf tracking
-                                          used to pre-fill the Add modal's genre, does the actual filtering,
-                                          renders FilterBar + ShelfNav + shelves/empty-state + AddBookFab
+  BooksShelvesView.tsx                   CLIENT boundary: owns filter + status-view state, the active-shelf
+                                          tracking used to pre-fill the Add modal's genre, and the stats bar
+                                          (moved here from the server page so it can react to both); does the
+                                          actual filtering; renders StatusToggle + FilterBar + ShelfNav +
+                                          shelves/empty-state + AddBookFab
   ShelfNav.tsx (shared with Shows) — takes an onActiveChange callback, used only by the Fab's genre pre-fill
-  BookShelf.tsx, AuthorGroup.tsx, BookCard.tsx, MoreSuggestions.tsx
+  BookShelf.tsx, AuthorGroup.tsx — pass isDone/getRating/animatingOut and the onItemStatusChange/
+                                          onItemRatingChange callbacks straight through to BookCard
+  BookCard.tsx, MoreSuggestions.tsx
   AddBookFab.tsx                          owns the modal's open/close state + the FAB's ref; wires Fab + Modal + AddBookForm
   AddBookForm.tsx                         fields/validation/submit only now — no section wrapper, lives inside the Modal
 components/shows/
-  ShowsShelvesView.tsx                   same pattern as BooksShelvesView.tsx (Genre + Platform)
+  ShowsShelvesView.tsx                   same pattern as BooksShelvesView.tsx (Genre + Platform, flat items not author-grouped)
   ShowShelf.tsx, ShowCard.tsx, MoreSuggestionsShow.tsx
   AddShowFab.tsx, AddShowForm.tsx         mirror the Books pair exactly
+components/ui/StatusToggle.tsx          "On the Shelf" / "Finished" segmented control — reuses .tab-nav's
+                                          exact CSS (see globals.css: `.tab-nav a, .tab-nav button`), not a
+                                          new visual style
+lib/hooks/useStatusTransitions.ts       shared by both *ShelvesView components — see "Status view" below,
+                                          read this before touching card status/rating logic on either tab
 components/ui/
   Fab.tsx                                 generic fixed-position "+" button, forwardRef'd so callers can
                                           pass it to Modal's returnFocusRef
@@ -122,6 +131,48 @@ nothing forces them server-side. Filter dropdown options are always
 derived from the *full* unfiltered dataset (not narrowed by the other
 active filter) — a standard, simpler filter UX than trying to keep
 cross-filter option lists in sync.
+
+## Status view (On the Shelf / Finished) — and a real bug this design fixes
+
+`StatusToggle` (`components/ui/StatusToggle.tsx`) adds a third filter
+dimension alongside genre/author/platform: `statusView` (`'shelf'` shows
+`status !== 'done'`, `'finished'` shows `status === 'done'`), combined
+with AND logic same as the others. The stats bar and ShelfNav both react
+to it the same way they already reacted to genre/author.
+
+**`BookCard`/`ShowCard` do not own local `done`/`rating` state — they're
+fully controlled components now**, reading `done`/`rating` as props
+computed by `lib/hooks/useStatusTransitions.ts` in the parent
+`*ShelvesView`, not derived from `item.status`/`item.rating` themselves.
+This was a deliberate fix for a real bug found while building this
+feature, not a stylistic preference:
+
+Switching `statusView` naturally unmounts a card (when it leaves the
+filtered list) and can remount it later (when it re-enters, e.g. after
+switching back). Before this fix, each card derived its own `done`/
+`rating` from `useState(item.status === 'done')` — a one-time
+initializer. A card that had just been marked done, then left "On the
+Shelf" and was later viewed under "Finished", would remount and
+re-initialize from `item.status` — the *server's last confirmed value* at
+the time the page was rendered — which is correct once the Server
+Action's `revalidatePath` round-trip has landed, but wrong (silently
+reverts to the pre-click state) if the round-trip hasn't finished yet by
+the time the remount happens. Verified this failure mode directly against
+a throwaway test route before fixing it: marking an item done, switching
+to Finished, was showing the card as still-unread and toggling it back
+open silently failed to remove it from the Finished view. Lifting
+`done`/`rating` to the parent's `statusOverrides`/`ratingOverrides` maps
+(which persist regardless of mount state) fixes it: a remounted card
+always reads the correct optimistic value immediately, independent of
+server timing.
+
+`animatingOut` is a *separate*, purely-visual concern from the above — a
+fixed 280ms window (see `.card.exiting` in globals.css) during which an
+item that just left the active status view is kept in the filtered
+array and rendered with a fade instead of vanishing the instant its
+status flips. It has no bearing on the actual include/exclude filtering
+decision, which is why it's tracked independently rather than folded into
+the override maps.
 
 ## Add-a-book / Add-a-show: FAB + modal
 

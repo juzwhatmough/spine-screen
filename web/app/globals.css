@@ -77,14 +77,17 @@ h1 em{ font-style: italic; font-weight: 500; color: var(--spine); }
   opacity: 0.9;
 }
 
-/* ---------- Tab nav (Books / Shows) ---------- */
+/* ---------- Tab nav (Books / Shows header switcher, and the On the
+   Shelf / Finished status toggle near the stats bar — same component
+   visually, `a` for real navigation, `button` for in-page state) ---------- */
 .tab-nav{
   display: flex;
   gap: 8px;
   margin-top: 24px;
   position: relative;
 }
-.tab-nav a{
+.tab-nav a,
+.tab-nav button{
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   letter-spacing: 0.05em;
@@ -99,8 +102,14 @@ h1 em{ font-style: italic; font-weight: 500; color: var(--spine); }
   display: inline-block;
   transition: background .15s ease, color .15s ease;
 }
-.tab-nav a:hover{ background: rgba(34,38,31,0.06); }
-.tab-nav a.active{ background: var(--ink); color: var(--paper); }
+.tab-nav a:hover,
+.tab-nav button:hover{ background: rgba(34,38,31,0.06); }
+.tab-nav a.active,
+.tab-nav button.active{ background: var(--ink); color: var(--paper); }
+
+/* Status toggle sits right above the stats bar, not in the header, so it
+   doesn't need the header's top margin. */
+.status-toggle{ margin: 0; padding: 16px 24px 0; }
 
 /* ---------- Stats bar ---------- */
 .stats{
@@ -324,6 +333,17 @@ section.shelf:first-of-type{ border-top: none; }
   animation: stampIn .28s ease;
 }
 .card.read .title{ text-decoration: line-through; text-decoration-color: rgba(34,38,31,0.35); }
+
+/* Applied briefly (see BooksShelvesView.tsx/ShowsShelvesView.tsx's
+   animatingOut set) when a card's status change is about to move it out
+   of the currently active On the Shelf/Finished view — gives it a fade
+   instead of vanishing the instant the underlying data updates. */
+.card.exiting{
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity .28s ease, transform .28s ease;
+  pointer-events: none;
+}
 @keyframes stampIn{
   0%{ transform: scale(1.6) rotate(-8deg); opacity: 0; }
   60%{ transform: scale(0.95) rotate(2deg); opacity: 1; }

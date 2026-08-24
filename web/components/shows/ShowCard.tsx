@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { toggleRead, setRating } from "@/lib/actions/listItems";
 import type { ListItemRow } from "@/types/database";
 
@@ -10,15 +10,31 @@ import type { ListItemRow } from "@/types/database";
 // streaming platform and renders in the `.kind` badge instead of an
 // author line; a warning badge replaces the hook when the title isn't
 // currently streaming.
-export function ShowCard({ item, color }: { item: ListItemRow; color: string }) {
+//
+// `watched`/`rating` are CONTROLLED props (from useStatusTransitions in
+// the parent view) — see BookCard.tsx for why this isn't local state.
+export function ShowCard({
+  item,
+  color,
+  watched,
+  rating,
+  exiting = false,
+  onStatusChange,
+  onRatingChange,
+}: {
+  item: ListItemRow;
+  color: string;
+  watched: boolean;
+  rating: ListItemRow["rating"];
+  exiting?: boolean;
+  onStatusChange: (itemId: string, nowWatched: boolean) => void;
+  onRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
+}) {
   const [, startTransition] = useTransition();
-  const [watched, setWatched] = useState(item.status === "done");
-  const [rating, setLocalRating] = useState(item.rating);
 
   function handleToggle() {
     const nowWatched = !watched;
-    setWatched(nowWatched);
-    if (!nowWatched) setLocalRating(null);
+    onStatusChange(item.id, nowWatched);
     startTransition(() => {
       toggleRead(item.id);
     });
@@ -34,7 +50,7 @@ export function ShowCard({ item, color }: { item: ListItemRow; color: string }) 
   function handleRating(r: "liked" | "disliked", e: React.MouseEvent) {
     e.stopPropagation();
     const next = rating === r ? null : r;
-    setLocalRating(next);
+    onRatingChange(item.id, next);
     startTransition(() => {
       setRating(item.id, r);
     });
@@ -44,7 +60,7 @@ export function ShowCard({ item, color }: { item: ListItemRow; color: string }) 
 
   return (
     <div
-      className={`card${watched ? " read" : ""}`}
+      className={`card${watched ? " read" : ""}${exiting ? " exiting" : ""}`}
       style={{ "--tagcolor": color } as React.CSSProperties}
       tabIndex={0}
       onClick={handleToggle}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { toggleRead, setRating } from "@/lib/actions/listItems";
 import { kindLabel } from "@/lib/books/kindLabel";
 import type { ListItemRow } from "@/types/database";
@@ -8,18 +8,40 @@ import type { ListItemRow } from "@/types/database";
 // Direct port of makeCard()'s interaction model from index.html: tap
 // anywhere on the card toggles read/done (clearing rating on unmark),
 // thumbs stopPropagation so they don't also toggle the card, clicking an
-// already-active thumb clears it. State is applied optimistically and
-// fired at the server in the background — same "best effort, don't block
-// the UI on the round-trip" feel as the original's localStorage writes.
-export function BookCard({ item, color }: { item: ListItemRow; color: string }) {
+// already-active thumb clears it.
+//
+// `done`/`rating` are CONTROLLED props (from useStatusTransitions in the
+// parent view), not local state — a card that derived them from
+// `item.status`/`item.rating` itself would show stale values whenever it
+// remounts (which happens naturally when switching the On the
+// Shelf/Finished status view moves it in or out of the filtered list)
+// and the server hasn't confirmed the latest change yet. See
+// lib/hooks/useStatusTransitions.ts for the full reasoning.
+export function BookCard({
+  item,
+  color,
+  done,
+  rating,
+  exiting = false,
+  onStatusChange,
+  onRatingChange,
+}: {
+  item: ListItemRow;
+  color: string;
+  done: boolean;
+  rating: ListItemRow["rating"];
+  // True for a brief window right after this card's status change makes
+  // it no longer belong in the active On the Shelf/Finished view — purely
+  // a CSS hook (.card.exiting), no bearing on the actual filtering.
+  exiting?: boolean;
+  onStatusChange: (itemId: string, nowDone: boolean) => void;
+  onRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
+}) {
   const [, startTransition] = useTransition();
-  const [done, setDone] = useState(item.status === "done");
-  const [rating, setLocalRating] = useState(item.rating);
 
   function handleToggle() {
     const nowDone = !done;
-    setDone(nowDone);
-    if (!nowDone) setLocalRating(null);
+    onStatusChange(item.id, nowDone);
     startTransition(() => {
       toggleRead(item.id);
     });
@@ -35,7 +57,7 @@ export function BookCard({ item, color }: { item: ListItemRow; color: string }) 
   function handleRating(r: "liked" | "disliked", e: React.MouseEvent) {
     e.stopPropagation();
     const next = rating === r ? null : r;
-    setLocalRating(next);
+    onRatingChange(item.id, next);
     startTransition(() => {
       setRating(item.id, r);
     });
@@ -43,7 +65,7 @@ export function BookCard({ item, color }: { item: ListItemRow; color: string }) 
 
   return (
     <div
-      className={`card${done ? " read" : ""}`}
+      className={`card${done ? " read" : ""}${exiting ? " exiting" : ""}`}
       style={{ "--tagcolor": color } as React.CSSProperties}
       tabIndex={0}
       onClick={handleToggle}

@@ -7,9 +7,9 @@ import { TabNav } from "@/components/nav/TabNav";
 import type { ListItemRow } from "@/types/database";
 
 // No onboarding for Shows — the original static feature never had genre
-// preferences or AI suggestions either, so there's nothing to ask new
-// users. They land straight here with an empty shelf and the always-visible
-// "Add a show" form (see AddShowForm.tsx). Only Juz gets anything
+// preferences either, so there's nothing to ask new users. They land
+// straight here with an empty shelf and the "Add a show" FAB (see
+// AddShowFab.tsx) as their only way in. Only Juz gets anything
 // pre-populated, silently, same pattern as her book seed.
 export default async function ShowsPage() {
   const supabase = await createClient();
@@ -41,7 +41,6 @@ export default async function ShowsPage() {
 
   const rows = (items ?? []) as ListItemRow[];
   const shelves = groupShowItems(rows);
-  const notStreamingCount = rows.filter((r) => r.meta?.currentlyStreaming === false).length;
 
   return (
     <>
@@ -58,26 +57,11 @@ export default async function ShowsPage() {
         <TabNav active="shows" />
       </header>
 
-      <div className="stats">
-        <span>
-          <b>{shelves.length}</b> shelves
-        </span>
-        <span>
-          <b>{rows.length}</b> titles
-        </span>
-        {notStreamingCount > 0 && (
-          <span>
-            <b>{notStreamingCount}</b> not currently streaming
-          </span>
-        )}
-        <span>Tap a card to mark it watched, then rate it</span>
-      </div>
-
       <ShowsShelvesView shelves={shelves} />
 
       <footer>
-        Tap a card to mark it watched, then 👍 or 👎 it · Add your own with
-        the form above · Your list is saved to your account
+        Tap a card to mark it watched, then 👍 or 👎 it · Tap the + button
+        to add your own · Your list is saved to your account
       </footer>
     </>
   );

@@ -78,12 +78,15 @@ the same `spine-screen` repo as the static site.
 - A short one-time onboarding for new (non-Juz) Books users, which also
   auto-populates a starter shelf per genre they picked. Shows still has
   no onboarding — it starts empty for anyone but Juz
-- Both tabs now have: filters (Books: Author + Genre; Shows: Genre +
-  Streaming Service), a "+" button (bottom-right) that opens an
-  "Add a book"/"Add a show" popup, and AI "🔄 Suggest more" — Shows'
-  AI picks never claim a real streaming platform (there's no way to
-  verify Australian availability yet), so they show with an
-  "Unconfirmed" badge instead
+- Both tabs now have: an "On the Shelf" / "Finished" toggle next to the
+  stats bar (marking something read/watched moves it into Finished, with
+  a brief fade rather than an abrupt jump), filters (Books: Author +
+  Genre; Shows: Genre + Streaming Service) that combine with the status
+  toggle, a "+" button (bottom-right) that opens an "Add a
+  book"/"Add a show" popup, and AI "🔄 Suggest more" — Shows' AI picks
+  never claim a real streaming platform (there's no way to verify
+  Australian availability yet), so they show with an "Unconfirmed" badge
+  instead
 - Everything else — the card design, the read/watch + rate interaction —
   works the same way, same visual system
 
