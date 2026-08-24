@@ -1,4 +1,5 @@
 import { ShowCard } from "./ShowCard";
+import { MoreSuggestionsShow } from "./MoreSuggestionsShow";
 import type { ShowShelfData } from "@/lib/shows/groupItems";
 
 export function ShowShelf({ shelf }: { shelf: ShowShelfData }) {
@@ -20,6 +21,11 @@ export function ShowShelf({ shelf }: { shelf: ShowShelfData }) {
         {shelf.items.map((item) => (
           <ShowCard key={item.id} item={item} color={shelf.color} />
         ))}
+      </div>
+
+      <div className="subhead-row">
+        <span className="subhead">More to explore</span>
+        <MoreSuggestionsShow genre={shelf.tag} />
       </div>
     </section>
   );

@@ -2,9 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { groupShowItems } from "@/lib/shows/groupItems";
 import { seedJuzShows } from "@/lib/actions/seedJuzShows";
-import { ShelfNav } from "@/components/books/ShelfNav";
-import { ShowShelf } from "@/components/shows/ShowShelf";
-import { AddShowForm } from "@/components/shows/AddShowForm";
+import { ShowsShelvesView } from "@/components/shows/ShowsShelvesView";
 import { TabNav } from "@/components/nav/TabNav";
 import type { ListItemRow } from "@/types/database";
 
@@ -75,14 +73,7 @@ export default async function ShowsPage() {
         <span>Tap a card to mark it watched, then rate it</span>
       </div>
 
-      <ShelfNav shelves={shelves.map((s) => ({ id: s.id, tag: s.tag }))} />
-
-      <main>
-        <AddShowForm />
-        {shelves.map((shelf) => (
-          <ShowShelf key={shelf.id} shelf={shelf} />
-        ))}
-      </main>
+      <ShowsShelvesView shelves={shelves} />
 
       <footer>
         Tap a card to mark it watched, then 👍 or 👎 it · Add your own with

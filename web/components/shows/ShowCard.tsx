@@ -53,10 +53,14 @@ export function ShowCard({ item, color }: { item: ListItemRow; color: string }) 
       <div className="kind">{item.creator ?? "Unknown platform"}</div>
       <p className="title">{item.title}</p>
       <p className="hook">{item.meta?.hook ?? ""}</p>
-      {!currentlyStreaming && (
-        <p className="warn-badge">
-          ⚠ Not currently streaming — {item.meta?.note || "rent/buy only"}
-        </p>
+      {item.meta?.unconfirmed ? (
+        <p className="warn-badge">⚠ Unconfirmed — verify streaming availability</p>
+      ) : (
+        !currentlyStreaming && (
+          <p className="warn-badge">
+            ⚠ Not currently streaming — {item.meta?.note || "rent/buy only"}
+          </p>
+        )
       )}
       <div className="foot">
         <span className="status">{watched ? "Watched" : "To watch"}</span>

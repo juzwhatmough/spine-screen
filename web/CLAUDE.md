@@ -14,18 +14,24 @@ devices. Anyone can sign in via magic link and get their own private
 Books and Shows shelves — a Books/Shows tab switcher (`components/nav/TabNav.tsx`)
 sits in the header of both.
 
-**Books and Shows are NOT symmetrical** — this is the single most
-important thing to know before touching either:
-- Books has onboarding + AI "🔄 More suggestions" (`/api/books/suggest`).
-  New users answer a few questions and get an auto-seeded starter shelf.
-- Shows has neither. The original static Shows feature never had genre
-  preferences or AI suggestions — it was always just a curated browse
-  list — so there's nothing to ask a new user. Non-Juz users land on an
-  empty Shows shelf with an always-visible "Add a show" form
-  (`components/shows/AddShowForm.tsx`) instead of a one-time flow.
-- Both give Juz (matched by `JUZ_EMAIL`) a silent, automatic seed of her
-  existing library on first visit to each tab — 70 books, 93 shows — no
-  UI shown to her either way.
+**Books and Shows are close to symmetrical now, with one real
+difference:** both have onboarding-free manual add forms, filters, and AI
+"🔄 More suggestions" — but Books' onboarding flow (new users answer a few
+questions and get an auto-seeded starter shelf) has no Shows equivalent.
+Non-Juz Shows users just land on an empty shelf with the always-visible
+"Add a show" form. Both tabs give Juz (matched by `JUZ_EMAIL`) a silent,
+automatic seed of her existing library on first visit — 70 books, 93
+shows — no UI shown to her either way.
+
+**Shows' AI suggestions never assert a streaming platform.** There's no
+live Australian streaming-availability data source wired into this
+project (no JustWatch API or equivalent), so unlike Books' AI suggestions
+(which do carry a real author), every AI-suggested show is inserted with
+`creator: "Unconfirmed"` and `meta.unconfirmed: true`, and the card shows
+a distinct "⚠ Unconfirmed — verify streaming availability" badge instead
+of a platform name. Wiring in a real availability source is a future
+batch, explicitly out of scope here — don't have an AI suggestion assert
+a platform without one.
 
 This project was built without a prior "Batch 1" scaffold existing — the
 Next.js app, Supabase schema, and auth were all built from scratch in the
@@ -58,26 +64,53 @@ data.
 supabase/migrations/0001_init.sql   schema — user runs this in Supabase's SQL editor, not Claude
 proxy.ts                             session-refresh entrypoint (was middleware.ts pre-Next-16)
 app/
-  layout.tsx, globals.css             fonts + design tokens, ported verbatim from index.html/DESIGN_SPEC.md
+  layout.tsx, globals.css             fonts + design tokens, ported from index.html/DESIGN_SPEC.md
   page.tsx                            redirect: signed-in -> /books, signed-out -> /login
   login/page.tsx                      magic-link email form
   auth/callback/route.ts               exchanges the auth code for a session
-  onboarding/page.tsx                  gate + form (Juz never sees this — see below)
-  books/page.tsx                       gate (auth, onboarding, Juz auto-seed) + shelf render
-  api/books/suggest/route.ts            ported api/suggest.js, now with an auth check
-  shows/page.tsx                       gate (auth, Juz auto-seed — no onboarding) + shelf render
-components/books/                     ShelfNav (shared with Shows), BookShelf, AuthorGroup, BookCard, MoreSuggestions
-components/shows/                      ShowShelf, ShowCard, AddShowForm
+  onboarding/page.tsx                  gate + form (Books only; Juz never sees this)
+  books/page.tsx                       gate (auth, onboarding, Juz auto-seed) + groupItems -> BooksShelvesView
+  shows/page.tsx                       gate (auth, Juz auto-seed — no onboarding) + groupShowItems -> ShowsShelvesView
+  api/books/suggest/route.ts            AI suggestions (real author, real book)
+  api/shows/suggest/route.ts             AI suggestions (creator: "Unconfirmed", never a real platform)
+components/books/
+  BooksShelvesView.tsx                   CLIENT boundary: owns filter state, does the actual filtering,
+                                          renders FilterBar + ShelfNav + AddBookForm + shelves/empty-state
+  ShelfNav.tsx (shared with Shows), BookShelf.tsx, AuthorGroup.tsx, BookCard.tsx,
+  MoreSuggestions.tsx, AddBookForm.tsx
+components/shows/
+  ShowsShelvesView.tsx                   same pattern as BooksShelvesView.tsx (Genre + Platform)
+  ShowShelf.tsx, ShowCard.tsx, AddShowForm.tsx, MoreSuggestionsShow.tsx
+components/filters/FilterBar.tsx        shared dropdown-row component — Books and Shows both use this,
+                                          don't build a second filter UI
 components/onboarding/                 OnboardingForm, GenrePicker (Books only)
 components/nav/TabNav.tsx              Books/Shows tab switcher, used by both pages' headers
 lib/supabase/                          client.ts (browser), server.ts (RSC/actions), proxy.ts (session refresh)
 lib/books/                             genres.ts, kindLabel.ts, groupItems.ts, seedData.ts (Juz's 70 books)
 lib/shows/                             genres.ts, groupItems.ts, seedData.ts (Juz's 93 shows)
-lib/anthropic/suggestBooks.ts          shared by the API route AND onboarding's auto-seed (Books only)
-lib/actions/                           listItems.ts (shared toggleRead/setRating + addManualBook/addManualShow),
-                                        onboarding.ts, seedJuz.ts, seedJuzShows.ts (all Server Actions)
+lib/anthropic/                          suggestBooks.ts, suggestShows.ts (mirror each other; suggestShows
+                                          never solicits a platform field at all — see prompt text)
+lib/actions/listItems.ts               toggleRead/setRating (shared, generic across media_type),
+                                          addManualBook, addManualShow — both validate genre against
+                                          the canonical GENRE_TAGS/SHOW_GENRE_TAGS list (no free-text genre)
+lib/actions/                           onboarding.ts, seedJuz.ts, seedJuzShows.ts (all Server Actions)
 types/database.ts                     hand-written — regenerate with `supabase gen types typescript` if the CLI ever gets wired up
 ```
+
+## Filtering architecture
+
+`app/books/page.tsx` and `app/shows/page.tsx` are Server Components that
+fetch + group data as before, but no longer render shelves directly — they
+hand the full grouped array to `BooksShelvesView`/`ShowsShelvesView`
+(Client Components), which own filter state and do plain `.filter()`
+logic client-side (no reload, no server round-trip). `BookShelf` /
+`AuthorGroup` / `ShowShelf` have no server-only imports, so they're safe
+to render from inside a Client Component even without a `"use client"`
+directive of their own — Next.js just bundles them for the client since
+nothing forces them server-side. Filter dropdown options are always
+derived from the *full* unfiltered dataset (not narrowed by the other
+active filter) — a standard, simpler filter UX than trying to keep
+cross-filter option lists in sync.
 
 ## Content model
 
@@ -127,9 +160,19 @@ got (and doesn't need) an onboarding flow to write them from.
   shelf color and are not auto-seeded with AI suggestions — no prompt
   scaffolding exists for an arbitrary genre string. They work fine for
   manually-added books.
-- **No AI suggestions or onboarding on Shows, ever, by design** — not a
-  gap to fill later. `/api/books/suggest` is books-only. Non-Juz users get
-  an empty Shows shelf plus the always-visible `AddShowForm`, full stop.
+- **Shows still has no onboarding** (unlike Books) — that's unchanged.
+  What *did* change: Shows now has AI suggestions and a manual add form,
+  same as Books, just without the platform claim (see above).
+- **Manual add forms (`AddBookForm`, `AddShowForm`) both require genre to
+  match an existing canonical shelf** — no free-text "Other" like
+  onboarding's `GenrePicker` allows. Enforced both client-side (dropdown
+  only offers real options) and server-side in `lib/actions/listItems.ts`
+  (throws if the genre isn't in `GENRE_TAGS`/`SHOW_GENRE_TAGS`).
+- **`MoreSuggestionsShow.tsx` is a near-duplicate of `MoreSuggestions.tsx`**,
+  not a shared component — same fetch/loading/error logic, different
+  endpoint. Deliberate: "port the same architecture" was read as porting
+  the pattern, not refactoring the working, tested Books component to
+  share code with a new, less-proven one.
 - **Juz gets no onboarding UI at all, for either tab.** If the signed-in
   email matches `JUZ_EMAIL`, `app/books/page.tsx` silently seeds her 70
   books (`lib/books/seedData.ts`) and `app/shows/page.tsx` silently seeds

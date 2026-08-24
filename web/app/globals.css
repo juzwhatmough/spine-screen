@@ -408,6 +408,16 @@ footer{
   padding: 10px 12px;
 }
 .field textarea{ resize: vertical; min-height: 70px; }
+.field select{
+  width: 100%;
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink);
+  background: #FBF8F1;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 10px 12px;
+}
 .primary-btn{
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
@@ -448,6 +458,48 @@ footer{
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
+}
+
+/* ---------- Filter row ---------- */
+.filter-row{
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line);
+}
+.filter-row .filter-field{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+.filter-row label{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.filter-row select{
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: #FBF8F1;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 8px 10px;
+}
+.filter-row .link-btn{ margin-bottom: 9px; }
+
+.empty-state{
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  max-width: 520px;
+  padding: 24px 0 40px;
 }
 .form-error{
   font-family: 'IBM Plex Mono', monospace;

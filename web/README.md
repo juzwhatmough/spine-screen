@@ -77,11 +77,15 @@ the same `spine-screen` repo as the static site.
 - Accounts instead of `localStorage` — your lists follow you between
   devices
 - A short one-time onboarding for new (non-Juz) Books users, which also
-  auto-populates a starter shelf per genre they picked. Shows has no
-  onboarding or AI suggestions on either version, static or this one
-- Everything else — the card design, the read/watch + rate interaction,
-  Books' "More suggestions" AI feature — works the same way, same visual
-  system
+  auto-populates a starter shelf per genre they picked. Shows still has
+  no onboarding — it starts empty for anyone but Juz
+- Both tabs now have: filters (Books: Author + Genre; Shows: Genre +
+  Streaming Service), a manual "Add a book"/"Add a show" form, and AI
+  "🔄 More suggestions" — Shows' AI picks never claim a real streaming
+  platform (there's no way to verify Australian availability yet), so
+  they show with an "Unconfirmed" badge instead
+- Everything else — the card design, the read/watch + rate interaction —
+  works the same way, same visual system
 
 ## Local development
 

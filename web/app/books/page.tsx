@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { groupItems } from "@/lib/books/groupItems";
 import { seedJuzLibrary } from "@/lib/actions/seedJuz";
-import { ShelfNav } from "@/components/books/ShelfNav";
-import { BookShelf } from "@/components/books/BookShelf";
+import { BooksShelvesView } from "@/components/books/BooksShelvesView";
 import { TabNav } from "@/components/nav/TabNav";
 import type { ListItemRow } from "@/types/database";
 
@@ -72,13 +71,7 @@ export default async function BooksPage() {
         </span>
       </div>
 
-      <ShelfNav shelves={shelves.map((s) => ({ id: s.id, tag: s.tag }))} />
-
-      <main>
-        {shelves.map((shelf) => (
-          <BookShelf key={shelf.id} shelf={shelf} />
-        ))}
-      </main>
+      <BooksShelvesView shelves={shelves} />
 
       <footer>
         Tap a card to mark it read, then 👍 or 👎 it · Tap &quot;More
