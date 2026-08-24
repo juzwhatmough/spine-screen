@@ -238,6 +238,42 @@ either). `AddBookFab.tsx`/`AddShowFab.tsx` own the open/close state and a
 closing the modal (Esc, overlay click, or a successful submit calling
 `onSuccess`) always returns focus there.
 
+### Title-field type-ahead (Google Books / TMDB)
+
+Both forms' Title field debounces 300ms then searches — Books hits
+Google Books directly from the browser (`lib/books/googleBooksSearch.ts`,
+no API key needed for basic volume search, confirmed accepts
+unauthenticated requests — this sandbox's shared anonymous quota was
+exhausted when this was built, so it's verified against a mocked
+response, not a live successful one); Shows goes through
+`app/api/shows/search/route.ts`, a server route, because TMDB requires
+`TMDB_API_KEY` and that has to stay server-side, same pattern as
+`ANTHROPIC_API_KEY`. Both `lib/books/googleBooksSearch.ts` and
+`lib/shows/tmdbSearch.ts` swallow every failure (network, non-2xx,
+missing key, malformed JSON) into an empty array — no error ever
+surfaces to the user, per the "silently fall back to manual entry"
+requirement. All fields stay editable after picking a suggestion; this
+is autofill, not a lock, and doesn't add or change any validation.
+
+**Genre mapping is heuristic and deliberately conservative** — neither
+Google Books' BISAC-style categories (`lib/books/googleBooksSearch.ts`'s
+`mapGoogleBooksCategoryToGenre`) nor TMDB's genre IDs
+(`lib/shows/tmdbGenres.ts`'s `mapTmdbGenresToShelf`, IDs hardcoded from
+TMDB's public/stable genre list rather than fetched, to avoid a second
+API call per search) map cleanly onto this app's hand-curated shelves.
+Both only claim the reasonably unambiguous cases (priority-ordered checks
+— e.g. Shows checks Crime+Documentary → True Crime *before* checking
+Documentary alone) and leave Genre unset otherwise for the user to pick —
+never force a guess into a wrong shelf just to fill the field.
+
+**Shows' Platform field is never touched by this** — only Title/Genre
+populate from a TMDB pick. This isn't an oversight, it's explicit: TMDB's
+watch-provider data was deliberately kept out of scope here (a future
+batch, if ever), consistent with this app's broader policy of never
+asserting streaming availability without a human behind the claim (see
+"Manual platform editing" above) — pulling in provider data here would
+undermine the whole reason Shows doesn't have a "refresh via AI" button.
+
 - **Genre pre-fill**: `ShelfNav` takes an `onActiveChange(tag)` callback,
   fired from the same effect that already tracks scroll-spy `active`
   state — it doesn't need that data for anything of its own, this is

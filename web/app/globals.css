@@ -684,6 +684,46 @@ footer{
   margin: 0 0 14px;
 }
 
+/* ---------- Title-field autocomplete (Add-a-book/show modals) ---------- */
+.autocomplete-wrap{ position: relative; }
+.autocomplete-dropdown{
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin-top: 4px;
+  background: #FBF8F1;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: var(--card-shadow);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.autocomplete-item{
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 10px;
+  cursor: pointer;
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink);
+}
+.autocomplete-item:last-child{ border-bottom: none; }
+.autocomplete-item:hover,
+.autocomplete-item:focus-visible{ background: var(--paper-2); }
+.autocomplete-item .ac-meta{
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
 @media (max-width: 640px){
   header{ padding: 48px 20px 32px; }
   .spine-strip{ width: 9px; }

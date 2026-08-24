@@ -53,6 +53,11 @@ the same `spine-screen` repo as the static site.
     [console.anthropic.com](https://console.anthropic.com)
   - `JUZ_EMAIL` — the email address you'll sign in with (this account
     gets your existing 70 books automatically, no onboarding questions)
+  - `TMDB_API_KEY` — free from [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)
+    (use the plain "API Key", not the "API Read Access Token") — powers
+    the title suggestions when adding a show. Skip this one if you don't
+    care about that autofill; everything else still works without it,
+    the show search box just won't suggest anything
 - Go to **Deployments** → **Redeploy** so the variables take effect
 
 **8. Finish the redirect URL setup**
