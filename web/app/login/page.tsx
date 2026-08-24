@@ -37,7 +37,7 @@ export default function LoginPage() {
         </h1>
         <p className="sub">
           Sign in to build your own reading list — genre shelves, an AI
-          &ldquo;More suggestions&rdquo; feature, and your own private copy,
+          &ldquo;Suggest more&rdquo; feature, and your own private copy,
           synced to your account.
         </p>
       </header>

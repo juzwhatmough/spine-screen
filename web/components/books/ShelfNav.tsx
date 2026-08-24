@@ -3,8 +3,17 @@
 import { useEffect, useState } from "react";
 
 // Port of the sticky-nav scroll-spy from index.html — same
-// IntersectionObserver + rootMargin approach.
-export function ShelfNav({ shelves }: { shelves: { id: string; tag: string }[] }) {
+// IntersectionObserver + rootMargin approach. `onActiveChange` is used by
+// the Add FAB (see AddBookFab.tsx/AddShowFab.tsx) to pre-fill the modal's
+// Genre dropdown with whatever shelf is currently in view — this is the
+// only reason that callback exists, ShelfNav itself doesn't need it.
+export function ShelfNav({
+  shelves,
+  onActiveChange,
+}: {
+  shelves: { id: string; tag: string }[];
+  onActiveChange?: (tag: string) => void;
+}) {
   const [active, setActive] = useState<string | undefined>(shelves[0]?.id);
 
   useEffect(() => {
@@ -23,6 +32,11 @@ export function ShelfNav({ shelves }: { shelves: { id: string; tag: string }[] }
     sections.forEach((s) => observer.observe(s));
     return () => observer.disconnect();
   }, [shelves]);
+
+  useEffect(() => {
+    const shelf = shelves.find((s) => s.id === active);
+    if (shelf) onActiveChange?.(shelf.tag);
+  }, [active, shelves, onActiveChange]);
 
   return (
     <nav className="shelves">

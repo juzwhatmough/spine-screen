@@ -2,16 +2,17 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addManualShow } from "@/lib/actions/listItems";
-import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
+import { addManualBook } from "@/lib/actions/listItems";
+import { GENRE_TAGS } from "@/lib/books/genres";
 
-// Lives inside a Modal now (see components/shows/AddShowFab.tsx) — no
-// longer renders its own section/title. There's still no AI/onboarding
-// path for Shows (the original static feature never had one either) —
-// this is the only way a non-Juz user builds up their Shows list at all.
-// See AddBookForm.tsx for why `initialGenre` doesn't need an effect to
-// stay in sync.
-export function AddShowForm({
+// Lives inside a Modal now (see components/books/AddBookFab.tsx) — no
+// longer renders its own section/title, the modal provides that. Fields,
+// validation, and submit logic are unchanged from the inline version.
+// `initialGenre` pre-fills from whichever shelf is currently active in
+// the scroll-spy nav; the form remounts fresh each time the modal opens
+// (Modal doesn't render children while closed), so a plain useState
+// initializer is enough — no effect needed to keep it in sync.
+export function AddBookForm({
   initialGenre,
   onSuccess,
 }: {
@@ -20,9 +21,9 @@ export function AddShowForm({
 }) {
   const [isPending, startTransition] = useTransition();
   const [title, setTitle] = useState("");
-  const [platform, setPlatform] = useState("");
+  const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState(
-    initialGenre && SHOW_GENRE_TAGS.includes(initialGenre) ? initialGenre : SHOW_GENRE_TAGS[0]
+    initialGenre && GENRE_TAGS.includes(initialGenre) ? initialGenre : GENRE_TAGS[0]
   );
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -32,11 +33,11 @@ export function AddShowForm({
     setError(null);
     startTransition(async () => {
       try {
-        await addManualShow({ title, platform, genre });
+        await addManualBook({ title, author, genre });
         router.refresh();
         onSuccess();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not add that show");
+        setError(err instanceof Error ? err.message : "Could not add that book");
       }
     });
   }
@@ -46,9 +47,9 @@ export function AddShowForm({
       {error && <p className="form-error">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div className="field">
-          <label htmlFor="show-title">Title</label>
+          <label htmlFor="book-title">Title</label>
           <input
-            id="show-title"
+            id="book-title"
             type="text"
             required
             value={title}
@@ -56,20 +57,19 @@ export function AddShowForm({
           />
         </div>
         <div className="field">
-          <label htmlFor="show-platform">Platform</label>
+          <label htmlFor="book-author">Author</label>
           <input
-            id="show-platform"
+            id="book-author"
             type="text"
             required
-            placeholder="Netflix, Stan…"
-            value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
           />
         </div>
         <div className="field">
-          <label htmlFor="show-genre">Genre</label>
-          <select id="show-genre" value={genre} onChange={(e) => setGenre(e.target.value)}>
-            {SHOW_GENRE_TAGS.map((tag) => (
+          <label htmlFor="book-genre">Genre</label>
+          <select id="book-genre" value={genre} onChange={(e) => setGenre(e.target.value)}>
+            {GENRE_TAGS.map((tag) => (
               <option key={tag} value={tag}>
                 {tag}
               </option>

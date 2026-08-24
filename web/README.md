@@ -1,11 +1,10 @@
 # The Shelf — Books & Shows (multi-user)
 
 A real account-backed version of The To-Read Shelf: anyone can sign in
-with a magic link and get their own genre shelves — a Books tab with the
-same "🔄 More suggestions" AI feature (after a couple of quick onboarding
-questions), and a Shows tab where you add titles yourself (no AI here,
-same as the original static Shows feature never had it either) — backed
-by a database instead of `localStorage`.
+with a magic link and get their own genre shelves — both Books and Shows
+have the same "🔄 Suggest more" AI feature (Books also gets a couple of
+quick onboarding questions first; Shows doesn't) — backed by a database
+instead of `localStorage`.
 
 This is a separate app from the static `the-to-read-shelf` project one
 folder up — that one keeps running untouched at its existing URL. This one
@@ -69,19 +68,27 @@ the same `spine-screen` repo as the static site.
 - Any other email goes through a short Books onboarding (favourite
   authors, genres, a couple of loved/disliked books) before landing on
   their own book shelf. The Shows tab has no onboarding — it starts
-  empty, with an "Add a show" box always visible at the top to build it
-  up manually
+  empty, with a "+" button in the bottom-right corner to add your first
+  show
 
 ## What's different from the static version
 
 - Accounts instead of `localStorage` — your lists follow you between
   devices
 - A short one-time onboarding for new (non-Juz) Books users, which also
-  auto-populates a starter shelf per genre they picked. Shows has no
-  onboarding or AI suggestions on either version, static or this one
-- Everything else — the card design, the read/watch + rate interaction,
-  Books' "More suggestions" AI feature — works the same way, same visual
-  system
+  auto-populates a starter shelf per genre they picked. Shows still has
+  no onboarding — it starts empty for anyone but Juz
+- Both tabs now have: an "On the Shelf" / "Finished" toggle next to the
+  stats bar (marking something read/watched moves it into Finished, with
+  a brief fade rather than an abrupt jump), filters (Books: Author +
+  Genre; Shows: Genre + Streaming Service) that combine with the status
+  toggle, a "+" button (bottom-right) that opens an "Add a
+  book"/"Add a show" popup, and AI "🔄 Suggest more" — Shows' AI picks
+  never claim a real streaming platform (there's no way to verify
+  Australian availability yet), so they show with an "Unconfirmed" badge
+  instead
+- Everything else — the card design, the read/watch + rate interaction —
+  works the same way, same visual system
 
 ## Local development
 

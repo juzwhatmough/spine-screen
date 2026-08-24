@@ -12,6 +12,14 @@ export type ListItemMeta = {
   // in meta since there's no dedicated column for them.
   note?: string | null;
   currentlyStreaming?: boolean;
+  // Set on AI-suggested shows only (see app/api/shows/suggest/route.ts).
+  // We have no live AU streaming-availability data source, so these never
+  // get a real platform (`creator` is literally "Unconfirmed") and the
+  // card shows a distinct "unconfirmed" badge rather than the
+  // "not currently streaming" one — the two mean different things
+  // (know it's unavailable vs. don't know either way) and conflating them
+  // would itself be a false claim.
+  unconfirmed?: boolean;
 };
 
 export type ListItemRow = {

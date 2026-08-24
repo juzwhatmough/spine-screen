@@ -3,18 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Ported from fetchMoreSuggestions() in index.html. The route handler now
-// does the insert server-side (so it can dedupe via the DB's unique
-// index) — this component just triggers it and refreshes the Server
-// Component tree to pick up whatever actually got inserted.
-export function MoreSuggestions({ genre }: { genre: string }) {
+// Mirrors components/books/MoreSuggestions.tsx exactly — same
+// loading/error handling, just posts to /api/shows/suggest. Kept as a
+// separate sibling component rather than a shared one: matches the
+// ticket's "port the same architecture" framing without touching the
+// working, tested Books component.
+export function MoreSuggestionsShow({ genre }: { genre: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   async function handleClick() {
     setLoading(true);
     try {
-      const res = await fetch("/api/books/suggest", {
+      const res = await fetch("/api/shows/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ genre }),

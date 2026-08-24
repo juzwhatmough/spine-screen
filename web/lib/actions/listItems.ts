@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { GENRE_TAGS } from "@/lib/books/genres";
+import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
 
 // Card tap-to-toggle stays binary in v1 (want <-> done) even though the
 // schema's `status` is 3-state (want/in_progress/done) — matches the
@@ -70,7 +72,7 @@ export async function setRating(itemId: string, rating: "liked" | "disliked") {
 
 export async function addManualBook(input: {
   title: string;
-  author?: string;
+  author: string;
   genre: string;
 }) {
   const supabase = await createClient();
@@ -80,7 +82,12 @@ export async function addManualBook(input: {
   if (!user) throw new Error("Not signed in");
 
   const title = input.title.trim();
+  const author = input.author.trim();
   if (!title) throw new Error("Title is required");
+  if (!author) throw new Error("Author is required");
+  if (!GENRE_TAGS.includes(input.genre)) {
+    throw new Error("Genre must match an existing shelf");
+  }
 
   const { error } = await supabase.from("list_items").upsert(
     [
@@ -88,7 +95,7 @@ export async function addManualBook(input: {
         user_id: user.id,
         media_type: "book" as const,
         title,
-        creator: input.author?.trim() || null,
+        creator: author,
         genre: input.genre,
         status: "want" as const,
         meta: { source_status: "want" },
@@ -116,6 +123,9 @@ export async function addManualShow(input: {
   const platform = input.platform.trim();
   if (!title) throw new Error("Title is required");
   if (!platform) throw new Error("Platform is required");
+  if (!SHOW_GENRE_TAGS.includes(input.genre)) {
+    throw new Error("Genre must match an existing shelf");
+  }
 
   const { error } = await supabase.from("list_items").upsert(
     [

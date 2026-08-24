@@ -1,8 +1,23 @@
 import { AuthorGroup } from "./AuthorGroup";
 import { MoreSuggestions } from "./MoreSuggestions";
 import type { BookShelfData } from "@/lib/books/groupItems";
+import type { ListItemRow } from "@/types/database";
 
-export function BookShelf({ shelf }: { shelf: BookShelfData }) {
+export function BookShelf({
+  shelf,
+  animatingOut,
+  isDone,
+  getRating,
+  onItemStatusChange,
+  onItemRatingChange,
+}: {
+  shelf: BookShelfData;
+  animatingOut: Set<string>;
+  isDone: (item: ListItemRow) => boolean;
+  getRating: (item: ListItemRow) => ListItemRow["rating"];
+  onItemStatusChange: (itemId: string, nowDone: boolean) => void;
+  onItemRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
+}) {
   return (
     <section
       className="shelf"
@@ -18,7 +33,16 @@ export function BookShelf({ shelf }: { shelf: BookShelfData }) {
       <p className="shelf-note">{shelf.note}</p>
 
       {shelf.groups.map((group) => (
-        <AuthorGroup key={group.author} group={group} color={shelf.color} />
+        <AuthorGroup
+          key={group.author}
+          group={group}
+          color={shelf.color}
+          animatingOut={animatingOut}
+          isDone={isDone}
+          getRating={getRating}
+          onItemStatusChange={onItemStatusChange}
+          onItemRatingChange={onItemRatingChange}
+        />
       ))}
 
       <div className="subhead-row">

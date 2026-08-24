@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { groupItems } from "@/lib/books/groupItems";
 import { seedJuzLibrary } from "@/lib/actions/seedJuz";
-import { ShelfNav } from "@/components/books/ShelfNav";
-import { BookShelf } from "@/components/books/BookShelf";
+import { BooksShelvesView } from "@/components/books/BooksShelvesView";
 import { TabNav } from "@/components/nav/TabNav";
 import type { ListItemRow } from "@/types/database";
 
@@ -59,31 +58,12 @@ export default async function BooksPage() {
         <TabNav active="books" />
       </header>
 
-      <div className="stats">
-        <span>
-          <b>{shelves.length}</b> shelves
-        </span>
-        <span>
-          <b>{rows.length}</b> titles
-        </span>
-        <span>
-          Tap a card to mark it read, then rate it — your ratings shape
-          &quot;More suggestions&quot;
-        </span>
-      </div>
-
-      <ShelfNav shelves={shelves.map((s) => ({ id: s.id, tag: s.tag }))} />
-
-      <main>
-        {shelves.map((shelf) => (
-          <BookShelf key={shelf.id} shelf={shelf} />
-        ))}
-      </main>
+      <BooksShelvesView shelves={shelves} />
 
       <footer>
-        Tap a card to mark it read, then 👍 or 👎 it · Tap &quot;More
-        suggestions&quot; on any shelf for fresh picks based on your ratings
-        · Your list is saved to your account
+        Tap a card to mark it read, then 👍 or 👎 it · Tap &quot;Suggest
+        more&quot; on any shelf for fresh picks based on your ratings ·
+        Your list is saved to your account
       </footer>
     </>
   );
