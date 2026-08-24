@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# CLAUDE.md — The Shelf (Books, multi-user)
+# CLAUDE.md — The Shelf (Books & Shows, multi-user)
 
 Context for anyone (human or Claude Code) picking this project up.
 
@@ -8,10 +8,24 @@ Context for anyone (human or Claude Code) picking this project up.
 
 The account-backed successor to `the-to-read-shelf` (one folder up, still
 a separate live static site — see its own CLAUDE.md). Same visual system
-and card/read/rate interaction, but backed by Supabase auth + Postgres
-instead of `localStorage`, so a reading list follows a user between
-devices. Anyone can sign in via magic link, do a short onboarding, and get
-their own genre shelves with the same "🔄 More suggestions" AI feature.
+and card/read-or-watch/rate interaction, but backed by Supabase auth +
+Postgres instead of `localStorage`, so a list follows a user between
+devices. Anyone can sign in via magic link and get their own private
+Books and Shows shelves — a Books/Shows tab switcher (`components/nav/TabNav.tsx`)
+sits in the header of both.
+
+**Books and Shows are NOT symmetrical** — this is the single most
+important thing to know before touching either:
+- Books has onboarding + AI "🔄 More suggestions" (`/api/books/suggest`).
+  New users answer a few questions and get an auto-seeded starter shelf.
+- Shows has neither. The original static Shows feature never had genre
+  preferences or AI suggestions — it was always just a curated browse
+  list — so there's nothing to ask a new user. Non-Juz users land on an
+  empty Shows shelf with an always-visible "Add a show" form
+  (`components/shows/AddShowForm.tsx`) instead of a one-time flow.
+- Both give Juz (matched by `JUZ_EMAIL`) a silent, automatic seed of her
+  existing library on first visit to each tab — 70 books, 93 shows — no
+  UI shown to her either way.
 
 This project was built without a prior "Batch 1" scaffold existing — the
 Next.js app, Supabase schema, and auth were all built from scratch in the
@@ -51,38 +65,51 @@ app/
   onboarding/page.tsx                  gate + form (Juz never sees this — see below)
   books/page.tsx                       gate (auth, onboarding, Juz auto-seed) + shelf render
   api/books/suggest/route.ts            ported api/suggest.js, now with an auth check
-components/books/                     ShelfNav, BookShelf, AuthorGroup, BookCard, MoreSuggestions
-components/onboarding/                 OnboardingForm, GenrePicker
+  shows/page.tsx                       gate (auth, Juz auto-seed — no onboarding) + shelf render
+components/books/                     ShelfNav (shared with Shows), BookShelf, AuthorGroup, BookCard, MoreSuggestions
+components/shows/                      ShowShelf, ShowCard, AddShowForm
+components/onboarding/                 OnboardingForm, GenrePicker (Books only)
+components/nav/TabNav.tsx              Books/Shows tab switcher, used by both pages' headers
 lib/supabase/                          client.ts (browser), server.ts (RSC/actions), proxy.ts (session refresh)
 lib/books/                             genres.ts, kindLabel.ts, groupItems.ts, seedData.ts (Juz's 70 books)
-lib/anthropic/suggestBooks.ts          shared by the API route AND onboarding's auto-seed
-lib/actions/                           listItems.ts, onboarding.ts, seedJuz.ts (all Server Actions)
+lib/shows/                             genres.ts, groupItems.ts, seedData.ts (Juz's 93 shows)
+lib/anthropic/suggestBooks.ts          shared by the API route AND onboarding's auto-seed (Books only)
+lib/actions/                           listItems.ts (shared toggleRead/setRating + addManualBook/addManualShow),
+                                        onboarding.ts, seedJuz.ts, seedJuzShows.ts (all Server Actions)
 types/database.ts                     hand-written — regenerate with `supabase gen types typescript` if the CLI ever gets wired up
 ```
 
 ## Content model
 
 `list_items` (RLS: a user only ever sees/writes their own rows) holds both
-books and shows, though only `media_type = 'book'` is used right now —
-`'show'` is reserved for a future port of the Shows UI, not built here.
+books (`media_type = 'book'`) and shows (`media_type = 'show'`).
 
 Mapping from the original prototype's fields:
-- card "read" (stamped) -> `status = 'done'`
+- card "read"/"watched" (stamped) -> `status = 'done'`
 - 👍 -> `rating = 'liked'`, 👎 -> `rating = 'disliked'`
-- the prototype's `hook` text -> `meta.hook`
-- the prototype's `source_status` -> `meta.source_status` — kept as **5**
-  values (`want`/`more`/`discover`/`ai`/`ai-known`), not the 3 a planning
-  doc for this work originally described, because the original app's
-  `kindLabel()` genuinely branches on 5 to produce 4 distinct card labels
-  ("Suggested for you" vs "New to you" are different things)
+- book `hook` -> `meta.hook`; book `source_status` -> `meta.source_status`
+  — kept as **5** values (`want`/`more`/`discover`/`ai`/`ai-known`), not
+  the 3 a planning doc for the Books work originally described, because
+  the original app's `kindLabel()` genuinely branches on 5 to produce 4
+  distinct card labels ("Suggested for you" vs "New to you" are different
+  things)
+- **Shows only:** `creator` stores the streaming **platform**, not an
+  author (shows don't have one) — this is a deliberate reuse of an
+  existing column rather than a schema change, so the
+  `list_items_user_unique_title` dedup index (which includes `creator`)
+  still works correctly. `ShowCard.tsx` reads `item.creator` into the
+  `.kind` badge instead of rendering an author line. Show `note` and
+  `currentlyStreaming` live in `meta` (see `types/database.ts`'s
+  `ListItemMeta`) — there was no natural column for either.
 
 `rating` (schema: `loved`/`liked`/`disliked`) and `status` (schema:
 `want`/`in_progress`/`done`) are both wider than what the card UI
 currently uses — see "Known simplifications" below.
 
-`user_profile` holds onboarding answers (`favorite_authors`,
+`user_profile` holds Books onboarding answers (`favorite_authors`,
 `favorite_genres`, `loved_books`, `disliked_books`) plus `loved_shows`/
-`disliked_shows`, reserved for the same future Shows port.
+`disliked_shows` — the latter two are unused placeholders; Shows never
+got (and doesn't need) an onboarding flow to write them from.
 
 ## Known simplifications (deliberate, not oversights)
 
@@ -100,24 +127,28 @@ currently uses — see "Known simplifications" below.
   shelf color and are not auto-seeded with AI suggestions — no prompt
   scaffolding exists for an arbitrary genre string. They work fine for
   manually-added books.
-- **No AI suggestions on a Shows tab** — there isn't one yet. `/api/books/suggest`
-  is books-only.
-- **Juz gets no onboarding UI at all.** If the signed-in email matches
-  `JUZ_EMAIL` and she has zero book `list_items`, `app/books/page.tsx`
-  silently seeds all 70 books (from `lib/books/seedData.ts`, re-derived
-  from `the-to-read-shelf/index.html`'s `shelves` array — already
-  fact-checked) and renders `/books` directly. Everyone else goes through
-  `/onboarding`.
+- **No AI suggestions or onboarding on Shows, ever, by design** — not a
+  gap to fill later. `/api/books/suggest` is books-only. Non-Juz users get
+  an empty Shows shelf plus the always-visible `AddShowForm`, full stop.
+- **Juz gets no onboarding UI at all, for either tab.** If the signed-in
+  email matches `JUZ_EMAIL`, `app/books/page.tsx` silently seeds her 70
+  books (`lib/books/seedData.ts`) and `app/shows/page.tsx` silently seeds
+  her 93 shows (`lib/shows/seedData.ts`) — both re-derived from
+  `the-to-read-shelf/index.html`'s live data, already fact-checked.
+  Everyone else: Books sends them through `/onboarding`; Shows just shows
+  them an empty shelf.
 
 ## Data integrity note
 
-`lib/books/seedData.ts` was generated programmatically from
-`the-to-read-shelf/index.html`'s live `shelves` array (a script flattened
-`groups[].books[]` + `similar[]` into the 70-row list), not retyped by
-hand — so it inherits that data's existing fact-checked state without
-introducing new transcription errors. If new seed data is ever added
-here directly, hold it to the same bar as `the-to-read-shelf/CLAUDE.md`
-describes: Juz has caught real attribution errors in this list before.
+`lib/books/seedData.ts` and `lib/shows/seedData.ts` were both generated
+programmatically from `the-to-read-shelf/index.html`'s live `shelves`/
+`shows` arrays (a script flattened/copied the data), not retyped by hand
+— so they inherit that data's existing fact-checked state (including the
+Nightingale `currentlyStreaming` fix documented in that project's
+DESIGN_SPEC.md) without introducing new transcription errors. If new seed
+data is ever added here directly, hold it to the same bar as
+`the-to-read-shelf/CLAUDE.md` describes: Juz has caught real attribution
+errors in this list before.
 
 ## Working style notes
 

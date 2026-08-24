@@ -7,6 +7,11 @@ export type SourceStatus = "want" | "more" | "discover" | "ai" | "ai-known";
 export type ListItemMeta = {
   hook?: string;
   source_status?: SourceStatus;
+  // Shows only. `creator` holds the streaming platform for show rows (see
+  // lib/shows/seedData.ts for why) — `note` and `currentlyStreaming` live
+  // in meta since there's no dedicated column for them.
+  note?: string | null;
+  currentlyStreaming?: boolean;
 };
 
 export type ListItemRow = {

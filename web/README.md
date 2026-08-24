@@ -1,9 +1,11 @@
-# The Shelf — Books (multi-user)
+# The Shelf — Books & Shows (multi-user)
 
-A real account-backed version of The To-Read Shelf: anyone can sign in with
-a magic link, answer a couple of quick questions, and get their own genre
-shelves with the same "🔄 More suggestions" AI feature — backed by a
-database instead of `localStorage`.
+A real account-backed version of The To-Read Shelf: anyone can sign in
+with a magic link and get their own genre shelves — a Books tab with the
+same "🔄 More suggestions" AI feature (after a couple of quick onboarding
+questions), and a Shows tab where you add titles yourself (no AI here,
+same as the original static Shows feature never had it either) — backed
+by a database instead of `localStorage`.
 
 This is a separate app from the static `the-to-read-shelf` project one
 folder up — that one keeps running untouched at its existing URL. This one
@@ -61,20 +63,25 @@ the same `spine-screen` repo as the static site.
 
 **9. Try it**
 - Visit your new URL, enter your email, click the link that arrives
-- If you signed in with the address in `JUZ_EMAIL`, your 70 books should
-  already be there — no questions asked
-- Any other email goes through a short onboarding (favourite authors,
-  genres, a couple of loved/disliked books) before landing on their own
-  shelf
+- If you signed in with the address in `JUZ_EMAIL`, your 70 books and 93
+  shows should already be there on their respective tabs — no questions
+  asked
+- Any other email goes through a short Books onboarding (favourite
+  authors, genres, a couple of loved/disliked books) before landing on
+  their own book shelf. The Shows tab has no onboarding — it starts
+  empty, with an "Add a show" box always visible at the top to build it
+  up manually
 
 ## What's different from the static version
 
-- Accounts instead of `localStorage` — your list follows you between
+- Accounts instead of `localStorage` — your lists follow you between
   devices
-- A short one-time onboarding for new (non-Juz) users, which also
-  auto-populates a starter shelf per genre they picked
-- Everything else — the card design, the read/rate interaction, the
-  "More suggestions" AI feature — works the same way, same visual system
+- A short one-time onboarding for new (non-Juz) Books users, which also
+  auto-populates a starter shelf per genre they picked. Shows has no
+  onboarding or AI suggestions on either version, static or this one
+- Everything else — the card design, the read/watch + rate interaction,
+  Books' "More suggestions" AI feature — works the same way, same visual
+  system
 
 ## Local development
 

@@ -13,6 +13,7 @@
   --sage: #5F6E56;
   --line: rgba(34, 38, 31, 0.16);
   --card-shadow: 0 1px 0 rgba(34, 38, 31, 0.06), 0 8px 20px -14px rgba(34, 38, 31, 0.35);
+  --warn: #C1652E;
 }
 
 *{ box-sizing: border-box; }
@@ -75,6 +76,31 @@ h1 em{ font-style: italic; font-weight: 500; color: var(--spine); }
   );
   opacity: 0.9;
 }
+
+/* ---------- Tab nav (Books / Shows) ---------- */
+.tab-nav{
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  position: relative;
+}
+.tab-nav a{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  padding: 9px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background .15s ease, color .15s ease;
+}
+.tab-nav a:hover{ background: rgba(34,38,31,0.06); }
+.tab-nav a.active{ background: var(--ink); color: var(--paper); }
 
 /* ---------- Stats bar ---------- */
 .stats{
@@ -234,6 +260,17 @@ section.shelf:first-of-type{ border-top: none; }
   line-height: 1.5;
   margin: 0;
   flex-grow: 1;
+}
+.card .warn-badge{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--warn);
+  background: rgba(193,101,46,0.12);
+  border: 1px solid rgba(193,101,46,0.35);
+  border-radius: 2px;
+  padding: 5px 7px;
+  margin: 10px 0 0;
 }
 .card .foot{
   display: flex;

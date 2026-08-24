@@ -4,6 +4,7 @@ import { groupItems } from "@/lib/books/groupItems";
 import { seedJuzLibrary } from "@/lib/actions/seedJuz";
 import { ShelfNav } from "@/components/books/ShelfNav";
 import { BookShelf } from "@/components/books/BookShelf";
+import { TabNav } from "@/components/nav/TabNav";
 import type { ListItemRow } from "@/types/database";
 
 export default async function BooksPage() {
@@ -55,6 +56,7 @@ export default async function BooksPage() {
           you might fall for next — sorted the way a good bookshop shelves
           them, by genre rather than app.
         </p>
+        <TabNav active="books" />
       </header>
 
       <div className="stats">

@@ -31,7 +31,10 @@ export async function toggleRead(itemId: string) {
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
+  // shared action for both media types — cheap to revalidate both paths
+  // rather than fetch media_type just to pick one
   revalidatePath("/books");
+  revalidatePath("/shows");
 }
 
 // Card thumbs stay binary (liked/disliked) even though `rating` is 3-state
@@ -62,6 +65,7 @@ export async function setRating(itemId: string, rating: "liked" | "disliked") {
   if (error) throw new Error(error.message);
 
   revalidatePath("/books");
+  revalidatePath("/shows");
 }
 
 export async function addManualBook(input: {
@@ -95,4 +99,39 @@ export async function addManualBook(input: {
   if (error) throw new Error(error.message);
 
   revalidatePath("/books");
+}
+
+export async function addManualShow(input: {
+  title: string;
+  platform: string;
+  genre: string;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const title = input.title.trim();
+  const platform = input.platform.trim();
+  if (!title) throw new Error("Title is required");
+  if (!platform) throw new Error("Platform is required");
+
+  const { error } = await supabase.from("list_items").upsert(
+    [
+      {
+        user_id: user.id,
+        media_type: "show" as const,
+        title,
+        creator: platform,
+        genre: input.genre,
+        status: "want" as const,
+        meta: { currentlyStreaming: true },
+      },
+    ],
+    { onConflict: "user_id,media_type,title,creator", ignoreDuplicates: true }
+  );
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/shows");
 }
