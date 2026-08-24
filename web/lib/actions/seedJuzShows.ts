@@ -19,6 +19,7 @@ export async function seedJuzShows() {
     throw new Error("Not authorized");
   }
 
+  const verifiedAt = new Date().toISOString();
   const rows = JUZ_SEED_SHOWS.map((s) => ({
     user_id: user.id,
     media_type: "show" as const,
@@ -26,7 +27,12 @@ export async function seedJuzShows() {
     creator: s.platform,
     genre: s.genre,
     status: "want" as const,
-    meta: { hook: s.hook, note: s.note, currentlyStreaming: s.currentlyStreaming },
+    meta: {
+      hook: s.hook,
+      note: s.note,
+      currentlyStreaming: s.currentlyStreaming,
+      platformVerifiedAt: verifiedAt,
+    },
   }));
 
   const { error } = await supabase

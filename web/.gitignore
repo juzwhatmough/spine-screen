@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the template — this is meant to be committed so a fresh
+# clone knows which variables to set. Real secrets still go in .env.local,
+# still blocked by the pattern above.
+!.env.local.example
 
 # vercel
 .vercel

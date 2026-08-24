@@ -26,7 +26,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
   // used only to pre-fill the Add-a-book modal's Genre field.
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
 
-  const { isDone, getRating, animatingOut, handleStatusChange, handleRatingChange } =
+  const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
     useStatusTransitions(statusView);
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
@@ -48,13 +48,13 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
             items: g.items.filter((item) => {
               const done = isDone(item);
               const matchesStatus = statusView === "finished" ? done : !done;
-              return matchesStatus || animatingOut.has(item.id);
+              return matchesStatus || leavingView(item.id);
             }),
           }))
           .filter((g) => g.items.length > 0),
       }))
       .filter((s) => s.groups.length > 0);
-  }, [shelves, genre, author, statusView, isDone, animatingOut]);
+  }, [shelves, genre, author, statusView, isDone, leavingView]);
 
   const titleCount = useMemo(
     () => filtered.reduce((sum, s) => sum + s.groups.reduce((n, g) => n + g.items.length, 0), 0),

@@ -136,11 +136,54 @@ export async function addManualShow(input: {
         creator: platform,
         genre: input.genre,
         status: "want" as const,
-        meta: { currentlyStreaming: true },
+        meta: { currentlyStreaming: true, platformVerifiedAt: new Date().toISOString() },
       },
     ],
     { onConflict: "user_id,media_type,title,creator", ignoreDuplicates: true }
   );
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/shows");
+}
+
+// Manual platform correction — the only way a show's platform ever
+// changes post-add. Deliberately not "refresh via AI": re-querying the
+// model to re-guess availability would just fabricate a second
+// unverifiable claim on top of the first one. Editing is always
+// user-sourced, which is also why this both stamps platformVerifiedAt
+// and clears `unconfirmed` in one action — a user typing in a real
+// platform *is* the resolution of an AI suggestion's "unconfirmed"
+// state, there's no separate flow needed.
+export async function updateShowPlatform(itemId: string, platform: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const trimmed = platform.trim();
+  if (!trimmed) throw new Error("Platform is required");
+
+  const { data: current, error: fetchError } = await supabase
+    .from("list_items")
+    .select("meta")
+    .eq("id", itemId)
+    .eq("user_id", user.id)
+    .single();
+  if (fetchError || !current) throw new Error(fetchError?.message ?? "Item not found");
+
+  const { error } = await supabase
+    .from("list_items")
+    .update({
+      creator: trimmed,
+      meta: {
+        ...(current.meta as object),
+        platformVerifiedAt: new Date().toISOString(),
+        unconfirmed: false,
+      },
+    })
+    .eq("id", itemId)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/shows");
