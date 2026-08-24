@@ -1,11 +1,10 @@
 # The Shelf — Books & Shows (multi-user)
 
 A real account-backed version of The To-Read Shelf: anyone can sign in
-with a magic link and get their own genre shelves — a Books tab with the
-same "🔄 More suggestions" AI feature (after a couple of quick onboarding
-questions), and a Shows tab where you add titles yourself (no AI here,
-same as the original static Shows feature never had it either) — backed
-by a database instead of `localStorage`.
+with a magic link and get their own genre shelves — both Books and Shows
+have the same "🔄 Suggest more" AI feature (Books also gets a couple of
+quick onboarding questions first; Shows doesn't) — backed by a database
+instead of `localStorage`.
 
 This is a separate app from the static `the-to-read-shelf` project one
 folder up — that one keeps running untouched at its existing URL. This one
@@ -81,7 +80,7 @@ the same `spine-screen` repo as the static site.
   no onboarding — it starts empty for anyone but Juz
 - Both tabs now have: filters (Books: Author + Genre; Shows: Genre +
   Streaming Service), a "+" button (bottom-right) that opens an
-  "Add a book"/"Add a show" popup, and AI "🔄 More suggestions" — Shows'
+  "Add a book"/"Add a show" popup, and AI "🔄 Suggest more" — Shows'
   AI picks never claim a real streaming platform (there's no way to
   verify Australian availability yet), so they show with an
   "Unconfirmed" badge instead

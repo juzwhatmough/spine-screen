@@ -67,16 +67,16 @@ export default async function BooksPage() {
         </span>
         <span>
           Tap a card to mark it read, then rate it — your ratings shape
-          &quot;More suggestions&quot;
+          &quot;Suggest more&quot;
         </span>
       </div>
 
       <BooksShelvesView shelves={shelves} />
 
       <footer>
-        Tap a card to mark it read, then 👍 or 👎 it · Tap &quot;More
-        suggestions&quot; on any shelf for fresh picks based on your ratings
-        · Your list is saved to your account
+        Tap a card to mark it read, then 👍 or 👎 it · Tap &quot;Suggest
+        more&quot; on any shelf for fresh picks based on your ratings ·
+        Your list is saved to your account
       </footer>
     </>
   );

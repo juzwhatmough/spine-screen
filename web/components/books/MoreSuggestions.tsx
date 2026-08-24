@@ -40,7 +40,7 @@ export function MoreSuggestions({ genre }: { genre: string }) {
       disabled={loading}
       onClick={handleClick}
     >
-      {loading ? "Finding more…" : "🔄 More suggestions"}
+      {loading ? "Finding more…" : "🔄 Suggest more"}
     </button>
   );
 }

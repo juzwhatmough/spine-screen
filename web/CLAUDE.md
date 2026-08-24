@@ -16,7 +16,7 @@ sits in the header of both.
 
 **Books and Shows are close to symmetrical now, with one real
 difference:** both have onboarding-free manual add forms, filters, and AI
-"🔄 More suggestions" — but Books' onboarding flow (new users answer a few
+"🔄 Suggest more" — but Books' onboarding flow (new users answer a few
 questions and get an auto-seeded starter shelf) has no Shows equivalent.
 Non-Juz Shows users just land on an empty shelf with the "Add a show" FAB
 (see "Add-a-book / Add-a-show: FAB + modal" below) as their only way in.
