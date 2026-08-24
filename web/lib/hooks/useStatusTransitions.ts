@@ -4,6 +4,12 @@ import { useCallback, useRef, useState } from "react";
 import type { StatusView } from "@/components/ui/StatusToggle";
 import type { ListItemRow } from "@/types/database";
 
+// How long a card stays fully visible and interactive (thumbs clickable)
+// after being marked done, before the fade-out even begins. Long enough
+// to glance at the card and hit a thumb; not so long it reads as
+// "nothing happened." A card that's rated during this window doesn't
+// get its timer extended — 1.4s is already generous for a single tap.
+const RATE_WINDOW_MS = 1400;
 const EXIT_ANIMATION_MS = 280;
 
 // Matches ListItemRow["rating"] (which also allows "loved", schema-wide)
@@ -34,14 +40,24 @@ type Rating = ListItemRow["rating"];
 //   persists across mount/unmount, so a remounted card immediately shows
 //   the correct optimistic state regardless of server timing.
 //
-// - `animatingOut` is *purely* a fixed-duration visual flag for the CSS
-//   fade (see .card.exiting in globals.css) and has no bearing on
-//   whether an item is actually included in the filtered list.
+// - `animatingOut` is a fixed-duration visual flag for the CSS fade (see
+//   .card.exiting in globals.css) and has no bearing on whether an item
+//   is actually included in the filtered list — see `leavingView` below.
+// - `pendingExit` gates the whole exit sequence behind RATE_WINDOW_MS: an
+//   item that just left the active view stays fully interactive (full
+//   opacity, thumbs clickable) for that window before `animatingOut` (and
+//   therefore the fade + pointer-events:none) even starts. Without this,
+//   marking a card done and reaching for the thumbs would be a race
+//   against a 280ms fade that starts the instant you tap the card —
+//   there'd be no time to rate it. `leavingView(item)` checks *both*
+//   flags: an item only actually disappears from the filtered list once
+//   pendingExit has cleared, i.e. after the full rate-window + fade.
 export function useStatusTransitions(statusView: StatusView) {
   const [statusOverrides, setStatusOverrides] = useState<Map<string, boolean>>(new Map());
   const [ratingOverrides, setRatingOverrides] = useState<Map<string, Rating>>(new Map());
+  const [pendingExit, setPendingExit] = useState<Set<string>>(new Set());
   const [animatingOut, setAnimatingOut] = useState<Set<string>>(new Set());
-  const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const timers = useRef<Map<string, ReturnType<typeof setTimeout>[]>>(new Map());
 
   const isDone = useCallback(
     (item: { id: string; status: string }) =>
@@ -64,27 +80,55 @@ export function useStatusTransitions(statusView: StatusView) {
       setStatusOverrides((prev) => new Map(prev).set(itemId, nowDone));
       if (!nowDone) handleRatingChange(itemId, null); // unmarking clears the rating, same as before
 
+      const existingTimers = timers.current.get(itemId);
+      if (existingTimers) existingTimers.forEach(clearTimeout);
+      timers.current.delete(itemId);
+
       const leavingActiveView =
         (statusView === "shelf" && nowDone) || (statusView === "finished" && !nowDone);
-      if (!leavingActiveView) return;
+      if (!leavingActiveView) {
+        setPendingExit((prev) => {
+          if (!prev.has(itemId)) return prev;
+          const next = new Set(prev);
+          next.delete(itemId);
+          return next;
+        });
+        setAnimatingOut((prev) => {
+          if (!prev.has(itemId)) return prev;
+          const next = new Set(prev);
+          next.delete(itemId);
+          return next;
+        });
+        return;
+      }
 
-      setAnimatingOut((prev) => new Set(prev).add(itemId));
-      const existingTimer = timers.current.get(itemId);
-      if (existingTimer) clearTimeout(existingTimer);
-      timers.current.set(
-        itemId,
-        setTimeout(() => {
+      setPendingExit((prev) => new Set(prev).add(itemId));
+      const rateWindowTimer = setTimeout(() => {
+        setAnimatingOut((prev) => new Set(prev).add(itemId));
+        const fadeTimer = setTimeout(() => {
+          setPendingExit((prev) => {
+            const next = new Set(prev);
+            next.delete(itemId);
+            return next;
+          });
           setAnimatingOut((prev) => {
             const next = new Set(prev);
             next.delete(itemId);
             return next;
           });
           timers.current.delete(itemId);
-        }, EXIT_ANIMATION_MS)
-      );
+        }, EXIT_ANIMATION_MS);
+        timers.current.set(itemId, [fadeTimer]);
+      }, RATE_WINDOW_MS);
+      timers.current.set(itemId, [rateWindowTimer]);
     },
     [statusView, handleRatingChange]
   );
 
-  return { isDone, getRating, animatingOut, handleStatusChange, handleRatingChange };
+  // An item stays in the rendered/filtered list as long as it either
+  // matches the active view outright, or is still within its
+  // rate-window-then-fade grace period.
+  const leavingView = useCallback((itemId: string) => pendingExit.has(itemId), [pendingExit]);
+
+  return { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange };
 }

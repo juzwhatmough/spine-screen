@@ -254,7 +254,58 @@ section.shelf:first-of-type{ border-top: none; }
   text-transform: uppercase;
   color: var(--tagcolor, var(--spine));
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+.kind-edit-btn{
+  background: none;
+  border: none;
+  color: var(--tagcolor, var(--spine));
+  opacity: 0.6;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px;
+  cursor: pointer;
+}
+.kind-edit-btn:hover{ opacity: 1; }
+.kind-edit{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+.kind-edit input{
+  flex: 1;
+  min-width: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 3px 6px;
+}
+.kind-edit button{
+  background: none;
+  border: none;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 3px;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+.kind-edit button:hover{ color: var(--ink); }
+.card .verified-note{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  opacity: 0.75;
+  margin: -4px 0 8px;
+}
+.card .verified-note.stale{ color: var(--warn); opacity: 0.85; }
 .card .title{
   font-family: 'Fraunces', serif;
   font-weight: 600;

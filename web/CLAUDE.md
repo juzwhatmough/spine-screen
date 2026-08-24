@@ -166,13 +166,67 @@ open silently failed to remove it from the Finished view. Lifting
 always reads the correct optimistic value immediately, independent of
 server timing.
 
-`animatingOut` is a *separate*, purely-visual concern from the above — a
-fixed 280ms window (see `.card.exiting` in globals.css) during which an
-item that just left the active status view is kept in the filtered
-array and rendered with a fade instead of vanishing the instant its
-status flips. It has no bearing on the actual include/exclude filtering
-decision, which is why it's tracked independently rather than folded into
-the override maps.
+**Exit sequence is two-phase, not one** — `pendingExit`/`leavingView` vs.
+`animatingOut` are deliberately separate flags, not the same thing:
+1. The instant a card leaves the active view, it enters `pendingExit`
+   (`leavingView(id)` → true). It stays fully visible and fully
+   interactive — full opacity, thumbs clickable, `pointer-events: auto`
+   — for `RATE_WINDOW_MS` (1.4s).
+2. Only after that window does it enter `animatingOut`, which applies
+   `.card.exiting` (fade + `pointer-events: none`) for `EXIT_ANIMATION_MS`
+   (280ms), then actually leaves the filtered array.
+
+**This two-phase design exists because of a second bug**, found via user
+report after the first fix shipped: marking a card done used to fade it
+out (and disable its pointer events) *immediately* on click, which meant
+tapping "mark read" and then reaching for the thumbs was a race against a
+280ms animation you'd already lost — the card became unclickable before
+you could rate it. The fix wasn't "make the fade slower," it was
+separating "no longer belongs in this view" (immediate, drives filtering
+via `leavingView`) from "visually leaving" (delayed, drives the CSS via
+`animatingOut`) — the card now gives you a real window to rate it before
+any visual change or interactivity loss begins. `filtered` arrays in both
+`*ShelvesView` components check `leavingView(id)` for inclusion, *not*
+`animatingOut` — get this backwards and the rating race comes back.
+
+## Manual platform editing (Shows) — deliberately not AI-backed
+
+Every show's platform (`creator`) is now editable in place from its card
+(pencil icon next to the platform name → inline `<input>` → ✓/✕ or
+Enter/Escape). This is the **only** way a platform ever changes after a
+show is added — there is intentionally no "refresh via AI" action that
+re-queries Anthropic to re-guess availability. Doing that would just
+produce a second unverifiable claim on top of the first one; the whole
+point of Shows' AI suggestions carrying an "Unconfirmed" badge (see
+above) instead of a fabricated platform is that this app doesn't assert
+streaming availability without a human behind the claim. Editing *is*
+that human-in-the-loop step, for both correcting a stale/wrong platform
+and resolving an AI suggestion's Unconfirmed badge (same action clears
+`meta.unconfirmed`, no separate resolution flow).
+
+`meta.platformVerifiedAt` (ISO timestamp, `lib/shows/relativeTime.ts` for
+formatting/staleness) is set on every path that gives a show a real,
+human-sourced platform — Juz's seed (`seedJuzShows.ts`), manual add
+(`addManualShow`), and this edit action (`updateShowPlatform`) — and left
+unset for freshly AI-suggested shows, since nothing's been verified yet.
+Displayed on-card as a small, low-weight line ("checked 3 weeks ago",
+`.verified-note` in globals.css) right under the platform name — text
+only, no background/border, so it doesn't compete with the boxed
+warning badges. Past **60 days** (`STALE_AFTER_DAYS`, the ticket's own
+suggested threshold, used as-is) it switches to `--warn` colored text —
+still just a color change, not a boxed badge, per "low visual weight...
+not a warning unless significantly stale."
+
+`ShowCard`'s platform/verifiedAt/unconfirmed are **plain local state**,
+not lifted into `useStatusTransitions`'s override maps the way
+`done`/`rating` are. This is a deliberate scope call, not an oversight:
+the remount-desync bug that motivated lifting `done`/`rating` is
+specifically triggered by status-view switching unmounting a card mid-
+flight; editing a platform is a deliberate, momentary action that doesn't
+itself trigger that remount, so the failure mode would only occur if a
+user edited a platform in the exact instant the card was also leaving the
+view from a simultaneous status change — narrow enough to accept as a
+known limitation rather than extend the override system for.
 
 ## Add-a-book / Add-a-show: FAB + modal
 

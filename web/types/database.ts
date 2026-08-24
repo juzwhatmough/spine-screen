@@ -20,6 +20,12 @@ export type ListItemMeta = {
   // (know it's unavailable vs. don't know either way) and conflating them
   // would itself be a false claim.
   unconfirmed?: boolean;
+  // Shows only. ISO timestamp — set when a show is first added with a
+  // real platform (seed, manual add) and re-set whenever the user edits
+  // the platform field (lib/actions/listItems.ts's updateShowPlatform).
+  // Deliberately absent for freshly AI-suggested shows (nothing's been
+  // human-verified yet) — see components/shows/ShowCard.tsx.
+  platformVerifiedAt?: string;
 };
 
 export type ListItemRow = {

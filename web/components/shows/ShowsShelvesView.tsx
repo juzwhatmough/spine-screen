@@ -19,7 +19,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
   const [platform, setPlatform] = useState("");
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
 
-  const { isDone, getRating, animatingOut, handleStatusChange, handleRatingChange } =
+  const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
     useStatusTransitions(statusView);
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
@@ -38,11 +38,11 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
           if (platform && i.creator !== platform) return false;
           const done = isDone(i);
           const matchesStatus = statusView === "finished" ? done : !done;
-          return matchesStatus || animatingOut.has(i.id);
+          return matchesStatus || leavingView(i.id);
         }),
       }))
       .filter((s) => s.items.length > 0);
-  }, [shelves, genre, platform, statusView, isDone, animatingOut]);
+  }, [shelves, genre, platform, statusView, isDone, leavingView]);
 
   const titleCount = useMemo(
     () => filtered.reduce((sum, s) => sum + s.items.length, 0),
