@@ -124,7 +124,8 @@
   /* ---------- Stats bar ---------- */
   .stats{
     display:flex;
-    gap:28px;
+    align-items:center;
+    gap:16px;
     flex-wrap:wrap;
     padding:18px 24px;
     background:var(--paper-2);
@@ -135,6 +136,38 @@
     color:var(--ink-soft);
   }
   .stats b{ color:var(--ink); font-weight:500; }
+  .stats-text{
+    display:flex;
+    gap:28px;
+    flex-wrap:wrap;
+    flex:1 1 auto;
+  }
+  .filter-toggle{
+    flex:0 0 auto;
+    margin-left:auto;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    padding:7px 12px;
+    border-radius:2px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .filter-toggle:hover:not(:disabled){ border-color:var(--brass); color:var(--ink); }
+  .filter-toggle.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--paper);
+  }
+  .filter-toggle:disabled{ opacity:0.45; cursor:default; }
 
   /* ---------- Shelf nav ---------- */
   nav.shelves{
@@ -369,6 +402,14 @@
     color:var(--sage);
     background:transparent;
   }
+  /* Completed (read/watched) cards are hidden from the active shelf by
+     default; the "Show read/watched" filter reveals them again via the
+     .show-completed class on the section's <main>. */
+  #mainBooks .swipe-wrap.is-complete,
+  #mainShows .swipe-wrap.is-complete{ display:none; }
+  #mainBooks.show-completed .swipe-wrap.is-complete,
+  #mainShows.show-completed .swipe-wrap.is-complete{ display:block; }
+
   .card.read{ background:#F3F0E6; }
   .card.read .stamp{
     border-color:var(--spine);
@@ -723,26 +764,100 @@ function collapseAndDetach(wrap, onDetached){
   }, 330);
 }
 
-// Undoes collapseAndDetach — puts the wrap back where it was.
-function restoreWrap(wrap, cardEl, parent, nextSibling){
-  wrap.classList.remove('removing', 'armed');
+// Clears the inline styles collapseAndDetach/animateCollapseToHidden apply.
+function expandWrapInPlace(wrap, cardEl){
+  wrap.classList.remove('removing');
   wrap.style.removeProperty('height');
   wrap.style.removeProperty('opacity');
   wrap.style.removeProperty('margin-bottom');
   wrap.style.removeProperty('overflow');
-  cardEl.style.transform = '';
+  if(cardEl) cardEl.style.transform = '';
+}
+
+// Undoes collapseAndDetach — puts the wrap back where it was.
+function restoreWrap(wrap, cardEl, parent, nextSibling){
+  wrap.classList.remove('armed');
+  expandWrapInPlace(wrap, cardEl);
   if(parent){
     if(nextSibling && nextSibling.parentNode === parent) parent.insertBefore(wrap, nextSibling);
     else parent.appendChild(wrap);
   }
 }
 
+// Shrinks a swipe-wrap in place (unlike collapseAndDetach, it stays in the
+// DOM) — used when a "read"/"watched" card leaves the active shelf so the
+// "Show read/watched" filter can reveal it again later at full size.
+function animateCollapseToHidden(wrap){
+  const height = wrap.getBoundingClientRect().height;
+  wrap.style.height = height + 'px';
+  wrap.style.overflow = 'hidden';
+  wrap.classList.add('removing');
+  requestAnimationFrame(() => {
+    wrap.style.height = '0px';
+    wrap.style.opacity = '0';
+    wrap.style.marginBottom = '0px';
+  });
+  // once the inline styles clear, the .is-complete CSS rule (the shelf
+  // isn't showing completed items) takes over and keeps it display:none
+  setTimeout(() => { expandWrapInPlace(wrap); }, 330);
+}
+
+// Flags a card's wrap as "complete" for the filter and, unless the
+// "show read/watched" filter is already open, animates it off the active
+// shelf. Always reversible for a few seconds via the Undo toast.
+function markCardComplete(wrap, filter, itemLabel, verbPast, onUndoRevert){
+  wrap.classList.add('is-complete');
+  filter.registerComplete();
+  if(!filter.isShowing()) animateCollapseToHidden(wrap);
+  showUndoToast(`Marked ${verbPast}: "${itemLabel}"`, () => {
+    wrap.classList.remove('is-complete');
+    expandWrapInPlace(wrap);
+    filter.registerIncomplete();
+    onUndoRevert();
+  });
+}
+
+// Reverses markCardComplete when a filter-revealed completed card is
+// tapped back to unread/unwatched directly (no Undo toast needed).
+function unmarkCardComplete(wrap, filter){
+  wrap.classList.remove('is-complete');
+  expandWrapInPlace(wrap);
+  filter.registerIncomplete();
+}
+
+// Powers each view's "Show read/watched" toggle: tracks how many
+// completed items are on that shelf and whether they're currently visible.
+function createCompletionFilter(containerEl, btn, label){
+  let count = 0, showing = false;
+
+  function render(){
+    btn.textContent = showing ? `👁 Hide ${label}` : `👁 Show ${label} (${count})`;
+    btn.classList.toggle('active', showing);
+    btn.setAttribute('aria-pressed', String(showing));
+    btn.disabled = !showing && count === 0;
+  }
+
+  btn.addEventListener('click', () => {
+    showing = !showing;
+    containerEl.classList.toggle('show-completed', showing);
+    render();
+  });
+
+  render();
+
+  return {
+    isShowing: () => showing,
+    registerComplete(){ count++; render(); },
+    registerIncomplete(){ count = Math.max(0, count - 1); render(); }
+  };
+}
+
 // A card marked read/watched gets a few seconds to be rated (👍/👎 feed the
-// AI suggestions) before it quietly leaves the shelf — with its own Undo,
+// AI suggestions) before it leaves the active shelf — with its own Undo,
 // same as a swipe-delete, in case the mark itself was a mistake.
 const MARK_REMOVE_DELAY_MS = 5000;
 
-function attachMarkAndRemove(swipe, cardEl, itemLabel, verbPast){
+function attachMarkAndRemove(cardEl){
   let timer = null;
 
   function cancel(){
@@ -770,19 +885,7 @@ function attachMarkAndRemove(swipe, cardEl, itemLabel, verbPast){
     }, MARK_REMOVE_DELAY_MS);
   }
 
-  function removeWithUndo(onUndoRestore){
-    const wrap = swipe.wrap;
-    const parent = wrap.parentNode;
-    const nextSibling = wrap.nextSibling;
-    swipe.resetPosition();
-    collapseAndDetach(wrap);
-    showUndoToast(`Marked ${verbPast}: "${itemLabel}"`, () => {
-      onUndoRestore();
-      restoreWrap(wrap, cardEl, parent, nextSibling);
-    });
-  }
-
-  return { schedule, cancel, removeWithUndo };
+  return { schedule, cancel };
 }
 
 const shelves = [
@@ -1003,6 +1106,16 @@ const main = document.getElementById('mainBooks');
 const nav = document.getElementById('shelfNavBooks');
 let allBookCount = 0, wantCount = 0;
 
+const statsBooksEl = document.getElementById('statsBooks');
+const statsBooksText = document.createElement('div');
+statsBooksText.className = 'stats-text';
+const filterToggleBooksBtn = document.createElement('button');
+filterToggleBooksBtn.type = 'button';
+filterToggleBooksBtn.className = 'filter-toggle';
+statsBooksEl.appendChild(statsBooksText);
+statsBooksEl.appendChild(filterToggleBooksBtn);
+const filterBooks = createCompletionFilter(main, filterToggleBooksBtn, 'read');
+
 shelves.forEach((shelf, si) => {
   // nav button
   const btn = document.createElement('button');
@@ -1148,17 +1261,17 @@ function makeCard(book, color, authorKey){
     }
   } catch(e){ /* storage unavailable */ }
 
-  // deleted, or already marked read, on a previous visit — skip rendering
-  // it (its rating stays in the feedback cache above either way)
-  if(state.deleted || state.read) return null;
+  // deleted on a previous visit — skip rendering it entirely
+  if(state.deleted) return null;
 
   function toggleRead(){
     if(swipe.isArmed()){ swipe.resetPosition(); return; }
+    const wasComplete = swipe.wrap.classList.contains('is-complete');
     state.read = !state.read;
     if(state.read){
       persist();
       markRemove.schedule(() => {
-        markRemove.removeWithUndo(() => {
+        markCardComplete(swipe.wrap, filterBooks, book.title, 'read', () => {
           state.read = false;
           state.rating = null;
           render();
@@ -1168,6 +1281,7 @@ function makeCard(book, color, authorKey){
     } else {
       state.rating = null; // clear rating if unmarking as read
       markRemove.cancel();
+      if(wasComplete) unmarkCardComplete(swipe.wrap, filterBooks);
       persist();
     }
     render();
@@ -1189,10 +1303,22 @@ function makeCard(book, color, authorKey){
 
   const swipe = attachSwipeDelete(card, {
     itemLabel: book.title,
-    onConfirm: () => { markRemove.cancel(); state.deleted = true; persist(); },
+    onConfirm: () => {
+      markRemove.cancel();
+      if(swipe.wrap.classList.contains('is-complete')) filterBooks.registerIncomplete();
+      state.deleted = true;
+      persist();
+    },
     onUndo: () => { state.deleted = false; persist(); }
   });
-  const markRemove = attachMarkAndRemove(swipe, card, book.title, 'read');
+  const markRemove = attachMarkAndRemove(card);
+
+  // already read on a previous visit — keep it off the active shelf,
+  // behind the "Show read" filter, without playing the leave-animation
+  if(state.read){
+    swipe.wrap.classList.add('is-complete');
+    filterBooks.registerComplete();
+  }
 
   return swipe.wrap;
 }
@@ -1263,7 +1389,7 @@ Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly th
   }
 }
 
-document.getElementById('statsBooks').innerHTML =
+statsBooksText.innerHTML =
   `<span><b>${shelves.length}</b> shelves</span><span><b>${allBookCount}</b> titles</span><span>Tap a card to mark it read, then rate it — your ratings shape "More suggestions"</span>`;
 
 // active nav highlight on scroll
@@ -1407,6 +1533,16 @@ const mainShows = document.getElementById('mainShows');
 const navShows = document.getElementById('shelfNavShows');
 let allShowCount = 0, notStreamingCount = 0;
 
+const statsShowsEl = document.getElementById('statsShows');
+const statsShowsText = document.createElement('div');
+statsShowsText.className = 'stats-text';
+const filterToggleShowsBtn = document.createElement('button');
+filterToggleShowsBtn.type = 'button';
+filterToggleShowsBtn.className = 'filter-toggle';
+statsShowsEl.appendChild(statsShowsText);
+statsShowsEl.appendChild(filterToggleShowsBtn);
+const filterShows = createCompletionFilter(mainShows, filterToggleShowsBtn, 'watched');
+
 showShelves.forEach((shelf, si) => {
   const btn = document.createElement('button');
   btn.textContent = shelf.tag;
@@ -1502,17 +1638,17 @@ function makeShowCard(item, color){
     }
   } catch(e){ /* storage unavailable */ }
 
-  // deleted, or already marked watched, on a previous visit — skip
-  // rendering it (its rating stays in the feedback cache either way)
-  if(state.deleted || state.watched) return null;
+  // deleted on a previous visit — skip rendering it entirely
+  if(state.deleted) return null;
 
   function toggleWatched(){
     if(swipe.isArmed()){ swipe.resetPosition(); return; }
+    const wasComplete = swipe.wrap.classList.contains('is-complete');
     state.watched = !state.watched;
     if(state.watched){
       persist();
       markRemove.schedule(() => {
-        markRemove.removeWithUndo(() => {
+        markCardComplete(swipe.wrap, filterShows, item.title, 'watched', () => {
           state.watched = false;
           state.rating = null;
           render();
@@ -1522,6 +1658,7 @@ function makeShowCard(item, color){
     } else {
       state.rating = null;
       markRemove.cancel();
+      if(wasComplete) unmarkCardComplete(swipe.wrap, filterShows);
       persist();
     }
     render();
@@ -1543,15 +1680,27 @@ function makeShowCard(item, color){
 
   const swipe = attachSwipeDelete(card, {
     itemLabel: item.title,
-    onConfirm: () => { markRemove.cancel(); state.deleted = true; persist(); },
+    onConfirm: () => {
+      markRemove.cancel();
+      if(swipe.wrap.classList.contains('is-complete')) filterShows.registerIncomplete();
+      state.deleted = true;
+      persist();
+    },
     onUndo: () => { state.deleted = false; persist(); }
   });
-  const markRemove = attachMarkAndRemove(swipe, card, item.title, 'watched');
+  const markRemove = attachMarkAndRemove(card);
+
+  // already watched on a previous visit — keep it off the active shelf,
+  // behind the "Show watched" filter, without playing the leave-animation
+  if(state.watched){
+    swipe.wrap.classList.add('is-complete');
+    filterShows.registerComplete();
+  }
 
   return swipe.wrap;
 }
 
-document.getElementById('statsShows').innerHTML =
+statsShowsText.innerHTML =
   `<span><b>${showShelves.length}</b> shelves</span><span><b>${allShowCount}</b> titles</span><span><b>${notStreamingCount}</b> not currently streaming</span><span>Tap a card to mark it watched, then rate it</span>`;
 
 const showSections = showShelves.map(s => document.getElementById(s.id));
