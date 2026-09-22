@@ -306,6 +306,26 @@
     padding-top:10px;
     border-top:1px dashed var(--line);
   }
+  .mark-remove-bar{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:3px;
+    border-radius:0 0 3px 3px;
+    background:var(--sage);
+    transform:scaleX(0);
+    transform-origin:left;
+    opacity:0;
+  }
+  .card.pending-remove .mark-remove-bar{ opacity:1; }
+  .mark-hint{
+    display:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.02em;
+    color:var(--ink-soft);
+    margin:8px 0 0;
+  }
+  .card.pending-remove .mark-hint{ display:block; }
   .card .status{
     font-family:'IBM Plex Mono', monospace;
     font-size:10.5px;
@@ -669,31 +689,13 @@ function attachSwipeDelete(cardEl, { itemLabel, onConfirm, onUndo }){
     if(armedSwipeWrap === wrap) armedSwipeWrap = null;
     const parent = wrap.parentNode;
     const nextSibling = wrap.nextSibling;
-    const height = wrap.getBoundingClientRect().height;
-    wrap.style.height = height + 'px';
-    wrap.style.overflow = 'hidden';
-    wrap.classList.add('removing');
-    requestAnimationFrame(() => {
-      wrap.style.height = '0px';
-      wrap.style.opacity = '0';
-      wrap.style.marginBottom = '0px';
-    });
-    setTimeout(() => { if(wrap.parentNode) wrap.parentNode.removeChild(wrap); }, 330);
+    collapseAndDetach(wrap);
 
     onConfirm();
 
     showUndoToast(`Removed "${itemLabel}"`, () => {
       onUndo();
-      wrap.classList.remove('removing', 'armed');
-      wrap.style.removeProperty('height');
-      wrap.style.removeProperty('opacity');
-      wrap.style.removeProperty('margin-bottom');
-      wrap.style.removeProperty('overflow');
-      cardEl.style.transform = '';
-      if(parent){
-        if(nextSibling && nextSibling.parentNode === parent) parent.insertBefore(wrap, nextSibling);
-        else parent.appendChild(wrap);
-      }
+      restoreWrap(wrap, cardEl, parent, nextSibling);
     });
   });
 
@@ -703,6 +705,85 @@ function attachSwipeDelete(cardEl, { itemLabel, onConfirm, onUndo }){
 document.addEventListener('click', (e) => {
   if(armedSwipeWrap && !armedSwipeWrap.contains(e.target)) armedSwipeWrap.__resetSwipe();
 }, true);
+
+// Shrinks a swipe-wrap out of the layout, then detaches it from the DOM.
+function collapseAndDetach(wrap, onDetached){
+  const height = wrap.getBoundingClientRect().height;
+  wrap.style.height = height + 'px';
+  wrap.style.overflow = 'hidden';
+  wrap.classList.add('removing');
+  requestAnimationFrame(() => {
+    wrap.style.height = '0px';
+    wrap.style.opacity = '0';
+    wrap.style.marginBottom = '0px';
+  });
+  setTimeout(() => {
+    if(wrap.parentNode) wrap.parentNode.removeChild(wrap);
+    if(onDetached) onDetached();
+  }, 330);
+}
+
+// Undoes collapseAndDetach — puts the wrap back where it was.
+function restoreWrap(wrap, cardEl, parent, nextSibling){
+  wrap.classList.remove('removing', 'armed');
+  wrap.style.removeProperty('height');
+  wrap.style.removeProperty('opacity');
+  wrap.style.removeProperty('margin-bottom');
+  wrap.style.removeProperty('overflow');
+  cardEl.style.transform = '';
+  if(parent){
+    if(nextSibling && nextSibling.parentNode === parent) parent.insertBefore(wrap, nextSibling);
+    else parent.appendChild(wrap);
+  }
+}
+
+// A card marked read/watched gets a few seconds to be rated (👍/👎 feed the
+// AI suggestions) before it quietly leaves the shelf — with its own Undo,
+// same as a swipe-delete, in case the mark itself was a mistake.
+const MARK_REMOVE_DELAY_MS = 5000;
+
+function attachMarkAndRemove(swipe, cardEl, itemLabel, verbPast){
+  let timer = null;
+
+  function cancel(){
+    if(timer){ clearTimeout(timer); timer = null; }
+    cardEl.classList.remove('pending-remove');
+    const bar = cardEl.querySelector('.mark-remove-bar');
+    if(bar){ bar.style.transition = 'none'; bar.style.transform = 'scaleX(0)'; }
+  }
+
+  function schedule(onExpire){
+    cancel();
+    cardEl.classList.add('pending-remove');
+    const bar = cardEl.querySelector('.mark-remove-bar');
+    if(bar){
+      bar.style.transition = 'none';
+      bar.style.transform = 'scaleX(1)';
+      void bar.offsetWidth; // force reflow so the transition below actually animates
+      bar.style.transition = `transform ${MARK_REMOVE_DELAY_MS}ms linear`;
+      bar.style.transform = 'scaleX(0)';
+    }
+    timer = setTimeout(() => {
+      timer = null;
+      cardEl.classList.remove('pending-remove');
+      onExpire();
+    }, MARK_REMOVE_DELAY_MS);
+  }
+
+  function removeWithUndo(onUndoRestore){
+    const wrap = swipe.wrap;
+    const parent = wrap.parentNode;
+    const nextSibling = wrap.nextSibling;
+    swipe.resetPosition();
+    collapseAndDetach(wrap);
+    showUndoToast(`Marked ${verbPast}: "${itemLabel}"`, () => {
+      onUndoRestore();
+      restoreWrap(wrap, cardEl, parent, nextSibling);
+    });
+  }
+
+  return { schedule, cancel, removeWithUndo };
+}
 
 const shelves = [
   {
@@ -1024,6 +1105,8 @@ function makeCard(book, color, authorKey){
         <span class="stamp">Mark read</span>
       </div>
     </div>
+    <p class="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
+    <div class="mark-remove-bar"></div>
   `;
   const statusEl = card.querySelector('.status');
   const stampEl = card.querySelector('.stamp');
@@ -1065,15 +1148,29 @@ function makeCard(book, color, authorKey){
     }
   } catch(e){ /* storage unavailable */ }
 
-  // deleted on a previous visit — skip rendering it entirely
-  if(state.deleted) return null;
+  // deleted, or already marked read, on a previous visit — skip rendering
+  // it (its rating stays in the feedback cache above either way)
+  if(state.deleted || state.read) return null;
 
   function toggleRead(){
     if(swipe.isArmed()){ swipe.resetPosition(); return; }
     state.read = !state.read;
-    if(!state.read) state.rating = null; // clear rating if unmarking as read
+    if(state.read){
+      persist();
+      markRemove.schedule(() => {
+        markRemove.removeWithUndo(() => {
+          state.read = false;
+          state.rating = null;
+          render();
+          persist();
+        });
+      });
+    } else {
+      state.rating = null; // clear rating if unmarking as read
+      markRemove.cancel();
+      persist();
+    }
     render();
-    persist();
   }
 
   function setRating(r, evt){
@@ -1092,9 +1189,10 @@ function makeCard(book, color, authorKey){
 
   const swipe = attachSwipeDelete(card, {
     itemLabel: book.title,
-    onConfirm: () => { state.deleted = true; persist(); },
+    onConfirm: () => { markRemove.cancel(); state.deleted = true; persist(); },
     onUndo: () => { state.deleted = false; persist(); }
   });
+  const markRemove = attachMarkAndRemove(swipe, card, book.title, 'read');
 
   return swipe.wrap;
 }
@@ -1369,6 +1467,8 @@ function makeShowCard(item, color){
         <span class="stamp">Mark watched</span>
       </div>
     </div>
+    <p class="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
+    <div class="mark-remove-bar"></div>
   `;
   const statusEl = card.querySelector('.status');
   const stampEl = card.querySelector('.stamp');
@@ -1402,15 +1502,29 @@ function makeShowCard(item, color){
     }
   } catch(e){ /* storage unavailable */ }
 
-  // deleted on a previous visit — skip rendering it entirely
-  if(state.deleted) return null;
+  // deleted, or already marked watched, on a previous visit — skip
+  // rendering it (its rating stays in the feedback cache either way)
+  if(state.deleted || state.watched) return null;
 
   function toggleWatched(){
     if(swipe.isArmed()){ swipe.resetPosition(); return; }
     state.watched = !state.watched;
-    if(!state.watched) state.rating = null;
+    if(state.watched){
+      persist();
+      markRemove.schedule(() => {
+        markRemove.removeWithUndo(() => {
+          state.watched = false;
+          state.rating = null;
+          render();
+          persist();
+        });
+      });
+    } else {
+      state.rating = null;
+      markRemove.cancel();
+      persist();
+    }
     render();
-    persist();
   }
 
   function setRating(r, evt){
@@ -1429,9 +1543,10 @@ function makeShowCard(item, color){
 
   const swipe = attachSwipeDelete(card, {
     itemLabel: item.title,
-    onConfirm: () => { state.deleted = true; persist(); },
+    onConfirm: () => { markRemove.cancel(); state.deleted = true; persist(); },
     onUndo: () => { state.deleted = false; persist(); }
   });
+  const markRemove = attachMarkAndRemove(swipe, card, item.title, 'watched');
 
   return swipe.wrap;
 }
