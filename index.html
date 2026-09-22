@@ -169,6 +169,37 @@
   }
   .filter-toggle:disabled{ opacity:0.45; cursor:default; }
 
+  /* ---------- Genre/author/platform filters ---------- */
+  .filters-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    padding:0 24px 16px;
+    background:var(--paper-2);
+    border-bottom:1px solid var(--line);
+  }
+  .filters-row:empty{ display:none; }
+  .filter-select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.03em;
+    color:var(--ink);
+    background-color:var(--paper);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:7px 26px 7px 10px;
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234A4E42'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+    max-width:180px;
+  }
+  .filter-select:hover{ border-color:var(--brass); }
+  .filter-select:focus-visible{ outline:2px solid var(--spine); outline-offset:1px; }
+
   /* ---------- Shelf nav ---------- */
   nav.shelves{
     position:sticky; top:0; z-index:20;
@@ -402,14 +433,6 @@
     color:var(--sage);
     background:transparent;
   }
-  /* Completed (read/watched) cards are hidden from the active shelf by
-     default; the "Show read/watched" filter reveals them again via the
-     .show-completed class on the section's <main>. */
-  #mainBooks .swipe-wrap.is-complete,
-  #mainShows .swipe-wrap.is-complete{ display:none; }
-  #mainBooks.show-completed .swipe-wrap.is-complete,
-  #mainShows.show-completed .swipe-wrap.is-complete{ display:block; }
-
   .card.read{ background:#F3F0E6; }
   .card.read .stamp{
     border-color:var(--spine);
@@ -585,12 +608,14 @@
 
 <div class="view active" id="view-books">
   <div class="stats" id="statsBooks"></div>
+  <div class="filters-row" id="filtersBooks"></div>
   <nav class="shelves" id="shelfNavBooks"></nav>
   <main id="mainBooks"></main>
 </div>
 
 <div class="view" id="view-shows">
   <div class="stats" id="statsShows"></div>
+  <div class="filters-row" id="filtersShows"></div>
   <nav class="shelves" id="shelfNavShows"></nav>
   <main id="mainShows"></main>
 </div>
@@ -785,9 +810,10 @@ function restoreWrap(wrap, cardEl, parent, nextSibling){
 }
 
 // Shrinks a swipe-wrap in place (unlike collapseAndDetach, it stays in the
-// DOM) — used when a "read"/"watched" card leaves the active shelf so the
-// "Show read/watched" filter can reveal it again later at full size.
-function animateCollapseToHidden(wrap){
+// DOM) — used when a "read"/"watched" card leaves the active shelf so a
+// filter (genre/author/platform/"show read") can reveal it again at full
+// size later, with no rebuild needed.
+function animateCollapseToHidden(wrap, onDone){
   const height = wrap.getBoundingClientRect().height;
   wrap.style.height = height + 'px';
   wrap.style.overflow = 'hidden';
@@ -797,37 +823,39 @@ function animateCollapseToHidden(wrap){
     wrap.style.opacity = '0';
     wrap.style.marginBottom = '0px';
   });
-  // once the inline styles clear, the .is-complete CSS rule (the shelf
-  // isn't showing completed items) takes over and keeps it display:none
-  setTimeout(() => { expandWrapInPlace(wrap); }, 330);
+  setTimeout(() => {
+    expandWrapInPlace(wrap);
+    if(onDone) onDone();
+  }, 330);
 }
 
-// Flags a card's wrap as "complete" for the filter and, unless the
-// "show read/watched" filter is already open, animates it off the active
-// shelf. Always reversible for a few seconds via the Undo toast.
-function markCardComplete(wrap, filter, itemLabel, verbPast, onUndoRevert){
-  wrap.classList.add('is-complete');
+// Marks a card "complete" for its view's completion filter and, unless
+// that filter is already open, animates it off the active shelf. Always
+// reversible for a few seconds via the Undo toast. `recompute` re-applies
+// every active filter (genre/author/platform/"show read") to the shelf.
+function markCardComplete(wrap, filter, itemLabel, verbPast, onUndoRevert, recompute){
   filter.registerComplete();
-  if(!filter.isShowing()) animateCollapseToHidden(wrap);
+  if(filter.isShowing()) recompute();
+  else animateCollapseToHidden(wrap, recompute);
   showUndoToast(`Marked ${verbPast}: "${itemLabel}"`, () => {
-    wrap.classList.remove('is-complete');
-    expandWrapInPlace(wrap);
     filter.registerIncomplete();
-    onUndoRevert();
+    onUndoRevert(); // sets the card's state back to unread/unwatched, then recomputes
   });
 }
 
 // Reverses markCardComplete when a filter-revealed completed card is
 // tapped back to unread/unwatched directly (no Undo toast needed).
-function unmarkCardComplete(wrap, filter){
-  wrap.classList.remove('is-complete');
-  expandWrapInPlace(wrap);
+function unmarkCardComplete(wrap, filter, recompute){
   filter.registerIncomplete();
+  expandWrapInPlace(wrap);
+  recompute();
 }
 
 // Powers each view's "Show read/watched" toggle: tracks how many
 // completed items are on that shelf and whether they're currently visible.
-function createCompletionFilter(containerEl, btn, label){
+// `onToggle` re-applies the view's other filters (genre/author/platform)
+// whenever this one flips.
+function createCompletionFilter(btn, label, onToggle){
   let count = 0, showing = false;
 
   function render(){
@@ -839,8 +867,8 @@ function createCompletionFilter(containerEl, btn, label){
 
   btn.addEventListener('click', () => {
     showing = !showing;
-    containerEl.classList.toggle('show-completed', showing);
     render();
+    onToggle();
   });
 
   render();
@@ -1114,7 +1142,59 @@ filterToggleBooksBtn.type = 'button';
 filterToggleBooksBtn.className = 'filter-toggle';
 statsBooksEl.appendChild(statsBooksText);
 statsBooksEl.appendChild(filterToggleBooksBtn);
-const filterBooks = createCompletionFilter(main, filterToggleBooksBtn, 'read');
+
+// Genre and author filters — narrow the shelf down without hiding data;
+// each is independent and combines with the others and with "Show read".
+const filtersBooksEl = document.getElementById('filtersBooks');
+const genreSelectBooks = document.createElement('select');
+genreSelectBooks.className = 'filter-select';
+genreSelectBooks.setAttribute('aria-label', 'Filter books by genre');
+const authorSelectBooks = document.createElement('select');
+authorSelectBooks.className = 'filter-select';
+authorSelectBooks.setAttribute('aria-label', 'Filter books by author');
+filtersBooksEl.appendChild(genreSelectBooks);
+filtersBooksEl.appendChild(authorSelectBooks);
+
+genreSelectBooks.innerHTML = `<option value="all">All genres</option>` +
+  shelves.map(s => `<option value="${s.id}">${s.tag}</option>`).join('');
+
+const allBookAuthors = Array.from(new Set(
+  shelves.flatMap(s => [
+    ...s.groups.map(g => g.author),
+    ...(s.similar || []).map(x => x.name)
+  ])
+)).sort((a, b) => a.localeCompare(b));
+authorSelectBooks.innerHTML = `<option value="all">All authors</option>` +
+  allBookAuthors.map(a => `<option value="${a}">${a}</option>`).join('');
+
+const bookCardEntries = []; // { wrap, author, shelfId, isComplete }
+const bookShelfSections = []; // { id, el, navBtn }
+
+function recomputeBookVisibility(){
+  const genre = genreSelectBooks.value;
+  const author = authorSelectBooks.value;
+  const showCompleted = filterBooks.isShowing();
+  bookCardEntries.forEach(entry => {
+    const ok = (genre === 'all' || entry.shelfId === genre)
+      && (author === 'all' || entry.author === author)
+      && (showCompleted || !entry.isComplete());
+    entry.wrap.style.display = ok ? '' : 'none';
+  });
+  bookShelfSections.forEach(s => {
+    const show = genre === 'all' || s.id === genre;
+    s.el.style.display = show ? '' : 'none';
+    if(s.navBtn) s.navBtn.style.display = show ? '' : 'none';
+  });
+  main.querySelectorAll('.author-group').forEach(g => {
+    const anyVisible = Array.from(g.querySelectorAll('.swipe-wrap')).some(w => w.style.display !== 'none');
+    g.style.display = anyVisible ? '' : 'none';
+  });
+}
+
+genreSelectBooks.addEventListener('change', recomputeBookVisibility);
+authorSelectBooks.addEventListener('change', recomputeBookVisibility);
+
+const filterBooks = createCompletionFilter(filterToggleBooksBtn, 'read', recomputeBookVisibility);
 
 shelves.forEach((shelf, si) => {
   // nav button
@@ -1131,6 +1211,7 @@ shelves.forEach((shelf, si) => {
   section.className = 'shelf';
   section.id = shelf.id;
   section.style.setProperty('--tagcolor', shelf.color);
+  bookShelfSections.push({ id: shelf.id, el: section, navBtn: btn });
 
   section.innerHTML = `
     <div class="shelf-head">
@@ -1155,7 +1236,7 @@ shelves.forEach((shelf, si) => {
     const cardsWrap = g.querySelector('.cards');
     group.books.forEach(b => {
       shelfExistingTitles.add(b.title.toLowerCase());
-      const card = makeCard(b, shelf.color, group.author);
+      const card = makeCard(b, shelf.color, group.author, shelf.id);
       if(card){ allBookCount++; cardsWrap.appendChild(card); }
     });
     section.appendChild(g);
@@ -1176,7 +1257,7 @@ shelves.forEach((shelf, si) => {
   cardsWrap.className = 'cards';
   (shelf.similar || []).forEach(s => {
     shelfExistingTitles.add(s.pick.toLowerCase());
-    const card = makeCard({title:s.pick, author:s.name, hook:s.hook, status:'discover'}, shelf.color, s.name);
+    const card = makeCard({title:s.pick, author:s.name, hook:s.hook, status:'discover'}, shelf.color, s.name, shelf.id);
     if(card){ allBookCount++; cardsWrap.appendChild(card); }
   });
   section.appendChild(cardsWrap);
@@ -1186,6 +1267,8 @@ shelves.forEach((shelf, si) => {
 
   main.appendChild(section);
 });
+
+recomputeBookVisibility();
 
 function kindLabel(status){
   if(status==='want') return 'From your list';
@@ -1197,7 +1280,7 @@ function kindLabel(status){
 
 const STORAGE_KEY_PREFIX_LOCAL_CACHE = {}; // key -> {read, rating, title, author}, populated as cards load
 
-function makeCard(book, color, authorKey){
+function makeCard(book, color, authorKey, shelfId){
   const key = STORAGE_KEY_PREFIX + (authorKey+':'+book.title).toLowerCase().replace(/[^a-z0-9]+/g,'-');
   const card = document.createElement('div');
   card.className = 'card';
@@ -1266,7 +1349,7 @@ function makeCard(book, color, authorKey){
 
   function toggleRead(){
     if(swipe.isArmed()){ swipe.resetPosition(); return; }
-    const wasComplete = swipe.wrap.classList.contains('is-complete');
+    const wasRead = state.read;
     state.read = !state.read;
     if(state.read){
       persist();
@@ -1276,12 +1359,13 @@ function makeCard(book, color, authorKey){
           state.rating = null;
           render();
           persist();
-        });
+          recomputeBookVisibility();
+        }, recomputeBookVisibility);
       });
     } else {
       state.rating = null; // clear rating if unmarking as read
       markRemove.cancel();
-      if(wasComplete) unmarkCardComplete(swipe.wrap, filterBooks);
+      if(wasRead) unmarkCardComplete(swipe.wrap, filterBooks, recomputeBookVisibility);
       persist();
     }
     render();
@@ -1305,7 +1389,7 @@ function makeCard(book, color, authorKey){
     itemLabel: book.title,
     onConfirm: () => {
       markRemove.cancel();
-      if(swipe.wrap.classList.contains('is-complete')) filterBooks.registerIncomplete();
+      if(state.read) filterBooks.registerIncomplete();
       state.deleted = true;
       persist();
     },
@@ -1313,12 +1397,12 @@ function makeCard(book, color, authorKey){
   });
   const markRemove = attachMarkAndRemove(card);
 
-  // already read on a previous visit — keep it off the active shelf,
-  // behind the "Show read" filter, without playing the leave-animation
-  if(state.read){
-    swipe.wrap.classList.add('is-complete');
-    filterBooks.registerComplete();
-  }
+  bookCardEntries.push({ wrap: swipe.wrap, author: authorKey, shelfId, isComplete: () => state.read });
+
+  // already read on a previous visit — counts toward the "Show read"
+  // filter; recomputeBookVisibility() (called once all cards are built)
+  // is what actually keeps it off the active shelf, with no animation
+  if(state.read) filterBooks.registerComplete();
 
   return swipe.wrap;
 }
@@ -1373,9 +1457,20 @@ Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly th
       existingTitles.add(norm);
       const isKnownAuthor = shelfAuthors.some(a => a.toLowerCase() === it.author.toLowerCase());
       const kind = isKnownAuthor ? 'ai-known' : 'ai';
-      const card = makeCard({ title: it.title, author: it.author, hook: it.hook || '', status: kind }, shelf.color, it.author);
-      if(card){ allBookCount++; cardsWrap.appendChild(card); }
+      const card = makeCard({ title: it.title, author: it.author, hook: it.hook || '', status: kind }, shelf.color, it.author, shelf.id);
+      if(card){
+        allBookCount++;
+        cardsWrap.appendChild(card);
+        if(!allBookAuthors.includes(it.author)){
+          allBookAuthors.push(it.author);
+          const opt = document.createElement('option');
+          opt.value = it.author;
+          opt.textContent = it.author;
+          authorSelectBooks.appendChild(opt);
+        }
+      }
     });
+    recomputeBookVisibility();
 
     if(!items.length){
       alert('No new suggestions came back — try again in a moment.');
@@ -1541,7 +1636,49 @@ filterToggleShowsBtn.type = 'button';
 filterToggleShowsBtn.className = 'filter-toggle';
 statsShowsEl.appendChild(statsShowsText);
 statsShowsEl.appendChild(filterToggleShowsBtn);
-const filterShows = createCompletionFilter(mainShows, filterToggleShowsBtn, 'watched');
+
+// Genre and platform filters, same pattern as the Books view.
+const filtersShowsEl = document.getElementById('filtersShows');
+const genreSelectShows = document.createElement('select');
+genreSelectShows.className = 'filter-select';
+genreSelectShows.setAttribute('aria-label', 'Filter shows by genre');
+const platformSelectShows = document.createElement('select');
+platformSelectShows.className = 'filter-select';
+platformSelectShows.setAttribute('aria-label', 'Filter shows by streaming service');
+filtersShowsEl.appendChild(genreSelectShows);
+filtersShowsEl.appendChild(platformSelectShows);
+
+genreSelectShows.innerHTML = `<option value="all">All genres</option>` +
+  showShelves.map(s => `<option value="${s.id}">${s.tag}</option>`).join('');
+
+const allPlatforms = Array.from(new Set(shows.map(s => s.platform))).sort((a, b) => a.localeCompare(b));
+platformSelectShows.innerHTML = `<option value="all">All platforms</option>` +
+  allPlatforms.map(p => `<option value="${p}">${p}</option>`).join('');
+
+const showCardEntries = []; // { wrap, platform, shelfId, isComplete }
+const showShelfSections = []; // { id, el, navBtn }
+
+function recomputeShowVisibility(){
+  const genre = genreSelectShows.value;
+  const platform = platformSelectShows.value;
+  const showCompleted = filterShows.isShowing();
+  showCardEntries.forEach(entry => {
+    const ok = (genre === 'all' || entry.shelfId === genre)
+      && (platform === 'all' || entry.platform === platform)
+      && (showCompleted || !entry.isComplete());
+    entry.wrap.style.display = ok ? '' : 'none';
+  });
+  showShelfSections.forEach(s => {
+    const show = genre === 'all' || s.id === genre;
+    s.el.style.display = show ? '' : 'none';
+    if(s.navBtn) s.navBtn.style.display = show ? '' : 'none';
+  });
+}
+
+genreSelectShows.addEventListener('change', recomputeShowVisibility);
+platformSelectShows.addEventListener('change', recomputeShowVisibility);
+
+const filterShows = createCompletionFilter(filterToggleShowsBtn, 'watched', recomputeShowVisibility);
 
 showShelves.forEach((shelf, si) => {
   const btn = document.createElement('button');
@@ -1556,6 +1693,7 @@ showShelves.forEach((shelf, si) => {
   section.className = 'shelf';
   section.id = shelf.id;
   section.style.setProperty('--tagcolor', shelf.color);
+  showShelfSections.push({ id: shelf.id, el: section, navBtn: btn });
   section.innerHTML = `
     <div class="shelf-head">
       <span class="shelf-tag" style="background:${shelf.color}">${shelf.tag}</span>
@@ -1567,7 +1705,7 @@ showShelves.forEach((shelf, si) => {
   const cardsWrap = document.createElement('div');
   cardsWrap.className = 'cards';
   shelf.items.forEach(item => {
-    const card = makeShowCard(item, shelf.color);
+    const card = makeShowCard(item, shelf.color, shelf.id);
     if(card){
       allShowCount++;
       if(!item.currentlyStreaming) notStreamingCount++;
@@ -1579,7 +1717,9 @@ showShelves.forEach((shelf, si) => {
   mainShows.appendChild(section);
 });
 
-function makeShowCard(item, color){
+recomputeShowVisibility();
+
+function makeShowCard(item, color, shelfId){
   const key = WATCH_STORAGE_KEY_PREFIX + (item.platform+':'+item.title).toLowerCase().replace(/[^a-z0-9]+/g,'-');
   const card = document.createElement('div');
   card.className = 'card';
@@ -1643,7 +1783,7 @@ function makeShowCard(item, color){
 
   function toggleWatched(){
     if(swipe.isArmed()){ swipe.resetPosition(); return; }
-    const wasComplete = swipe.wrap.classList.contains('is-complete');
+    const wasWatched = state.watched;
     state.watched = !state.watched;
     if(state.watched){
       persist();
@@ -1653,12 +1793,13 @@ function makeShowCard(item, color){
           state.rating = null;
           render();
           persist();
-        });
+          recomputeShowVisibility();
+        }, recomputeShowVisibility);
       });
     } else {
       state.rating = null;
       markRemove.cancel();
-      if(wasComplete) unmarkCardComplete(swipe.wrap, filterShows);
+      if(wasWatched) unmarkCardComplete(swipe.wrap, filterShows, recomputeShowVisibility);
       persist();
     }
     render();
@@ -1682,7 +1823,7 @@ function makeShowCard(item, color){
     itemLabel: item.title,
     onConfirm: () => {
       markRemove.cancel();
-      if(swipe.wrap.classList.contains('is-complete')) filterShows.registerIncomplete();
+      if(state.watched) filterShows.registerIncomplete();
       state.deleted = true;
       persist();
     },
@@ -1690,12 +1831,12 @@ function makeShowCard(item, color){
   });
   const markRemove = attachMarkAndRemove(card);
 
-  // already watched on a previous visit — keep it off the active shelf,
-  // behind the "Show watched" filter, without playing the leave-animation
-  if(state.watched){
-    swipe.wrap.classList.add('is-complete');
-    filterShows.registerComplete();
-  }
+  showCardEntries.push({ wrap: swipe.wrap, platform: item.platform, shelfId, isComplete: () => state.watched });
+
+  // already watched on a previous visit — counts toward the "Show watched"
+  // filter; recomputeShowVisibility() (called once all cards are built)
+  // is what actually keeps it off the active shelf, with no animation
+  if(state.watched) filterShows.registerComplete();
 
   return swipe.wrap;
 }
