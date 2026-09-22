@@ -353,6 +353,98 @@
     animation:stampIn .28s ease;
   }
   .card.read .title{ text-decoration:line-through; text-decoration-color:rgba(34,38,31,0.35); }
+
+  /* ---------- Swipe-to-delete ---------- */
+  .swipe-wrap{
+    position:relative;
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .swipe-wrap.removing{
+    transition:height .32s ease, opacity .28s ease, margin-bottom .32s ease;
+  }
+  .swipe-wrap .delete-bg{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    padding-right:14px;
+    background:var(--spine-2);
+    border-radius:3px;
+  }
+  .delete-confirm-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:#fff;
+    background:transparent;
+    border:1.5px solid rgba(255,255,255,0.75);
+    border-radius:2px;
+    padding:7px 10px;
+    cursor:pointer;
+    opacity:0;
+    transform:scale(.88);
+    transition:opacity .15s ease, transform .15s ease;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .swipe-wrap.armed .delete-confirm-btn{
+    opacity:1;
+    transform:scale(1);
+    pointer-events:auto;
+  }
+  .swipe-wrap .card{
+    position:relative;
+    z-index:1;
+    background:#FBF8F1;
+    transition:transform .22s cubic-bezier(.22,.7,.3,1);
+    touch-action:pan-y;
+    user-select:none;
+  }
+  .swipe-wrap.dragging .card{ transition:none; }
+  .swipe-wrap.armed .card{ box-shadow:none; }
+
+  /* ---------- Undo toast ---------- */
+  .undo-toast{
+    position:fixed;
+    left:50%;
+    bottom:22px;
+    transform:translate(-50%, 16px);
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.01em;
+    padding:12px 14px 12px 16px;
+    border-radius:4px;
+    box-shadow:0 10px 30px -10px rgba(0,0,0,0.5);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:1000;
+    max-width:calc(100vw - 32px);
+  }
+  .undo-toast.show{ opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
+  .undo-toast .undo-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--paper);
+    background:transparent;
+    border:1.5px solid var(--brass);
+    border-radius:2px;
+    padding:5px 9px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .undo-toast .undo-btn:hover{ background:var(--brass); color:var(--ink); }
+
   @keyframes stampIn{
     0%{ transform:scale(1.6) rotate(-8deg); opacity:0; }
     60%{ transform:scale(0.95) rotate(2deg); opacity:1; }
@@ -442,6 +534,171 @@
 
 <script>
 const STORAGE_KEY_PREFIX = 'reading-list:';
+
+// ---------- Swipe-to-delete (shared by Books & Shows) ----------
+// Two-step by design: a left swipe only *arms* the card (reveals a Delete
+// button behind it) — nothing is removed until that button is deliberately
+// tapped, which also gives an "Undo" toast a few seconds to catch mistakes.
+let armedSwipeWrap = null;
+
+function showUndoToast(message, onUndo){
+  const existing = document.getElementById('undoToast');
+  if(existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'undoToast';
+  toast.className = 'undo-toast';
+  toast.innerHTML = `<span></span><button type="button" class="undo-btn">Undo</button>`;
+  toast.querySelector('span').textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  let settled = false;
+  const timer = setTimeout(dismiss, 5000);
+  function dismiss(){
+    if(settled) return;
+    settled = true;
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 220);
+  }
+  toast.querySelector('.undo-btn').addEventListener('click', () => {
+    if(settled) return;
+    settled = true;
+    clearTimeout(timer);
+    toast.remove();
+    onUndo();
+  });
+}
+
+function attachSwipeDelete(cardEl, { itemLabel, onConfirm, onUndo }){
+  const REVEAL = 88;
+  const ARM_THRESHOLD = 40;
+  const AUTO_DISMISS_MS = 4500;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'swipe-wrap';
+
+  const deleteBg = document.createElement('div');
+  deleteBg.className = 'delete-bg';
+  deleteBg.setAttribute('aria-hidden', 'true');
+  deleteBg.innerHTML = `<button type="button" class="delete-confirm-btn">🗑 Delete</button>`;
+  const confirmBtn = deleteBg.querySelector('.delete-confirm-btn');
+
+  wrap.appendChild(deleteBg);
+  wrap.appendChild(cardEl);
+
+  let dragging = false, locked = null, startX = 0, startY = 0, armTimer = null;
+
+  function isArmed(){ return wrap.classList.contains('armed'); }
+
+  function setArmed(on){
+    wrap.classList.toggle('armed', on);
+    clearTimeout(armTimer);
+    if(on){
+      if(armedSwipeWrap && armedSwipeWrap !== wrap && armedSwipeWrap.__resetSwipe) armedSwipeWrap.__resetSwipe();
+      armedSwipeWrap = wrap;
+      armTimer = setTimeout(resetPosition, AUTO_DISMISS_MS);
+    } else if(armedSwipeWrap === wrap){
+      armedSwipeWrap = null;
+    }
+  }
+
+  function resetPosition(){
+    cardEl.style.transform = '';
+    setArmed(false);
+  }
+  wrap.__resetSwipe = resetPosition;
+
+  function onPointerDown(e){
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    dragging = true;
+    locked = null;
+    startX = e.clientX;
+    startY = e.clientY;
+    wrap.classList.add('dragging');
+  }
+
+  function onPointerMove(e){
+    if(!dragging) return;
+    const moveX = e.clientX - startX, moveY = e.clientY - startY;
+    if(locked === null){
+      if(Math.abs(moveX) < 6 && Math.abs(moveY) < 6) return;
+      locked = Math.abs(moveX) > Math.abs(moveY) ? 'x' : 'y';
+    }
+    if(locked !== 'x') return;
+    if(e.cancelable) e.preventDefault();
+    const base = isArmed() ? -REVEAL : 0;
+    let translate = base + moveX;
+    translate = Math.min(0, Math.max(translate, -(REVEAL + 24)));
+    cardEl.style.transform = `translateX(${translate}px)`;
+  }
+
+  function onPointerUp(e){
+    if(!dragging) return;
+    dragging = false;
+    wrap.classList.remove('dragging');
+    const wasLockedX = locked === 'x';
+    locked = null;
+    if(!wasLockedX) return;
+    const base = isArmed() ? -REVEAL : 0;
+    const moveX = (e.clientX ?? startX) - startX;
+    const finalTranslate = base + moveX;
+    if(finalTranslate <= -ARM_THRESHOLD){
+      cardEl.style.transform = `translateX(-${REVEAL}px)`;
+      setArmed(true);
+    } else {
+      resetPosition();
+    }
+  }
+
+  cardEl.addEventListener('pointerdown', onPointerDown);
+  cardEl.addEventListener('pointermove', onPointerMove);
+  cardEl.addEventListener('pointerup', onPointerUp);
+  cardEl.addEventListener('pointercancel', () => {
+    dragging = false; locked = null;
+    wrap.classList.remove('dragging');
+    resetPosition();
+  });
+
+  confirmBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearTimeout(armTimer);
+    if(armedSwipeWrap === wrap) armedSwipeWrap = null;
+    const parent = wrap.parentNode;
+    const nextSibling = wrap.nextSibling;
+    const height = wrap.getBoundingClientRect().height;
+    wrap.style.height = height + 'px';
+    wrap.style.overflow = 'hidden';
+    wrap.classList.add('removing');
+    requestAnimationFrame(() => {
+      wrap.style.height = '0px';
+      wrap.style.opacity = '0';
+      wrap.style.marginBottom = '0px';
+    });
+    setTimeout(() => { if(wrap.parentNode) wrap.parentNode.removeChild(wrap); }, 330);
+
+    onConfirm();
+
+    showUndoToast(`Removed "${itemLabel}"`, () => {
+      onUndo();
+      wrap.classList.remove('removing', 'armed');
+      wrap.style.removeProperty('height');
+      wrap.style.removeProperty('opacity');
+      wrap.style.removeProperty('margin-bottom');
+      wrap.style.removeProperty('overflow');
+      cardEl.style.transform = '';
+      if(parent){
+        if(nextSibling && nextSibling.parentNode === parent) parent.insertBefore(wrap, nextSibling);
+        else parent.appendChild(wrap);
+      }
+    });
+  });
+
+  return { wrap, isArmed, resetPosition };
+}
+
+document.addEventListener('click', (e) => {
+  if(armedSwipeWrap && !armedSwipeWrap.contains(e.target)) armedSwipeWrap.__resetSwipe();
+}, true);
 
 const shelves = [
   {
@@ -699,10 +956,9 @@ shelves.forEach((shelf, si) => {
     `;
     const cardsWrap = g.querySelector('.cards');
     group.books.forEach(b => {
-      allBookCount++;
       shelfExistingTitles.add(b.title.toLowerCase());
       const card = makeCard(b, shelf.color, group.author);
-      cardsWrap.appendChild(card);
+      if(card){ allBookCount++; cardsWrap.appendChild(card); }
     });
     section.appendChild(g);
   });
@@ -721,10 +977,9 @@ shelves.forEach((shelf, si) => {
   const cardsWrap = document.createElement('div');
   cardsWrap.className = 'cards';
   (shelf.similar || []).forEach(s => {
-    allBookCount++;
     shelfExistingTitles.add(s.pick.toLowerCase());
     const card = makeCard({title:s.pick, author:s.name, hook:s.hook, status:'discover'}, shelf.color, s.name);
-    cardsWrap.appendChild(card);
+    if(card){ allBookCount++; cardsWrap.appendChild(card); }
   });
   section.appendChild(cardsWrap);
 
@@ -771,7 +1026,7 @@ function makeCard(book, color, authorKey){
   const upBtn = card.querySelector('.thumb-btn.up');
   const downBtn = card.querySelector('.thumb-btn.down');
 
-  let state = { read:false, rating:null };
+  let state = { read:false, rating:null, deleted:false };
 
   function render(){
     card.classList.toggle('read', state.read);
@@ -782,8 +1037,9 @@ function makeCard(book, color, authorKey){
   }
 
   function persist(){
-    const payload = JSON.stringify({ read: state.read, rating: state.rating, title: book.title, author: book.author });
-    STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author };
+    const payload = JSON.stringify({ read: state.read, rating: state.rating, deleted: state.deleted, title: book.title, author: book.author });
+    if(state.deleted){ delete STORAGE_KEY_PREFIX_LOCAL_CACHE[key]; }
+    else { STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author }; }
     try { localStorage.setItem(key, payload); } catch(e){ /* storage unavailable */ }
   }
 
@@ -795,14 +1051,21 @@ function makeCard(book, color, authorKey){
         const parsed = JSON.parse(raw);
         state.read = !!parsed.read;
         state.rating = parsed.rating || null;
+        state.deleted = !!parsed.deleted;
       } catch(e){
         state.read = raw === 'true';
       }
-      STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author };
+      if(!state.deleted){
+        STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author };
+      }
     }
   } catch(e){ /* storage unavailable */ }
 
+  // deleted on a previous visit — skip rendering it entirely
+  if(state.deleted) return null;
+
   function toggleRead(){
+    if(swipe.isArmed()){ swipe.resetPosition(); return; }
     state.read = !state.read;
     if(!state.read) state.rating = null; // clear rating if unmarking as read
     render();
@@ -822,7 +1085,14 @@ function makeCard(book, color, authorKey){
   downBtn.addEventListener('click', (e) => setRating('down', e));
 
   render();
-  return card;
+
+  const swipe = attachSwipeDelete(card, {
+    itemLabel: book.title,
+    onConfirm: () => { state.deleted = true; persist(); },
+    onUndo: () => { state.deleted = false; persist(); }
+  });
+
+  return swipe.wrap;
 }
 
 // ---------- Feedback-aware AI suggestions ----------
@@ -873,11 +1143,10 @@ Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly th
       const norm = it.title.toLowerCase();
       if(existingTitles.has(norm)) return;
       existingTitles.add(norm);
-      allBookCount++;
       const isKnownAuthor = shelfAuthors.some(a => a.toLowerCase() === it.author.toLowerCase());
       const kind = isKnownAuthor ? 'ai-known' : 'ai';
       const card = makeCard({ title: it.title, author: it.author, hook: it.hook || '', status: kind }, shelf.color, it.author);
-      cardsWrap.appendChild(card);
+      if(card){ allBookCount++; cardsWrap.appendChild(card); }
     });
 
     if(!items.length){
@@ -1060,9 +1329,12 @@ showShelves.forEach((shelf, si) => {
   const cardsWrap = document.createElement('div');
   cardsWrap.className = 'cards';
   shelf.items.forEach(item => {
-    allShowCount++;
-    if(!item.currentlyStreaming) notStreamingCount++;
-    cardsWrap.appendChild(makeShowCard(item, shelf.color));
+    const card = makeShowCard(item, shelf.color);
+    if(card){
+      allShowCount++;
+      if(!item.currentlyStreaming) notStreamingCount++;
+      cardsWrap.appendChild(card);
+    }
   });
   section.appendChild(cardsWrap);
 
@@ -1099,7 +1371,7 @@ function makeShowCard(item, color){
   const upBtn = card.querySelector('.thumb-btn.up');
   const downBtn = card.querySelector('.thumb-btn.down');
 
-  let state = { watched:false, rating:null };
+  let state = { watched:false, rating:null, deleted:false };
 
   // Reuses the .read class/animation for the "watched" state — same
   // stamp/strikethrough/thumbs behaviour as books, just relabelled.
@@ -1112,7 +1384,7 @@ function makeShowCard(item, color){
   }
 
   function persist(){
-    const payload = JSON.stringify({ watched: state.watched, rating: state.rating, title: item.title, platform: item.platform });
+    const payload = JSON.stringify({ watched: state.watched, rating: state.rating, deleted: state.deleted, title: item.title, platform: item.platform });
     try { localStorage.setItem(key, payload); } catch(e){ /* storage unavailable */ }
   }
 
@@ -1122,10 +1394,15 @@ function makeShowCard(item, color){
       const parsed = JSON.parse(raw);
       state.watched = !!parsed.watched;
       state.rating = parsed.rating || null;
+      state.deleted = !!parsed.deleted;
     }
   } catch(e){ /* storage unavailable */ }
 
+  // deleted on a previous visit — skip rendering it entirely
+  if(state.deleted) return null;
+
   function toggleWatched(){
+    if(swipe.isArmed()){ swipe.resetPosition(); return; }
     state.watched = !state.watched;
     if(!state.watched) state.rating = null;
     render();
@@ -1145,7 +1422,14 @@ function makeShowCard(item, color){
   downBtn.addEventListener('click', (e) => setRating('down', e));
 
   render();
-  return card;
+
+  const swipe = attachSwipeDelete(card, {
+    itemLabel: item.title,
+    onConfirm: () => { state.deleted = true; persist(); },
+    onUndo: () => { state.deleted = false; persist(); }
+  });
+
+  return swipe.wrap;
 }
 
 document.getElementById('statsShows').innerHTML =
