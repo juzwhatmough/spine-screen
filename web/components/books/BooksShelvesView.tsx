@@ -6,7 +6,7 @@ import { BookShelf } from "./BookShelf";
 import { AddBookFab } from "./AddBookFab";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
-import { useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
+import { PendingExitContext, useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { BookShelfData } from "@/lib/books/groupItems";
 
@@ -27,8 +27,15 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
   // used only to pre-fill the Add-a-book modal's Genre field.
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
 
-  const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
-    useStatusTransitions(statusView);
+  const {
+    isDone,
+    getRating,
+    leavingView,
+    animatingOut,
+    pendingExit,
+    handleStatusChange,
+    handleRatingChange,
+  } = useStatusTransitions(statusView, "read");
   const { hiddenIds } = useDelete();
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
@@ -105,6 +112,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
         onActiveChange={setActiveGenre}
       />
 
+      <PendingExitContext.Provider value={pendingExit}>
       <main>
         {filtered.length === 0 ? (
           <p className="empty-state">
@@ -126,6 +134,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
           ))
         )}
       </main>
+      </PendingExitContext.Provider>
 
       <AddBookFab activeGenre={activeGenre} />
     </>

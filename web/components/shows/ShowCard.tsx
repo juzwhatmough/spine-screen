@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useContext } from "react";
 import { toggleRead, setRating, updateShowPlatform } from "@/lib/actions/listItems";
 import { formatRelativeTime, isStale } from "@/lib/shows/relativeTime";
 import { SwipeDelete } from "@/components/ui/SwipeDelete";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
+import { PendingExitContext } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
 // Same interaction model as BookCard (shared toggleRead/setRating actions
@@ -34,11 +35,12 @@ export function ShowCard({
   watched: boolean;
   rating: ListItemRow["rating"];
   exiting?: boolean;
-  onStatusChange: (itemId: string, nowWatched: boolean) => void;
+  onStatusChange: (itemId: string, nowWatched: boolean, title?: string) => void;
   onRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
 }) {
   const [, startTransition] = useTransition();
   const { requestDelete } = useDelete();
+  const pending = useContext(PendingExitContext).has(item.id) && !exiting;
   const [, startSaveTransition] = useTransition();
 
   const [platform, setPlatform] = useState(item.creator ?? "Unknown platform");
@@ -50,7 +52,7 @@ export function ShowCard({
 
   function handleToggle() {
     const nowWatched = !watched;
-    onStatusChange(item.id, nowWatched);
+    onStatusChange(item.id, nowWatched, item.title);
     startTransition(() => {
       toggleRead(item.id);
     });
@@ -113,7 +115,7 @@ export function ShowCard({
   return (
     <SwipeDelete onDelete={() => requestDelete(item)}>
       <div
-        className={`card${watched ? " read" : ""}${exiting ? " exiting" : ""}`}
+        className={`card${watched ? " read" : ""}${exiting ? " exiting" : ""}${pending ? " pending-remove" : ""}`}
         style={{ "--tagcolor": color } as React.CSSProperties}
         tabIndex={0}
         onClick={handleToggle}
@@ -202,6 +204,8 @@ export function ShowCard({
             <span className="stamp">{watched ? "Watched ✓" : "Mark watched"}</span>
           </div>
         </div>
+        <p className="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
+        <div className="mark-remove-bar" />
       </div>
     </SwipeDelete>
   );

@@ -838,3 +838,31 @@ footer{
   color: var(--ink-soft);
   margin: 6px 0 0;
 }
+
+/* ---------- Mark read/watched: rate window countdown ---------- */
+.mark-remove-bar{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--sage);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+}
+.card.pending-remove .mark-remove-bar{
+  opacity: 1;
+  animation: markCountdown 5s linear forwards;
+}
+@keyframes markCountdown{ from{ transform: scaleX(1); } to{ transform: scaleX(0); } }
+.mark-hint{
+  display: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  margin: 8px 0 0;
+}
+.card.pending-remove .mark-hint{ display: block; }
