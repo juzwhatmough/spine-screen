@@ -7,6 +7,7 @@ import { AddBookFab } from "./AddBookFab";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
 import { useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
+import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { BookShelfData } from "@/lib/books/groupItems";
 
 // Client boundary that owns filter state and does the actual client-side
@@ -28,6 +29,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
 
   const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
     useStatusTransitions(statusView);
+  const { hiddenIds } = useDelete();
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
   const authorOptions = useMemo(() => {
@@ -46,6 +48,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
           .map((g) => ({
             ...g,
             items: g.items.filter((item) => {
+              if (hiddenIds.has(item.id)) return false;
               const done = isDone(item);
               const matchesStatus = statusView === "finished" ? done : !done;
               return matchesStatus || leavingView(item.id);
@@ -54,7 +57,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
           .filter((g) => g.items.length > 0),
       }))
       .filter((s) => s.groups.length > 0);
-  }, [shelves, genre, author, statusView, isDone, leavingView]);
+  }, [shelves, genre, author, statusView, isDone, leavingView, hiddenIds]);
 
   const titleCount = useMemo(
     () => filtered.reduce((sum, s) => sum + s.groups.reduce((n, g) => n + g.items.length, 0), 0),

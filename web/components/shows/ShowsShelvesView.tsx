@@ -7,6 +7,7 @@ import { AddShowFab } from "./AddShowFab";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
 import { useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
+import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { ShowShelfData } from "@/lib/shows/groupItems";
 
 // Same pattern as BooksShelvesView.tsx (Genre + Platform instead of
@@ -21,6 +22,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
 
   const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
     useStatusTransitions(statusView);
+  const { hiddenIds } = useDelete();
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
   const platformOptions = useMemo(() => {
@@ -35,6 +37,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
       .map((s) => ({
         ...s,
         items: s.items.filter((i) => {
+          if (hiddenIds.has(i.id)) return false;
           if (platform && i.creator !== platform) return false;
           const done = isDone(i);
           const matchesStatus = statusView === "finished" ? done : !done;
@@ -42,7 +45,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
         }),
       }))
       .filter((s) => s.items.length > 0);
-  }, [shelves, genre, platform, statusView, isDone, leavingView]);
+  }, [shelves, genre, platform, statusView, isDone, leavingView, hiddenIds]);
 
   const titleCount = useMemo(
     () => filtered.reduce((sum, s) => sum + s.items.length, 0),
