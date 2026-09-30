@@ -106,8 +106,11 @@ be overkill.
   small orange "⚠ Not currently streaming" badge with the verification
   note explaining where to actually find them (rent/buy, moved platforms,
   etc.) — 8 of 93 seed titles currently carry this badge
-- No AI "More suggestions" yet — would need a shows-specific prompt in
-  `api/suggest.js` (or a second endpoint) if that's ever wanted
+- "🔄 More suggestions" per shelf (reuses `api/suggest.js` with a shows
+  prompt that never names a platform). Results arrive as "Unconfirmed" with
+  an orange badge; the ✎ button on any card edits its streaming service,
+  saved in `localStorage` (`shelf-platform:` keys) with a "checked X ago"
+  note that turns orange after 60 days
 
 ## Known constraints / non-goals (for now)
 
@@ -116,8 +119,10 @@ be overkill.
 - No database — content changes are code changes
 - No build tooling on purpose — keep it a single deployable HTML file
   plus one function, so it stays easy to hand-edit and easy to reason about
-- AI suggestions ("🔄 More suggestions") only exist for Books; Shows is
-  browse-only until/unless that's explicitly asked for
+- Titles added via the + button are stored in `localStorage`
+  (`shelf-custom:books` / `shelf-custom:shows`) and merged into the arrays at load;
+  the add form's title search uses Google Books (browser) and `api/search-shows.js`
+  (TMDB, optional `TMDB_API_KEY`)
 
 ## Where this might go next
 

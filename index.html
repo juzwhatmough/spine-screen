@@ -640,6 +640,20 @@
   .ac-item:last-child{ border-bottom:none; }
   .ac-item:hover, .ac-item:focus-visible{ background:var(--paper-2); }
   .ac-meta{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+  .card .kind{ display:flex; align-items:center; gap:6px; }
+  .kind-edit-btn{ background:none; border:none; color:var(--tagcolor, var(--spine)); opacity:0.6; font-size:12px; line-height:1; padding:4px; cursor:pointer; }
+  .kind-edit-btn:hover, .kind-edit-btn:focus-visible{ opacity:1; }
+  .kind-edit{ display:flex; align-items:center; gap:4px; flex:1; }
+  .kind-edit input{
+    flex:1; min-width:0; font-family:'IBM Plex Mono', monospace; font-size:16px;
+    text-transform:none; letter-spacing:normal; color:var(--ink); background:#fff;
+    border:1px solid var(--line); border-radius:2px; padding:3px 6px;
+  }
+  .kind-edit button{ background:none; border:none; font-size:14px; line-height:1; padding:4px 5px; cursor:pointer; color:var(--ink-soft); }
+  .kind-edit button:hover{ color:var(--ink); }
+  .card .verified-note{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft); opacity:0.75; margin:-4px 0 8px; }
+  .card .verified-note.stale{ color:var(--warn); opacity:0.85; }
+  .card .edit-error{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--warn); margin:-4px 0 8px; }
   .add-error{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--warn); margin:0 0 14px; }
   .add-submit{
     font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.05em; text-transform:uppercase;
@@ -698,7 +712,7 @@
   <main id="mainShows"></main>
 </div>
 
-<footer>Tap a card to mark it read or watched, then 👍 or 👎 it · Tap "More suggestions" on any book shelf for fresh picks based on your ratings · Progress is saved on this device</footer>
+<footer>Tap a card to mark it read or watched, then 👍 or 👎 it · Tap "More suggestions" on any shelf for fresh picks based on your ratings · Progress is saved on this device</footer>
 
 <button type="button" class="fab" id="addFab" aria-label="Add a book">
   <span class="fab-icon" aria-hidden="true">
@@ -1789,6 +1803,19 @@ platformSelectShows.innerHTML = `<option value="all">All platforms</option>` +
   allPlatforms.map(p => `<option value="${p}">${p}</option>`).join('');
 
 const showCardEntries = []; // { wrap, platform, shelfId, isComplete }
+const SHOW_FEEDBACK_CACHE = {}; // key -> { rating, title }, feeds the shows "More suggestions" prompt
+
+// Keep the platform filter (and the type-ahead list in the add form) in
+// step when a card is edited or a suggestion arrives with a new platform.
+function registerPlatformOption(name){
+  if(!name || allPlatforms.includes(name)) return;
+  allPlatforms.push(name);
+  allPlatforms.sort((a, b) => a.localeCompare(b));
+  const cur = platformSelectShows.value;
+  platformSelectShows.innerHTML = `<option value="all">All platforms</option>` +
+    allPlatforms.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  platformSelectShows.value = allPlatforms.includes(cur) || cur === 'all' ? cur : 'all';
+}
 const showShelfSections = []; // { id, el, navBtn }
 
 function recomputeShowVisibility(){
@@ -1847,10 +1874,85 @@ showShelves.forEach((shelf, si) => {
   });
   section.appendChild(cardsWrap);
 
+  // "More to explore" — AI suggestions, same idea as the Books shelves but
+  // starting empty (shows have no seed suggestions).
+  const subheadRow = document.createElement('div');
+  subheadRow.className = 'subhead-row';
+  subheadRow.innerHTML = `
+    <span class="subhead">More to explore</span>
+    <button type="button" class="refresh-btn">🔄 More suggestions</button>
+  `;
+  section.appendChild(subheadRow);
+  const suggestWrap = document.createElement('div');
+  suggestWrap.className = 'cards';
+  section.appendChild(suggestWrap);
+  const shelfShowTitles = new Set(shows.map(x => x.title.toLowerCase()));
+  const refreshBtn = subheadRow.querySelector('.refresh-btn');
+  refreshBtn.addEventListener('click', () => fetchMoreShowSuggestions(shelf, suggestWrap, shelfShowTitles, refreshBtn));
+
   mainShows.appendChild(section);
 });
 
 recomputeShowVisibility();
+
+
+// ---------- Feedback-aware AI suggestions (Shows) ----------
+// Deliberately never asks the model for a streaming platform — there's no
+// live availability data, so suggestions arrive as "Unconfirmed" and the
+// reader sets the real platform with the ✎ button once they've checked.
+async function fetchMoreShowSuggestions(shelf, cardsWrap, knownTitles, btn){
+  btn.disabled = true;
+  btn.textContent = 'Finding more…';
+  try {
+    const fb = Object.values(SHOW_FEEDBACK_CACHE);
+    const liked = fb.filter(e => e.rating === 'up').map(e => e.title);
+    const disliked = fb.filter(e => e.rating === 'down').map(e => e.title);
+    const onShelf = shelf.items.map(i => i.title);
+    const list = a => a.length ? a.join('; ') : 'none rated yet';
+    const prompt = `You are a TV/film recommendation engine inside a personal watchlist app.
+Genre shelf: "${shelf.tag}".
+Shows/films already on this shelf: ${onShelf.length ? onShelf.join('; ') : 'none yet'}.
+Reader has liked (after watching): ${list(liked)}.
+Reader has disliked (after watching): ${list(disliked)}.
+Do not suggest any of these titles, already in the reader's list: ${Array.from(knownTitles).join('; ') || 'none'}.
+Suggest exactly 4 shows or films for this genre that the reader doesn't already have, leaning toward what they liked and away from anything similar to what they disliked.
+IMPORTANT: Do not name a streaming platform or make any claim about where or whether this is currently available to watch — we cannot verify real-time Australian streaming availability, so never assert one. Only return a title and a one-sentence hook.
+Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly this shape:
+[{"title":"...","hook":"one sentence, under 20 words, no spoilers, no mention of any streaming service"}]`;
+
+    const response = await fetch('/api/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || 'Request failed');
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    let added = 0;
+    items.forEach(it => {
+      if(!it || !it.title) return;
+      const norm = String(it.title).toLowerCase();
+      if(knownTitles.has(norm)) return;
+      knownTitles.add(norm);
+      const card = makeShowCard({
+        title: escapeHtml(it.title), platform: 'Unconfirmed', genre: shelf.tag,
+        note: null, currentlyStreaming: true, unconfirmed: true,
+        hook: escapeHtml(it.hook || '')
+      }, shelf.color, shelf.id);
+      if(card){ allShowCount++; added++; cardsWrap.appendChild(card); }
+    });
+    registerPlatformOption('Unconfirmed');
+    recomputeShowVisibility();
+    if(!added) alert('No new suggestions came back — try again in a moment.');
+  } catch(err){
+    console.error(err);
+    alert('Could not fetch new suggestions right now — please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 More suggestions';
+  }
+}
 
 function makeShowCard(item, color, shelfId){
   const key = WATCH_STORAGE_KEY_PREFIX + (item.platform+':'+item.title).toLowerCase().replace(/[^a-z0-9]+/g,'-');
@@ -1858,11 +1960,14 @@ function makeShowCard(item, color, shelfId){
   card.className = 'card';
   card.tabIndex = 0;
   card.style.setProperty('--tagcolor', color);
-  const warnBadge = !item.currentlyStreaming
-    ? `<p class="warn-badge">⚠ Not currently streaming — ${item.note || 'rent/buy only'}</p>`
-    : '';
+  const warnBadge = item.unconfirmed
+    ? `<p class="warn-badge unconfirmed-badge">⚠ Unconfirmed — verify streaming availability</p>`
+    : (!item.currentlyStreaming
+      ? `<p class="warn-badge">⚠ Not currently streaming — ${item.note || 'rent/buy only'}</p>`
+      : '');
   card.innerHTML = `
-    <div class="kind">${item.platform}</div>
+    <div class="kind"><span class="kind-text"></span><button type="button" class="kind-edit-btn" aria-label="Edit streaming service" title="Edit streaming service">✎</button></div>
+    <p class="verified-note" hidden></p>
     <p class="title">${item.title}</p>
     <p class="hook">${item.hook}</p>
     ${warnBadge}
@@ -1886,6 +1991,99 @@ function makeShowCard(item, color, shelfId){
 
   let state = { watched:false, rating:null, deleted:false };
 
+  // ---- Editable streaming service (saved on this device) ----
+  // Kept under a separate key so the card's own state key (built from the
+  // original platform) never changes and watched/rating marks stay put.
+  const platKey = 'shelf-platform:' + key;
+  const kindEl = card.querySelector('.kind');
+  const editBtn = card.querySelector('.kind-edit-btn');
+  const verifiedEl = card.querySelector('.verified-note');
+  const entryRef = { wrap:null, platform:null, shelfId:null, isComplete:() => false };
+  let currentPlatform = item.platform;
+  let verifiedAt = null;
+  try {
+    const rawP = JSON.parse(localStorage.getItem(platKey));
+    if(rawP && rawP.platform){ currentPlatform = rawP.platform; verifiedAt = rawP.at || null; }
+  } catch(e){}
+
+  function daysSince(iso){ return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
+  function relTime(iso){
+    const d = daysSince(iso);
+    if(d <= 0) return 'checked today';
+    if(d === 1) return 'checked yesterday';
+    if(d < 7) return `checked ${d} days ago`;
+    if(d < 30){ const w = Math.round(d / 7); return `checked ${w} week${w === 1 ? '' : 's'} ago`; }
+    if(d < 365){ const m = Math.round(d / 30); return `checked ${m} month${m === 1 ? '' : 's'} ago`; }
+    const y = Math.round(d / 365); return `checked ${y} year${y === 1 ? '' : 's'} ago`;
+  }
+  function renderPlatform(){
+    kindEl.querySelector('.kind-text').textContent = currentPlatform;
+    if(verifiedAt){
+      verifiedEl.textContent = relTime(verifiedAt);
+      verifiedEl.classList.toggle('stale', daysSince(verifiedAt) >= 60);
+      verifiedEl.hidden = false;
+    } else { verifiedEl.hidden = true; }
+    if(verifiedAt && item.unconfirmed){
+      const b = card.querySelector('.unconfirmed-badge');
+      if(b) b.remove();
+    }
+  }
+  entryRef.platform = currentPlatform;
+  renderPlatform();
+
+  function startEditPlatform(ev){
+    ev.stopPropagation();
+    const original = kindEl.innerHTML;
+    kindEl.innerHTML = '';
+    const wrap = document.createElement('span');
+    wrap.className = 'kind-edit';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = (currentPlatform === 'Unconfirmed' || currentPlatform === 'Not Currently Streaming') ? '' : currentPlatform;
+    input.setAttribute('list', 'addPlatformList');
+    input.setAttribute('aria-label', 'Streaming service');
+    document.getElementById('addPlatformList').innerHTML = allPlatforms.filter(p => p !== 'Not Currently Streaming' && p !== 'Unconfirmed').map(p => `<option value="${escapeHtml(p)}">`).join('');
+    const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = '✓'; ok.setAttribute('aria-label', 'Save streaming service');
+    const no = document.createElement('button'); no.type = 'button'; no.textContent = '✕'; no.setAttribute('aria-label', 'Cancel');
+    wrap.append(input, ok, no);
+    wrap.addEventListener('click', e => e.stopPropagation());
+    kindEl.appendChild(wrap);
+    input.focus();
+
+    function cancel(){
+      kindEl.innerHTML = original;
+      kindEl.querySelector('.kind-edit-btn').addEventListener('click', startEditPlatform);
+      card.querySelectorAll('.edit-error').forEach(n => n.remove());
+    }
+    function save(){
+      const val = input.value.trim();
+      if(!val){
+        if(!card.querySelector('.edit-error')){
+          const er = document.createElement('p'); er.className = 'edit-error'; er.textContent = 'Streaming service is required';
+          kindEl.after(er);
+        }
+        return;
+      }
+      currentPlatform = val;
+      verifiedAt = new Date().toISOString();
+      try { localStorage.setItem(platKey, JSON.stringify({ platform: val, at: verifiedAt })); } catch(e){}
+      entryRef.platform = val;
+      registerPlatformOption(val);
+      cancel();
+      renderPlatform();
+      recomputeShowVisibility();
+    }
+    ok.addEventListener('click', save);
+    no.addEventListener('click', cancel);
+    input.addEventListener('keydown', e => {
+      e.stopPropagation();
+      if(e.key === 'Enter'){ e.preventDefault(); save(); }
+      if(e.key === 'Escape'){ e.preventDefault(); cancel(); }
+    });
+  }
+  editBtn.addEventListener('click', startEditPlatform);
+  editBtn.addEventListener('keydown', e => e.stopPropagation());
+
   // Reuses the .read class/animation for the "watched" state — same
   // stamp/strikethrough/thumbs behaviour as books, just relabelled.
   function render(){
@@ -1897,6 +2095,8 @@ function makeShowCard(item, color, shelfId){
   }
 
   function persist(){
+    if(state.deleted){ delete SHOW_FEEDBACK_CACHE[key]; }
+    else { SHOW_FEEDBACK_CACHE[key] = { rating: state.rating, title: item.title }; }
     const payload = JSON.stringify({ watched: state.watched, rating: state.rating, deleted: state.deleted, title: item.title, platform: item.platform });
     try { localStorage.setItem(key, payload); } catch(e){ /* storage unavailable */ }
   }
@@ -1913,6 +2113,7 @@ function makeShowCard(item, color, shelfId){
 
   // deleted on a previous visit — skip rendering it entirely
   if(state.deleted) return null;
+  SHOW_FEEDBACK_CACHE[key] = { rating: state.rating, title: item.title };
 
   function toggleWatched(){
     if(swipe.isArmed()){ swipe.resetPosition(); return; }
@@ -1964,7 +2165,10 @@ function makeShowCard(item, color, shelfId){
   });
   const markRemove = attachMarkAndRemove(card);
 
-  showCardEntries.push({ wrap: swipe.wrap, platform: item.platform, shelfId, isComplete: () => state.watched });
+  entryRef.wrap = swipe.wrap;
+  entryRef.shelfId = shelfId;
+  entryRef.isComplete = () => state.watched;
+  showCardEntries.push(entryRef);
 
   // already watched on a previous visit — counts toward the "Show watched"
   // filter; recomputeShowVisibility() (called once all cards are built)
@@ -2036,7 +2240,7 @@ viewButtons.forEach(btn => {
     titleEl.textContent = shows_ ? 'Add a show' : 'Add a book';
     fCreatorLabel.textContent = shows_ ? 'Streaming service' : 'Author';
     if(shows_){ fCreator.setAttribute('list', 'addPlatformList'); } else { fCreator.removeAttribute('list'); }
-    platformList.innerHTML = shows_ ? allPlatforms.filter(p => p !== 'Not Currently Streaming').map(p => `<option value="${escapeHtml(p)}">`).join('') : '';
+    platformList.innerHTML = shows_ ? allPlatforms.filter(p => p !== 'Not Currently Streaming' && p !== 'Unconfirmed').map(p => `<option value="${escapeHtml(p)}">`).join('') : '';
     const options = shows_ ? showShelves.map(s => s.tag) : shelves.map(s => s.tag);
     const all = shows_ ? showGenreOrder : options;
     fGenre.innerHTML = all.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
