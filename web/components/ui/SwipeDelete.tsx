@@ -59,6 +59,7 @@ export function SwipeDelete({
   }, [armed]);
 
   function onPointerDown(e: React.PointerEvent) {
+    if ((e.target as HTMLElement).closest(".delete-bg")) return; // a press on Delete is not a drag
     if (e.pointerType === "mouse" && e.button !== 0) return;
     drag.current = { active: true, lock: null, startX: e.clientX, startY: e.clientY, moved: false };
     setDragging(true);
@@ -105,8 +106,13 @@ export function SwipeDelete({
     }
   }
 
-  function confirm(e: React.MouseEvent) {
+  const confirmed = useRef(false);
+  const pressing = useRef(false);
+
+  function confirm(e: React.SyntheticEvent) {
     e.stopPropagation();
+    if (confirmed.current) return;
+    confirmed.current = true;
     const el = wrapRef.current;
     if (el) el.style.height = el.getBoundingClientRect().height + "px";
     requestAnimationFrame(() => setCollapsing(true));
@@ -122,15 +128,34 @@ export function SwipeDelete({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={() => {
+        const wasDragging = drag.current.active && drag.current.lock === "x";
         drag.current.active = false;
         setDragging(false);
-        reset();
+        if (wasDragging) reset();
       }}
       onClickCapture={onClickCapture}
     >
       <div className="delete-bg" aria-hidden={!armed}>
-        <button type="button" className="delete-confirm-btn" tabIndex={armed ? 0 : -1} onClick={confirm}>
-          🗑 Delete
+        <button
+          type="button"
+          className="delete-confirm-btn"
+          tabIndex={armed ? 0 : -1}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            pressing.current = true;
+          }}
+          onPointerUp={(e) => {
+            if (pressing.current) {
+              pressing.current = false;
+              confirm(e);
+            }
+          }}
+          onPointerCancel={() => {
+            pressing.current = false;
+          }}
+          onClick={confirm}
+        >
+          <span>🗑 Delete</span>
         </button>
       </div>
       {children}
