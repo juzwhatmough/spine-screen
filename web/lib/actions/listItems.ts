@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { GENRE_TAGS } from "@/lib/books/genres";
 import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
+import { describeTitle } from "@/lib/anthropic/describeTitle";
 import type { ListItemRow } from "@/types/database";
 
 // Card tap-to-toggle stays binary in v1 (want <-> done) even though the
@@ -90,6 +91,8 @@ export async function addManualBook(input: {
     throw new Error("Genre must match an existing shelf");
   }
 
+  const hook = await describeTitle({ kind: "book", title, creator: author });
+
   const { error } = await supabase.from("list_items").upsert(
     [
       {
@@ -99,7 +102,7 @@ export async function addManualBook(input: {
         creator: author,
         genre: input.genre,
         status: "want" as const,
-        meta: { source_status: "want" },
+        meta: { source_status: "want", ...(hook ? { hook } : {}) },
       },
     ],
     { onConflict: "user_id,media_type,title,creator", ignoreDuplicates: true }
@@ -113,6 +116,9 @@ export async function addManualShow(input: {
   title: string;
   platform: string;
   genre: string;
+  // True when the platform was taken as-is from TMDB's suggestion rather than
+  // typed/confirmed by the user — then it isn't stamped as "checked today".
+  platformFromSuggestion?: boolean;
 }) {
   const supabase = await createClient();
   const {
@@ -128,6 +134,8 @@ export async function addManualShow(input: {
     throw new Error("Genre must match an existing shelf");
   }
 
+  const hook = await describeTitle({ kind: "show", title });
+
   const { error } = await supabase.from("list_items").upsert(
     [
       {
@@ -137,7 +145,11 @@ export async function addManualShow(input: {
         creator: platform,
         genre: input.genre,
         status: "want" as const,
-        meta: { currentlyStreaming: true, platformVerifiedAt: new Date().toISOString() },
+        meta: {
+          currentlyStreaming: true,
+          ...(input.platformFromSuggestion ? {} : { platformVerifiedAt: new Date().toISOString() }),
+          ...(hook ? { hook } : {}),
+        },
       },
     ],
     { onConflict: "user_id,media_type,title,creator", ignoreDuplicates: true }
