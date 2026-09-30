@@ -91,6 +91,8 @@ export function SwipeDelete({
   }
 
   function onClickCapture(e: React.MouseEvent) {
+    // the Delete button must always get its click
+    if ((e.target as HTMLElement).closest(".delete-bg")) return;
     // a swipe (or a tap on an armed card) must not also toggle read/watched
     if (drag.current.moved) {
       drag.current.moved = false;
