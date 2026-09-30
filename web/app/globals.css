@@ -866,3 +866,54 @@ footer{
   margin: 8px 0 0;
 }
 .card.pending-remove .mark-hint{ display: block; }
+
+/* ---------- Search box (Books + Shows) ---------- */
+.search-row{
+  padding: 16px 24px 0;
+  background: var(--paper-2);
+}
+.search-box{
+  position: relative;
+  max-width: 520px;
+}
+.search-box .search-icon{
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+.search-box input{
+  width: 100%;
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px; /* 16px stops iOS zooming in on focus */
+  color: var(--ink);
+  background: #FBF8F1;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 10px 38px 10px 38px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-box input::-webkit-search-cancel-button{ display: none; }
+.search-box input:focus-visible{ outline: 2px solid var(--spine); outline-offset: 1px; }
+.search-clear{
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 16px;
+  cursor: pointer;
+}
+.search-clear:hover{ color: var(--ink); }
+@media (max-width: 640px){
+  .search-row{ padding: 14px 16px 0; }
+}

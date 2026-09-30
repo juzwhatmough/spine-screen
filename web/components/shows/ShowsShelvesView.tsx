@@ -5,6 +5,7 @@ import { ShelfNav } from "@/components/books/ShelfNav";
 import { ShowShelf } from "./ShowShelf";
 import { AddShowFab } from "./AddShowFab";
 import { FilterBar } from "@/components/filters/FilterBar";
+import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
 import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
 import { PendingExitContext, useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
@@ -18,6 +19,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
   const [statusView, setStatusView] = useState<StatusView>("shelf");
   const [genre, setGenre] = useState("");
   const [platform, setPlatform] = useState("");
+  const [query, setQuery] = useState("");
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
 
   const {
@@ -45,6 +47,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
         ...s,
         items: s.items.filter((i) => {
           if (hiddenIds.has(i.id)) return false;
+          if (!matchesQuery(query, i.title, i.creator)) return false;
           if (platform && i.creator !== platform) return false;
           const done = isDone(i);
           const matchesStatus = statusView === "finished" ? done : !done;
@@ -52,7 +55,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
         }),
       }))
       .filter((s) => s.items.length > 0);
-  }, [shelves, genre, platform, statusView, isDone, leavingView, hiddenIds]);
+  }, [shelves, genre, platform, query, statusView, isDone, leavingView, hiddenIds]);
 
   const titleCount = useMemo(
     () => filtered.reduce((sum, s) => sum + s.items.length, 0),
@@ -96,6 +99,13 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
         <span>Tap a card to mark it watched, then rate it</span>
       </div>
 
+      <SearchBox
+        value={query}
+        onChange={setQuery}
+        label="Search shows"
+        placeholder="Search by title or streaming service"
+      />
+
       <FilterBar
         filters={[
           { id: "genre", label: "Genre", value: genre, options: genreOptions },
@@ -114,7 +124,11 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
       <main>
         {filtered.length === 0 ? (
           <p className="empty-state">
-            {statusView === "finished"
+            {query.trim()
+              ? `No ${statusView === "finished" ? "watched " : ""}shows match \u201c${query.trim()}\u201d — try ${
+                  statusView === "finished" ? "the On the Shelf tab" : "the Finished tab"
+                } or clear the search.`
+              : statusView === "finished"
               ? "Nothing finished yet in this combination — mark a card watched and it'll show up here."
               : "Nothing on your shelves matches that combination yet — try clearing a filter, or tap the + button to add something new."}
           </p>

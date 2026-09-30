@@ -5,6 +5,7 @@ import { ShelfNav } from "./ShelfNav";
 import { BookShelf } from "./BookShelf";
 import { AddBookFab } from "./AddBookFab";
 import { FilterBar } from "@/components/filters/FilterBar";
+import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
 import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
 import { PendingExitContext, useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
@@ -23,6 +24,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
   const [statusView, setStatusView] = useState<StatusView>("shelf");
   const [genre, setGenre] = useState("");
   const [author, setAuthor] = useState("");
+  const [query, setQuery] = useState("");
   // Tracks whichever shelf is currently in view (ShelfNav's scroll-spy),
   // used only to pre-fill the Add-a-book modal's Genre field.
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
@@ -56,6 +58,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
             ...g,
             items: g.items.filter((item) => {
               if (hiddenIds.has(item.id)) return false;
+              if (!matchesQuery(query, item.title, item.creator)) return false;
               const done = isDone(item);
               const matchesStatus = statusView === "finished" ? done : !done;
               return matchesStatus || leavingView(item.id);
@@ -64,7 +67,7 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
           .filter((g) => g.items.length > 0),
       }))
       .filter((s) => s.groups.length > 0);
-  }, [shelves, genre, author, statusView, isDone, leavingView, hiddenIds]);
+  }, [shelves, genre, author, query, statusView, isDone, leavingView, hiddenIds]);
 
   const titleCount = useMemo(
     () => filtered.reduce((sum, s) => sum + s.groups.reduce((n, g) => n + g.items.length, 0), 0),
@@ -98,6 +101,13 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
         </span>
       </div>
 
+      <SearchBox
+        value={query}
+        onChange={setQuery}
+        label="Search books"
+        placeholder="Search by title or author"
+      />
+
       <FilterBar
         filters={[
           { id: "genre", label: "Genre", value: genre, options: genreOptions },
@@ -116,7 +126,11 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
       <main>
         {filtered.length === 0 ? (
           <p className="empty-state">
-            {statusView === "finished"
+            {query.trim()
+              ? `No ${statusView === "finished" ? "finished " : ""}books match \u201c${query.trim()}\u201d — try ${
+                  statusView === "finished" ? "the On the Shelf tab" : "the Finished tab"
+                } or clear the search.`
+              : statusView === "finished"
               ? "Nothing finished yet in this combination — mark a card read and it'll show up here."
               : "Nothing on your shelves matches that combination yet — try clearing a filter, or tap the + button to add something new."}
           </p>
