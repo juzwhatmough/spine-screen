@@ -625,6 +625,21 @@
   }
   .add-field textarea{ resize:vertical; min-height:70px; }
   .add-field input:focus-visible, .add-field select:focus-visible, .add-field textarea:focus-visible{ outline:2px solid var(--spine); outline-offset:1px; }
+  .add-field.ac-wrap{ position:relative; }
+  .ac-dropdown{
+    position:absolute; top:100%; left:0; right:0; z-index:5; margin-top:4px;
+    background:#FBF8F1; border:1px solid var(--line); border-radius:3px;
+    box-shadow:var(--card-shadow); max-height:220px; overflow-y:auto;
+  }
+  .ac-dropdown[hidden]{ display:none; }
+  .ac-item{
+    display:block; width:100%; text-align:left; background:none; border:none;
+    border-bottom:1px solid var(--line); padding:9px 10px; cursor:pointer;
+    font-family:'Source Serif 4', serif; font-size:14px; color:var(--ink);
+  }
+  .ac-item:last-child{ border-bottom:none; }
+  .ac-item:hover, .ac-item:focus-visible{ background:var(--paper-2); }
+  .ac-meta{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
   .add-error{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--warn); margin:0 0 14px; }
   .add-submit{
     font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.05em; text-transform:uppercase;
@@ -700,7 +715,7 @@
     </div>
     <p class="add-error" id="addError" role="alert" hidden></p>
     <form id="addForm" novalidate>
-      <div class="add-field"><label for="addItemTitle">Title</label><input id="addItemTitle" type="text" required autocomplete="off"></div>
+      <div class="add-field ac-wrap"><label for="addItemTitle">Title</label><input id="addItemTitle" type="text" required autocomplete="off"><div class="ac-dropdown" id="addSuggest" hidden></div></div>
       <div class="add-field"><label for="addItemCreator" id="addCreatorLabel">Author</label><input id="addItemCreator" type="text" required autocomplete="off" list="addPlatformList"></div>
       <datalist id="addPlatformList"></datalist>
       <div class="add-field"><label for="addItemGenre">Genre</label><select id="addItemGenre"></select></div>
@@ -2031,6 +2046,7 @@ viewButtons.forEach(btn => {
     if(current) fGenre.value = current.tag;
     form.reset && (fTitle.value = fCreator.value = fHook.value = '');
     errorEl.hidden = true;
+    hideSuggestions();
     overlay.classList.add('open');
     fTitle.focus();
   }
@@ -2076,6 +2092,85 @@ viewButtons.forEach(btn => {
     try { sessionStorage.setItem('shelf-view', shows_ ? 'shows' : 'books'); } catch(err){}
     location.reload();
   });
+
+
+  // ---- Title type-ahead: Google Books (books) / TMDB via /api/search-shows (shows) ----
+  // Autofill only: every field stays editable, and any failure or empty
+  // result silently leaves manual entry as-is.
+  const suggestEl = document.getElementById('addSuggest');
+  let searchTimer = null, searchSeq = 0;
+
+  function bookGenreFromCategories(cats){
+    if(!cats || !cats.length) return null;
+    const j = cats.join(' / ').toLowerCase();
+    const tag = t => shelves.some(s => s.tag === t) ? t : null;
+    if(/\b(war|historical|history)\b/.test(j)) return tag('WWII & Historical Fiction');
+    if(/\b(thriller|suspense|mystery|crime)\b/.test(j)) return tag('Psychological Thriller & Domestic Suspense');
+    if(/\b(humor|humorous|comedy|family)\b/.test(j)) return tag('Contemporary Comedy & Family Life');
+    if(/\b(biography|autobiography|memoir|nonfiction|non-fiction)\b/.test(j)) return tag('Narrative Nonfiction');
+    if(/\bfiction\b/.test(j)) return tag('Literary Fiction');
+    return null;
+  }
+
+  async function searchBooks(q){
+    try {
+      const res = await fetch('https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=5');
+      if(!res.ok) return [];
+      const data = await res.json();
+      return (data.items || []).map(it => {
+        const v = it.volumeInfo || {};
+        if(!v.title) return null;
+        return { title: v.title, creator: (v.authors || []).join(', '), year: (v.publishedDate || '').slice(0, 4), genre: bookGenreFromCategories(v.categories) };
+      }).filter(Boolean);
+    } catch(e){ return []; }
+  }
+  async function searchShowsApi(q){
+    try {
+      const res = await fetch('/api/search-shows?q=' + encodeURIComponent(q));
+      if(!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data.results) ? data.results.map(r => ({ title: r.title, creator: '', year: r.year, genre: r.genre })) : [];
+    } catch(e){ return []; }
+  }
+
+  function hideSuggestions(){ suggestEl.hidden = true; suggestEl.innerHTML = ''; }
+  function showSuggestions(list){
+    if(!list.length){ hideSuggestions(); return; }
+    suggestEl.innerHTML = '';
+    list.forEach(item => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ac-item';
+      b.textContent = item.title;
+      const meta = document.createElement('span');
+      meta.className = 'ac-meta';
+      meta.textContent = [item.creator, item.year].filter(Boolean).join(' · ') || (isShows() ? 'Movie / series' : 'Unknown author');
+      b.appendChild(meta);
+      b.addEventListener('mousedown', ev => ev.preventDefault());
+      b.addEventListener('click', () => {
+        fTitle.value = item.title;
+        if(item.creator && !isShows()) fCreator.value = item.creator;
+        if(item.genre && Array.from(fGenre.options).some(o => o.value === item.genre)) fGenre.value = item.genre;
+        hideSuggestions();
+        (fCreator.value ? fHook : fCreator).focus();
+      });
+      suggestEl.appendChild(b);
+    });
+    suggestEl.hidden = false;
+  }
+
+  fTitle.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = fTitle.value.trim();
+    if(q.length < 3){ hideSuggestions(); return; }
+    const seq = ++searchSeq;
+    searchTimer = setTimeout(async () => {
+      const results = await (isShows() ? searchShowsApi(q) : searchBooks(q));
+      if(seq === searchSeq && document.activeElement === fTitle) showSuggestions(results);
+    }, 300);
+  });
+  fTitle.addEventListener('blur', () => setTimeout(hideSuggestions, 150));
+  fTitle.addEventListener('keydown', e => { if(e.key === 'Escape' && !suggestEl.hidden){ e.stopPropagation(); hideSuggestions(); } });
 
   // come back to the tab the title was added on
   try {
