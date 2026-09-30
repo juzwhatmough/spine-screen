@@ -5,6 +5,9 @@ export type ShowSuggestion = {
   title: string;
   year: string;
   genre: string | undefined; // one of SHOW_GENRE_TAGS, or undefined if no confident mapping
+  // TMDB results only — lets the form look up where it streams in Australia
+  tmdbId?: number;
+  mediaType?: "movie" | "tv";
 };
 
 // Server-side search for the Add-a-show modal. TMDB first when a
@@ -34,6 +37,8 @@ export async function searchShows(query: string): Promise<{ results: ShowSuggest
             title: r.title ?? r.name ?? "",
             year: (r.release_date ?? r.first_air_date ?? "").slice(0, 4),
             genre: mapTmdbGenresToShelf(r.genre_ids ?? []),
+            tmdbId: r.id,
+            mediaType: r.media_type as "movie" | "tv",
           }))
           .filter((r) => r.title);
         if (results.length) return { results, failed: false };
@@ -92,5 +97,48 @@ type TmdbSearchResponse = {
     release_date?: string;
     first_air_date?: string;
     genre_ids?: number[];
+    id?: number;
   }>;
 };
+
+// Names TMDB/JustWatch use -> the names already used on this app's shelves.
+const PROVIDER_ALIASES: Record<string, string> = {
+  "Amazon Prime Video": "Prime Video",
+  "Disney Plus": "Disney+",
+  "Apple TV Plus": "Apple TV+",
+  "Apple TV+": "Apple TV+",
+  "Paramount Plus": "Paramount+",
+  "Paramount+": "Paramount+",
+};
+
+// Where a title streams in Australia (subscription or free), from TMDB's
+// watch-provider data (sourced from JustWatch). Empty when TMDB has
+// nothing — including rent/buy-only titles — or when no key is set.
+export async function getAuProviders(
+  tmdbId: number,
+  mediaType: "movie" | "tv"
+): Promise<string[]> {
+  const apiKey = process.env.TMDB_API_KEY;
+  if (!apiKey || !Number.isInteger(tmdbId)) return [];
+  try {
+    const res = await fetch(
+      `https://api.themoviedb.org/3/${mediaType}/${tmdbId}/watch/providers?api_key=${apiKey}`,
+      { signal: AbortSignal.timeout(6000) }
+    );
+    if (!res.ok) return [];
+    const data: {
+      results?: Record<string, { flatrate?: P[]; free?: P[]; ads?: P[] }>;
+    } = await res.json();
+    const au = data.results?.AU;
+    if (!au) return [];
+    const names = [...(au.flatrate ?? []), ...(au.free ?? []), ...(au.ads ?? [])]
+      .map((p) => p.provider_name)
+      .filter((n): n is string => !!n && !/with ads$/i.test(n))
+      .map((n) => PROVIDER_ALIASES[n] ?? n);
+    return [...new Set(names)].slice(0, 6);
+  } catch {
+    return [];
+  }
+}
+
+type P = { provider_name?: string };

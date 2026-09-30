@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addManualShow } from "@/lib/actions/listItems";
 import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
-import { searchShows, type ShowSuggestion } from "@/lib/shows/tmdbSearch";
+import { searchShows, fetchAuProviders, type ShowSuggestion } from "@/lib/shows/tmdbSearch";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -38,6 +38,8 @@ export function AddShowForm({
 
   const [suggestions, setSuggestions] = useState<ShowSuggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  // Services TMDB says it streams on in Australia (for the picked title)
+  const [providers, setProviders] = useState<string[]>([]);
   const [searchState, setSearchState] = useState<"idle" | "searching" | "none" | "error">("idle");
   const skipNextSearch = useRef(false);
 
@@ -68,6 +70,14 @@ export function AddShowForm({
     skipNextSearch.current = true;
     setTitle(s.title);
     if (s.genre) setGenre(s.genre);
+    setProviders([]);
+    if (s.tmdbId && s.mediaType) {
+      fetchAuProviders(s.tmdbId, s.mediaType).then((names) => {
+        setProviders(names);
+        // pre-fill only if the user hasn't typed a service themselves
+        setPlatform((current) => (current.trim() ? current : names[0] ?? ""));
+      });
+    }
     setShowDropdown(false);
     setSuggestions([]);
     setSearchState("idle");
@@ -78,7 +88,12 @@ export function AddShowForm({
     setError(null);
     startTransition(async () => {
       try {
-        await addManualShow({ title, platform, genre });
+        await addManualShow({
+          title,
+          platform,
+          genre,
+          platformFromSuggestion: providers.includes(platform.trim()),
+        });
         router.refresh();
         onSuccess();
       } catch (err) {
@@ -139,6 +154,25 @@ export function AddShowForm({
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
           />
+          {providers.length > 0 && (
+            <>
+              <div className="chip-group" style={{ marginTop: 8 }}>
+                {providers.map((name) => (
+                  <button
+                    type="button"
+                    key={name}
+                    className={`chip${platform.trim() === name ? " active" : ""}`}
+                    onClick={() => setPlatform(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <p className="search-hint">
+                Suggested from TMDB (data from JustWatch) — worth a quick check.
+              </p>
+            </>
+          )}
         </div>
         <div className="field">
           <label htmlFor="show-genre">Genre</label>

@@ -21,3 +21,18 @@ export async function searchShows(
     return { results: [], failed: true };
   }
 }
+
+// Where a TMDB title streams in Australia; [] on any failure or no data.
+export async function fetchAuProviders(
+  tmdbId: number,
+  mediaType: "movie" | "tv"
+): Promise<string[]> {
+  try {
+    const res = await fetch(`/api/shows/providers?id=${tmdbId}&type=${mediaType}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.providers) ? data.providers : [];
+  } catch {
+    return [];
+  }
+}

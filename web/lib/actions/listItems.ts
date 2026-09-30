@@ -116,6 +116,9 @@ export async function addManualShow(input: {
   title: string;
   platform: string;
   genre: string;
+  // True when the platform was taken as-is from TMDB's suggestion rather than
+  // typed/confirmed by the user — then it isn't stamped as "checked today".
+  platformFromSuggestion?: boolean;
 }) {
   const supabase = await createClient();
   const {
@@ -144,7 +147,7 @@ export async function addManualShow(input: {
         status: "want" as const,
         meta: {
           currentlyStreaming: true,
-          platformVerifiedAt: new Date().toISOString(),
+          ...(input.platformFromSuggestion ? {} : { platformVerifiedAt: new Date().toISOString() }),
           ...(hook ? { hook } : {}),
         },
       },
