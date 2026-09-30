@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { GENRE_TAGS } from "@/lib/books/genres";
 import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
+import type { ListItemRow } from "@/types/database";
 
 // Card tap-to-toggle stays binary in v1 (want <-> done) even though the
 // schema's `status` is 3-state (want/in_progress/done) — matches the
@@ -186,5 +187,50 @@ export async function updateShowPlatform(itemId: string, platform: string) {
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
+  revalidatePath("/shows");
+}
+
+// Swipe-to-delete. The row is removed immediately; "Undo" puts the same row
+// back with restoreItem below (see lib/hooks/useDeleteWithUndo.tsx).
+export async function deleteItem(itemId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { error } = await supabase
+    .from("list_items")
+    .delete()
+    .eq("id", itemId)
+    .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/books");
+  revalidatePath("/shows");
+}
+
+export async function restoreItem(row: ListItemRow) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { error } = await supabase.from("list_items").upsert({
+    id: row.id,
+    user_id: user.id,
+    media_type: row.media_type,
+    title: row.title,
+    creator: row.creator,
+    genre: row.genre,
+    status: row.status,
+    rating: row.rating,
+    meta: row.meta,
+    created_at: row.created_at,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/books");
   revalidatePath("/shows");
 }

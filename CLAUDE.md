@@ -2,6 +2,16 @@
 
 Context for anyone (human or Claude Code) picking this project up.
 
+## Which app is the "full" one
+
+**`web/` (Next.js + Supabase) is now the complete app**: sign-in, onboarding,
+lists synced to the user's account, AI suggestions for Books and Shows,
+add-with-autofill, editable streaming service, filters, finished view and
+swipe-to-delete with Undo. Deploy it as its own Vercel project with Root
+Directory set to `web` (see `web/README.md`). The single-file `index.html`
+below is the earlier local-only version, kept working but no longer where
+new features should go.
+
 ## What this is
 
 A personal library app for Juz — a reading list and a streaming watchlist,

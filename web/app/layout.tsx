@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { DeleteProvider } from "@/lib/hooks/useDeleteWithUndo";
 
 export const metadata: Metadata = {
   title: "The Shelf — Books",
@@ -19,7 +20,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <DeleteProvider>{children}</DeleteProvider>
+      </body>
     </html>
   );
 }
