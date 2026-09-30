@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import { toggleRead } from "@/lib/actions/listItems";
+import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { StatusView } from "@/components/ui/StatusToggle";
 import type { ListItemRow } from "@/types/database";
 
@@ -9,7 +11,9 @@ import type { ListItemRow } from "@/types/database";
 // to glance at the card and hit a thumb; not so long it reads as
 // "nothing happened." A card that's rated during this window doesn't
 // get its timer extended — 1.4s is already generous for a single tap.
-const RATE_WINDOW_MS = 1400;
+// Matches the original app: 5 seconds, with a countdown bar on the card and
+// an Undo toast in case the mark was a mistake.
+const RATE_WINDOW_MS = 5000;
 const EXIT_ANIMATION_MS = 280;
 
 // Matches ListItemRow["rating"] (which also allows "loved", schema-wide)
@@ -52,7 +56,11 @@ type Rating = ListItemRow["rating"];
 //   there'd be no time to rate it. `leavingView(item)` checks *both*
 //   flags: an item only actually disappears from the filtered list once
 //   pendingExit has cleared, i.e. after the full rate-window + fade.
-export function useStatusTransitions(statusView: StatusView) {
+// Ids currently inside their rate-window (drives the card's countdown bar).
+export const PendingExitContext = createContext<Set<string>>(new Set());
+
+export function useStatusTransitions(statusView: StatusView, verb: "read" | "watched" = "read") {
+  const { showUndoToast } = useDelete();
   const [statusOverrides, setStatusOverrides] = useState<Map<string, boolean>>(new Map());
   const [ratingOverrides, setRatingOverrides] = useState<Map<string, Rating>>(new Map());
   const [pendingExit, setPendingExit] = useState<Set<string>>(new Set());
@@ -75,8 +83,12 @@ export function useStatusTransitions(statusView: StatusView) {
     setRatingOverrides((prev) => new Map(prev).set(itemId, rating));
   }, []);
 
+  const applyRef = useRef<(itemId: string, nowDone: boolean, title?: string, silent?: boolean) => void>(
+    () => {}
+  );
+
   const handleStatusChange = useCallback(
-    (itemId: string, nowDone: boolean) => {
+    (itemId: string, nowDone: boolean, title?: string, silent = false) => {
       setStatusOverrides((prev) => new Map(prev).set(itemId, nowDone));
       if (!nowDone) handleRatingChange(itemId, null); // unmarking clears the rating, same as before
 
@@ -103,6 +115,16 @@ export function useStatusTransitions(statusView: StatusView) {
       }
 
       setPendingExit((prev) => new Set(prev).add(itemId));
+      if (title && !silent) {
+        showUndoToast(
+          nowDone ? `Marked \u201c${title}\u201d ${verb}` : `Moved \u201c${title}\u201d back to the shelf`,
+          () => {
+            applyRef.current(itemId, !nowDone, undefined, true);
+            void toggleRead(itemId);
+          },
+          RATE_WINDOW_MS
+        );
+      }
       const rateWindowTimer = setTimeout(() => {
         setAnimatingOut((prev) => new Set(prev).add(itemId));
         const fadeTimer = setTimeout(() => {
@@ -122,13 +144,25 @@ export function useStatusTransitions(statusView: StatusView) {
       }, RATE_WINDOW_MS);
       timers.current.set(itemId, [rateWindowTimer]);
     },
-    [statusView, handleRatingChange]
+    [statusView, handleRatingChange, showUndoToast, verb]
   );
+  // keep the latest handler available to the Undo toast's callback
+  useEffect(() => {
+    applyRef.current = handleStatusChange;
+  }, [handleStatusChange]);
 
   // An item stays in the rendered/filtered list as long as it either
   // matches the active view outright, or is still within its
   // rate-window-then-fade grace period.
   const leavingView = useCallback((itemId: string) => pendingExit.has(itemId), [pendingExit]);
 
-  return { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange };
+  return {
+    isDone,
+    getRating,
+    leavingView,
+    animatingOut,
+    pendingExit,
+    handleStatusChange,
+    handleRatingChange,
+  };
 }

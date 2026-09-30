@@ -6,7 +6,7 @@ import { ShowShelf } from "./ShowShelf";
 import { AddShowFab } from "./AddShowFab";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
-import { useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
+import { PendingExitContext, useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { ShowShelfData } from "@/lib/shows/groupItems";
 
@@ -20,8 +20,15 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
   const [platform, setPlatform] = useState("");
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
 
-  const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
-    useStatusTransitions(statusView);
+  const {
+    isDone,
+    getRating,
+    leavingView,
+    animatingOut,
+    pendingExit,
+    handleStatusChange,
+    handleRatingChange,
+  } = useStatusTransitions(statusView, "watched");
   const { hiddenIds } = useDelete();
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
@@ -103,6 +110,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
         onActiveChange={setActiveGenre}
       />
 
+      <PendingExitContext.Provider value={pendingExit}>
       <main>
         {filtered.length === 0 ? (
           <p className="empty-state">
@@ -124,6 +132,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
           ))
         )}
       </main>
+      </PendingExitContext.Provider>
 
       <AddShowFab activeGenre={activeGenre} />
     </>

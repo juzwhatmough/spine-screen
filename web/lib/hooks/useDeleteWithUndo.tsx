@@ -9,6 +9,9 @@ const TOAST_MS = 5000;
 type DeleteContextValue = {
   hiddenIds: Set<string>;
   requestDelete: (item: ListItemRow) => void;
+  // Generic "message + Undo" toast, also used by the mark-read/watched undo
+  // (lib/hooks/useStatusTransitions.ts).
+  showUndoToast: (message: string, onUndo: () => void, ms?: number) => void;
 };
 
 const DeleteContext = createContext<DeleteContextValue | null>(null);
@@ -21,7 +24,7 @@ const DeleteContext = createContext<DeleteContextValue | null>(null);
 // exact same row back via `restoreItem` (same id), then un-hides it.
 export function DeleteProvider({ children }: { children: React.ReactNode }) {
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
-  const [toast, setToast] = useState<{ row: ListItemRow; visible: boolean } | null>(null);
+  const [toast, setToast] = useState<{ message: string; onUndo: () => void } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<Map<string, Promise<unknown>>>(new Map());
 
@@ -30,6 +33,12 @@ export function DeleteProvider({ children }: { children: React.ReactNode }) {
     timer.current = null;
   };
   useEffect(() => clearTimer, []);
+
+  const showUndoToast = useCallback((message: string, onUndo: () => void, ms = TOAST_MS) => {
+    clearTimer();
+    setToast({ message, onUndo });
+    timer.current = setTimeout(() => setToast(null), ms);
+  }, []);
 
   const requestDelete = useCallback((row: ListItemRow) => {
     setHiddenIds((prev) => new Set(prev).add(row.id));
@@ -44,38 +53,42 @@ export function DeleteProvider({ children }: { children: React.ReactNode }) {
       alert("Could not remove that right now — please try again.");
     });
     pending.current.set(row.id, p);
-    clearTimer();
-    setToast({ row, visible: true });
-    timer.current = setTimeout(() => setToast(null), TOAST_MS);
-  }, []);
+    const undoDelete = async () => {
+      await pending.current.get(row.id);
+      try {
+        await restoreItem(row);
+        setHiddenIds((prev) => {
+          const next = new Set(prev);
+          next.delete(row.id);
+          return next;
+        });
+      } catch {
+        alert("Could not restore that — please add it again with the + button.");
+      }
+    };
+    showUndoToast(`Removed \u201c${row.title}\u201d`, undoDelete);
+  }, [showUndoToast]);
 
-  const undo = useCallback(async () => {
-    if (!toast) return;
-    const { row } = toast;
-    clearTimer();
-    setToast(null);
-    await pending.current.get(row.id);
-    try {
-      await restoreItem(row);
-      setHiddenIds((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
-      });
-    } catch {
-      alert("Could not restore that — please add it again with the + button.");
-    }
-  }, [toast]);
-
-  const value = useMemo(() => ({ hiddenIds, requestDelete }), [hiddenIds, requestDelete]);
+  const value = useMemo(
+    () => ({ hiddenIds, requestDelete, showUndoToast }),
+    [hiddenIds, requestDelete, showUndoToast]
+  );
 
   return (
     <DeleteContext.Provider value={value}>
       {children}
       {toast && (
         <div className="undo-toast show" role="status">
-          <span>Removed &ldquo;{toast.row.title}&rdquo;</span>
-          <button type="button" className="undo-btn" onClick={undo}>
+          <span>{toast.message}</span>
+          <button
+            type="button"
+            className="undo-btn"
+            onClick={() => {
+              clearTimer();
+              setToast(null);
+              toast.onUndo();
+            }}
+          >
             Undo
           </button>
         </div>

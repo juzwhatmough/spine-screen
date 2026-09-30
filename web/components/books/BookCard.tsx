@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useContext, useTransition } from "react";
 import { toggleRead, setRating } from "@/lib/actions/listItems";
 import { kindLabel } from "@/lib/books/kindLabel";
 import { SwipeDelete } from "@/components/ui/SwipeDelete";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
+import { PendingExitContext } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
 // Direct port of makeCard()'s interaction model from index.html: tap
@@ -36,15 +37,16 @@ export function BookCard({
   // it no longer belong in the active On the Shelf/Finished view — purely
   // a CSS hook (.card.exiting), no bearing on the actual filtering.
   exiting?: boolean;
-  onStatusChange: (itemId: string, nowDone: boolean) => void;
+  onStatusChange: (itemId: string, nowDone: boolean, title?: string) => void;
   onRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
 }) {
   const [, startTransition] = useTransition();
   const { requestDelete } = useDelete();
+  const pending = useContext(PendingExitContext).has(item.id) && !exiting;
 
   function handleToggle() {
     const nowDone = !done;
-    onStatusChange(item.id, nowDone);
+    onStatusChange(item.id, nowDone, item.title);
     startTransition(() => {
       toggleRead(item.id);
     });
@@ -69,7 +71,7 @@ export function BookCard({
   return (
     <SwipeDelete onDelete={() => requestDelete(item)}>
       <div
-        className={`card${done ? " read" : ""}${exiting ? " exiting" : ""}`}
+        className={`card${done ? " read" : ""}${exiting ? " exiting" : ""}${pending ? " pending-remove" : ""}`}
         style={{ "--tagcolor": color } as React.CSSProperties}
         tabIndex={0}
         onClick={handleToggle}
@@ -105,6 +107,8 @@ export function BookCard({
             <span className="stamp">{done ? "Read ✓" : "Mark read"}</span>
           </div>
         </div>
+        <p className="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
+        <div className="mark-remove-bar" />
       </div>
     </SwipeDelete>
   );

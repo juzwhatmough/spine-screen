@@ -15,7 +15,7 @@ export function BookShelf({
   animatingOut: Set<string>;
   isDone: (item: ListItemRow) => boolean;
   getRating: (item: ListItemRow) => ListItemRow["rating"];
-  onItemStatusChange: (itemId: string, nowDone: boolean) => void;
+  onItemStatusChange: (itemId: string, nowDone: boolean, title?: string) => void;
   onItemRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
 }) {
   return (
