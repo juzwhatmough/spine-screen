@@ -38,6 +38,7 @@ export function AddShowForm({
 
   const [suggestions, setSuggestions] = useState<ShowSuggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchState, setSearchState] = useState<"idle" | "searching" | "none" | "error">("idle");
   const skipNextSearch = useRef(false);
 
   useEffect(() => {
@@ -50,11 +51,14 @@ export function AddShowForm({
       if (trimmed.length < 3) {
         setSuggestions([]);
         setShowDropdown(false);
+        setSearchState("idle");
         return;
       }
-      searchShows(trimmed).then((results) => {
+      setSearchState("searching");
+      searchShows(trimmed).then(({ results, failed }) => {
         setSuggestions(results);
         setShowDropdown(results.length > 0);
+        setSearchState(results.length > 0 ? "idle" : failed ? "error" : "none");
       });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(handle);
@@ -66,6 +70,7 @@ export function AddShowForm({
     if (s.genre) setGenre(s.genre);
     setShowDropdown(false);
     setSuggestions([]);
+    setSearchState("idle");
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -98,6 +103,15 @@ export function AddShowForm({
             onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
           />
+          {searchState !== "idle" && !showDropdown && (
+            <p className="search-hint" role="status">
+              {searchState === "searching"
+                ? "Searching…"
+                : searchState === "none"
+                  ? "No matches found — fill in the details below."
+                  : "Title search is unavailable right now — fill in the details below."}
+            </p>
+          )}
           {showDropdown && (
             <div className="autocomplete-dropdown">
               {suggestions.map((s, i) => (
