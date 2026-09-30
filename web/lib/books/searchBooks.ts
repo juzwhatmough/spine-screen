@@ -18,7 +18,7 @@ export async function searchBooks(query: string): Promise<{ results: BookSuggest
   const key = process.env.GOOGLE_BOOKS_API_KEY;
   try {
     const res = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5` +
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(`intitle:${query}`)}&maxResults=8` +
         (key ? `&key=${encodeURIComponent(key)}` : ""),
       { signal: AbortSignal.timeout(6000) }
     );
@@ -37,7 +37,7 @@ export async function searchBooks(query: string): Promise<{ results: BookSuggest
           };
         })
         .filter((s): s is BookSuggestion => s !== null);
-      if (results.length) return { results, failed: false };
+      if (results.length) return { results: dedupe(results), failed: false };
     }
   } catch {
     // fall through to Open Library
@@ -45,7 +45,7 @@ export async function searchBooks(query: string): Promise<{ results: BookSuggest
 
   try {
     const res = await fetch(
-      `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5` +
+      `https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&limit=8` +
         "&fields=title,author_name,first_publish_year,subject",
       {
         headers: { "User-Agent": "TheShelf/1.0 (personal reading list)" },
@@ -65,7 +65,7 @@ export async function searchBooks(query: string): Promise<{ results: BookSuggest
           year: d.first_publish_year ? String(d.first_publish_year) : "",
           genre: mapGoogleBooksCategoryToGenre(d.subject?.slice(0, 15)),
         }));
-      return { results, failed: false };
+      return { results: dedupe(results), failed: false };
     }
   } catch {
     // handled below
@@ -116,4 +116,17 @@ export function mapGoogleBooksCategoryToGenre(categories?: string[]): string | u
 
 function findGenre(tag: string): string | undefined {
   return GENRE_TAGS.includes(tag) ? tag : undefined;
+}
+
+// Search returns several editions of the same book; keep one per title+author.
+function dedupe(list: BookSuggestion[]): BookSuggestion[] {
+  const seen = new Set<string>();
+  return list
+    .filter((b) => {
+      const k = `${b.title}|${b.author}`.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    })
+    .slice(0, 5);
 }
