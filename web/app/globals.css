@@ -817,3 +817,10 @@ footer{
   flex-shrink: 0;
 }
 .undo-toast .undo-btn:hover{ background: var(--brass); color: var(--ink); }
+
+.search-hint{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin: 6px 0 0;
+}
