@@ -917,3 +917,65 @@ footer{
 @media (max-width: 640px){
   .search-row{ padding: 14px 16px 0; }
 }
+
+/* ---------- Streaming availability check (Shows) ---------- */
+.kind-edit-btn:disabled{ cursor: wait; }
+.avail{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--brass);
+  border-radius: 2px;
+  padding: 8px 10px;
+  margin: 0 0 10px;
+}
+.avail p{ margin: 0 0 6px; }
+.avail .avail-match{ color: var(--ink-soft); font-size: 10px; }
+.avail-chips{ display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.avail-chip{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  background: var(--spine);
+  color: var(--paper);
+  border: none;
+  border-radius: 2px;
+  padding: 6px 10px;
+  margin: 0 6px 6px 0;
+  cursor: pointer;
+}
+.avail-chips .avail-chip{ margin: 0; }
+.avail-chip:hover{ background: var(--ink); }
+.avail-chip:focus-visible, .avail-link:focus-visible{ outline: 2px solid var(--brass); outline-offset: 2px; }
+.avail-link{
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.review-btn{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  background: none;
+  border: 1px solid var(--brass);
+  color: var(--ink);
+  border-radius: 2px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.review-btn:hover{ background: var(--paper); }
+.review-list{ list-style: none; margin: 0; padding: 0; }
+.review-row{ padding: 12px 0; border-top: 1px solid var(--line); }
+.review-row:first-child{ border-top: none; }
+.review-row h3{ font-family: 'Fraunces', serif; font-size: 16px; margin: 0 0 2px; }
+.review-meta{ font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-soft); margin: 0 0 8px; }
+.review-row .avail{ margin-bottom: 0; }
+.review-done{ font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--sage); margin: 0; }
+.review-progress{ font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-soft); margin: 0 0 12px; }

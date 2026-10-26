@@ -2,6 +2,8 @@
 
 import { useState, useTransition, useContext } from "react";
 import { toggleRead, setRating, updateShowPlatform } from "@/lib/actions/listItems";
+import { lookupShowAvailability, type AvailabilityResult as Availability } from "@/lib/actions/showAvailability";
+import { AvailabilityResult } from "./AvailabilityResult";
 import { formatRelativeTime, isStale } from "@/lib/shows/relativeTime";
 import { SwipeDelete } from "@/components/ui/SwipeDelete";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
@@ -49,6 +51,9 @@ export function ShowCard({
   const [editing, setEditing] = useState(false);
   const [draftPlatform, setDraftPlatform] = useState(platform);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [availability, setAvailability] = useState<Availability | null>(null);
+  const [streamingConfirmed, setStreamingConfirmed] = useState(false);
 
   function handleToggle() {
     const nowWatched = !watched;
@@ -110,7 +115,34 @@ export function ShowCard({
     });
   }
 
-  const currentlyStreaming = item.meta?.currentlyStreaming !== false;
+  async function checkAvailability(e: React.MouseEvent) {
+    e.stopPropagation();
+    setChecking(true);
+    setAvailability(null);
+    try {
+      setAvailability(await lookupShowAvailability(item.title));
+    } catch {
+      setAvailability({ status: "error" });
+    }
+    setChecking(false);
+  }
+
+  function acceptAvailability(next: string) {
+    setPlatform(next);
+    setVerifiedAt(new Date().toISOString());
+    setUnconfirmed(false);
+    setStreamingConfirmed(true);
+    setAvailability(null);
+    startSaveTransition(async () => {
+      try {
+        await updateShowPlatform(item.id, next, true);
+      } catch {
+        alert("Could not save that platform right now — please try again.");
+      }
+    });
+  }
+
+  const currentlyStreaming = streamingConfirmed || item.meta?.currentlyStreaming !== false;
 
   return (
     <SwipeDelete onDelete={() => requestDelete(item)}>
@@ -154,9 +186,29 @@ export function ShowCard({
               >
                 ✎
               </button>
+              <button
+                type="button"
+                className="kind-edit-btn"
+                aria-label="Check where it streams now"
+                title="Check where it streams now"
+                disabled={checking}
+                onClick={checkAvailability}
+              >
+                {checking ? "…" : "↻"}
+              </button>
             </>
           )}
         </div>
+        {availability && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <AvailabilityResult
+              result={availability}
+              currentPlatform={platform}
+              onAccept={acceptAvailability}
+              onDismiss={() => setAvailability(null)}
+            />
+          </div>
+        )}
         {editing && saveError && (
           <p className="form-error" style={{ margin: "-4px 0 8px", fontSize: 11 }}>
             {saveError}

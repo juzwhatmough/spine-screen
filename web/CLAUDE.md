@@ -205,6 +205,17 @@ that human-in-the-loop step, for both correcting a stale/wrong platform
 and resolving an AI suggestion's Unconfirmed badge (same action clears
 `meta.unconfirmed`, no separate resolution flow).
 
+**Availability check (suggest-only).** Each Show card has a ↻ button, and
+the stats bar has "Review N to check" (shows that are Unconfirmed or 60+
+days stale). Both call `lookupShowAvailability`
+(`lib/actions/showAvailability.ts`), which searches TMDB by title and reads
+Australian watch providers (`getAuProviders`). It is read-only and shows
+the matched title/year so a wrong match is visible; nothing is saved until
+the user taps a service, which goes through `updateShowPlatform(..., true)`
+(stamps `platformVerifiedAt`, clears `unconfirmed`, sets
+`currentlyStreaming`). Still no AI guessing — the data is TMDB/JustWatch and
+a human confirms every change. Needs `TMDB_API_KEY`.
+
 `meta.platformVerifiedAt` (ISO timestamp, `lib/shows/relativeTime.ts` for
 formatting/staleness) is set on every path that gives a show a real,
 human-sourced platform — Juz's seed (`seedJuzShows.ts`), manual add

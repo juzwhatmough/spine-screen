@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { ShelfNav } from "@/components/books/ShelfNav";
 import { ShowShelf } from "./ShowShelf";
 import { AddShowFab } from "./AddShowFab";
+import { ReviewStaleShows } from "./ReviewStaleShows";
+import { isStale } from "@/lib/shows/relativeTime";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
 import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
@@ -39,6 +41,16 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
     shelves.forEach((s) => s.items.forEach((i) => i.creator && names.add(i.creator)));
     return [...names].sort((a, b) => a.localeCompare(b));
   }, [shelves]);
+
+  // Unfiltered on purpose: the review list is "everything that needs a
+  // check", not just what the current filters happen to show.
+  const needsCheck = useMemo(
+    () =>
+      shelves.flatMap((s) =>
+        s.items.filter((i) => !!i.meta?.unconfirmed || isStale(i.meta?.platformVerifiedAt))
+      ),
+    [shelves]
+  );
 
   const filtered = useMemo(() => {
     return shelves
@@ -97,6 +109,7 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
           </span>
         )}
         <span>Tap a card to mark it watched, then rate it</span>
+        {needsCheck.length > 0 && <ReviewStaleShows items={needsCheck} />}
       </div>
 
       <SearchBox

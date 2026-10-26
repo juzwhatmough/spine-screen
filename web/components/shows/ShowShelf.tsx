@@ -35,7 +35,7 @@ export function ShowShelf({
       <div className="cards">
         {shelf.items.map((item) => (
           <ShowCard
-            key={item.id}
+            key={`${item.id}|${item.creator}|${item.meta?.platformVerifiedAt ?? ""}`}
             item={item}
             color={shelf.color}
             watched={isDone(item)}

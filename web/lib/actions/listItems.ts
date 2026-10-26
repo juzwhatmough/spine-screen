@@ -167,7 +167,13 @@ export async function addManualShow(input: {
 // and clears `unconfirmed` in one action — a user typing in a real
 // platform *is* the resolution of an AI suggestion's "unconfirmed"
 // state, there's no separate flow needed.
-export async function updateShowPlatform(itemId: string, platform: string) {
+export async function updateShowPlatform(
+  itemId: string,
+  platform: string,
+  // True when the platform came from a confirmed availability lookup, which
+  // also clears a stale "not currently streaming" flag.
+  streaming?: boolean
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -193,6 +199,7 @@ export async function updateShowPlatform(itemId: string, platform: string) {
         ...(current.meta as object),
         platformVerifiedAt: new Date().toISOString(),
         unconfirmed: false,
+        ...(streaming ? { currentlyStreaming: true } : {}),
       },
     })
     .eq("id", itemId)
