@@ -13,10 +13,10 @@ import type { ListItemRow } from "@/types/database";
 // pre-populated, silently, same pattern as her book seed.
 export default async function ShowsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { data: authData } = await supabase.auth.getClaims();
+  const claims = authData?.claims;
+  if (!claims) redirect("/login");
+  const user = { id: claims.sub, email: claims.email };
 
   const query = () =>
     supabase

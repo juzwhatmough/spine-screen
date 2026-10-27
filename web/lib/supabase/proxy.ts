@@ -30,8 +30,9 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Triggers a token refresh if the session is stale; writes the refreshed
-  // cookies via setAll above.
-  await supabase.auth.getUser();
+  // cookies via setAll above. getClaims() checks the signed token locally, so
+  // opening a page no longer waits on a round-trip to Supabase's auth server.
+  await supabase.auth.getClaims();
 
   return response;
 }

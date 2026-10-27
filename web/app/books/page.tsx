@@ -8,10 +8,10 @@ import type { ListItemRow } from "@/types/database";
 
 export default async function BooksPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { data: authData } = await supabase.auth.getClaims();
+  const claims = authData?.claims;
+  if (!claims) redirect("/login");
+  const user = { id: claims.sub, email: claims.email };
 
   const query = () =>
     supabase
