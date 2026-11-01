@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Marquee Shows</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#F2B83B}a:hover{color:#FFD27A}
+@keyframes mq-stamp{0%{opacity:0;transform:scale(2.2) rotate(-14deg)}55%{opacity:1;transform:scale(0.9) rotate(-14deg)}75%{transform:scale(1.06) rotate(-14deg)}100%{opacity:1;transform:scale(1) rotate(-14deg)}}
+@keyframes mq-fade{from{opacity:0}to{opacity:1}}
+@keyframes mq-rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mq-stamp{animation:mq-stamp 420ms cubic-bezier(.2,.9,.3,1.2) both}
+.mq-dim{animation:mq-fade 240ms ease-out both}
+.mq-rate{animation:mq-rise 260ms 120ms ease-out both}
+.mq-poster{transition:transform 160ms ease}
+.mq-poster:active{transform:scale(0.97)}
+@media (prefers-reduced-motion: reduce){.mq-stamp,.mq-dim,.mq-rate{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0D1020; color: #F4F1EA; font-family: Inter, system-ui, sans-serif; box-sizing: border-box">
+
+  <div aria-hidden="true" style="display: flex; justify-content: space-between; padding: 18px 22px 0">
+    <sc-for list="{{bulbs}}" as="b" hint-placeholder-count="14">
+      <span style="width: 6px; height: 6px; border-radius: 50%; background: {{b.c}}; box-shadow: {{b.glow}}"></span>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{notSearching}}" hint-placeholder-val="{{true}}">
+  <header style="display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 16px 22px 0">
+    <h1 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 38px; line-height: 1">THE SHELF</h1>
+    <button aria-label="Search shows" onClick="{{openSearch}}" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid #2A3050; background: #171B2E; color: #F4F1EA; display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+    </button>
+  </header>
+  </sc-if>
+  <sc-if value="{{searching}}" hint-placeholder-val="{{false}}">
+  <div class="mq-rate" style="display: flex; align-items: center; gap: 10px; height: 44px; padding: 16px 22px 0">
+    <div style="flex: 1; position: relative">
+      <label for="sh-q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search shows by title or service</label>
+      <svg aria-hidden="true" style="position: absolute; left: 14px; top: 12px; color: #F2B83B" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input id="sh-q" autofocus value="{{q}}" onChange="{{onSearch}}" placeholder="Show title or service" style="width: 100%; height: 44px; box-sizing: border-box; padding: 0 14px 0 44px; border-radius: 22px; border: 1px solid #F2B83B; background: #171B2E; color: #F4F1EA; font: 500 15px Inter, sans-serif; outline: none">
+    </div>
+    <button onClick="{{closeSearch}}" style="height: 44px; padding: 0 4px; border: 0; background: transparent; color: #F2B83B; font: 600 14px Inter, sans-serif; cursor: pointer">Cancel</button>
+  </div>
+  </sc-if>
+
+  <div role="tablist" aria-label="Library" style="margin: 16px 22px 0; padding: 4px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #171B2E; border: 1px solid #2A3050; border-radius: 16px">
+    <a href="A-Books.dc.html" role="tab" aria-selected="false" style="height: 44px; border-radius: 12px; color: #A3A9C2; font: 600 14px Inter, sans-serif; text-decoration: none; display: flex; align-items: center; justify-content: center">Books</a>
+    <button role="tab" aria-selected="true" style="height: 44px; border: 0; border-radius: 12px; background: #F2B83B; color: #0D1020; font: 700 14px Inter, sans-serif; cursor: pointer">Shows</button>
+  </div>
+
+  <div aria-label="Filter by service" role="group" style="margin-top: 16px; padding: 0 22px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none">
+    <sc-for list="{{services}}" as="s" hint-placeholder-count="5">
+      <button aria-pressed="{{s.pressed}}" onClick="{{s.pick}}" style="flex: none; height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid {{s.border}}; background: {{s.bg}}; color: {{s.fg}}; font: 600 13px Inter, sans-serif; white-space: nowrap; display: flex; align-items: center; gap: 6px; cursor: pointer">{{s.label}}</button>
+    </sc-for>
+  </div>
+
+  <nav aria-label="Genres" style="margin-top: 14px; padding: 0 22px; display: flex; gap: 20px; border-bottom: 1px solid #2A3050; overflow: hidden">
+    <sc-for list="{{genres}}" as="g" hint-placeholder-count="5">
+      <a href="#" aria-current="{{g.current}}" style="flex: none; height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: {{g.fg}}; text-decoration: none; border-bottom: {{g.line}}; box-sizing: border-box; white-space: nowrap">{{g.label}}</a>
+    </sc-for>
+  </nav>
+
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 22px 0">
+    <div>
+      <h2 style="margin: 0; font-family: Anton, sans-serif; font-weight: 400; font-size: 28px; line-height: 1">DRAMA</h2>
+      <p style="margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: #A3A9C2">{{countLabel}}</p>
+    </div>
+    <button style="flex: none; height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid #F2B83B; background: transparent; color: #F2B83B; font: 600 13px Inter, sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>Suggest more</button>
+  </div>
+
+  <div style="margin: 16px 22px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px">
+    <sc-for list="{{shows}}" as="s" hint-placeholder-count="4">
+      <div style="position: relative; display: flex; flex-direction: column; gap: 8px">
+        <a href="A-Detail.dc.html" class="mq-poster" aria-label="{{s.detailAria}}" style="text-decoration: none; position: relative; height: 190px; border: 0; border-radius: 16px; padding: 12px; box-sizing: border-box; background: {{s.bg}}; color: {{s.fg}}; text-align: left; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; cursor: pointer; box-shadow: 0 12px 26px rgba(0,0,0,0.45)">
+          <span style="align-self: flex-start; height: 22px; padding: 0 8px; border-radius: 6px; background: rgba(13,16,32,0.78); color: #F4F1EA; font: 700 10px/22px Inter, sans-serif; letter-spacing: 0.1em">{{s.platform}}</span>
+          <span style="font-family: Anton, sans-serif; font-size: 22px; line-height: 1.02">{{s.title}}</span>
+          <sc-if value="{{s.watched}}" hint-placeholder-val="{{false}}">
+            <span class="mq-dim" style="position: absolute; inset: 0; background: rgba(13,16,32,0.62)"></span>
+            <span class="mq-stamp" style="position: absolute; left: 50%; top: 50%; margin: -24px 0 0 -66px; width: 132px; height: 48px; box-sizing: border-box; border: 3px solid #F2B83B; border-radius: 10px; color: #F2B83B; font-family: Anton, sans-serif; font-size: 26px; letter-spacing: 0.06em; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 24px rgba(242,184,59,0.35), inset 0 0 12px rgba(242,184,59,0.2)">WATCHED</span>
+          </sc-if>
+        </a>
+        <button onClick="{{s.toggle}}" aria-pressed="{{s.pressed}}" aria-label="{{s.aria}}" style="position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; border-radius: 22px; border: {{s.checkBorder}}; background: {{s.checkBg}}; color: {{s.checkFg}}; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(6px)">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
+        </button>
+        <sc-if value="{{s.watched}}" hint-placeholder-val="{{false}}">
+          <div class="mq-rate" role="group" aria-label="Rate it" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+            <button aria-label="Thumbs up" aria-pressed="{{s.upP}}" onClick="{{s.up}}" style="height: 44px; border-radius: 12px; border: 1px solid {{s.upB}}; background: {{s.upBg}}; color: {{s.upFg}}; display: flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4V10zM7 10l4-7a2.5 2.5 0 0 1 3 3l-1 4h6a2 2 0 0 1 2 2.3l-1.3 7A2 2 0 0 1 17.7 21H7"></path></svg></button>
+            <button aria-label="Thumbs down" aria-pressed="{{s.downP}}" onClick="{{s.down}}" style="height: 44px; border-radius: 12px; border: 1px solid {{s.downB}}; background: {{s.downBg}}; color: {{s.downFg}}; display: flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V3h3v11zM17 14l-4 7a2.5 2.5 0 0 1-3-3l1-4H5a2 2 0 0 1-2-2.3l1.3-7A2 2 0 0 1 6.3 3H17"></path></svg></button>
+            <button aria-label="Loved it" aria-pressed="{{s.loveP}}" onClick="{{s.love}}" style="height: 44px; border-radius: 12px; border: 1px solid {{s.loveB}}; background: {{s.loveBg}}; color: {{s.loveFg}}; display: flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg></button>
+          </div>
+        </sc-if>
+        <sc-if value="{{s.unwatched}}" hint-placeholder-val="{{true}}">
+          <p style="margin: 0; height: 44px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #A3A9C2">
+            <span style="width: 8px; height: 8px; border-radius: 4px; border: 2px solid #4A5280"></span>TO WATCH</p>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+    <div class="mq-rate" style="position: absolute; left: 22px; right: 22px; top: 400px; padding: 24px; border-radius: 20px; border: 1px dashed #3A4166; text-align: center">
+      <p style="margin: 0; font-family: Anton, sans-serif; font-size: 22px">NOTHING HERE YET</p>
+      <p style="margin: 8px 0 16px; font-size: 14px; line-height: 1.5; color: #A3A9C2">{{emptyMsg}}</p>
+      <button onClick="{{clearAll}}" style="height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: #F2B83B; color: #0D1020; font: 700 14px Inter, sans-serif; cursor: pointer">Clear filters</button>
+    </div>
+  </sc-if>
+
+  <nav aria-label="Main" style="position: absolute; left: 14px; right: 14px; bottom: 18px; height: 68px; border-radius: 24px; background: rgba(23,27,46,0.94); border: 1px solid #2A3050; backdrop-filter: blur(16px); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center">
+    <a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #F2B83B; text-decoration: none">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M9 19V5M14 19l-1-14M19 19l-3.5-13"></path><path d="M3 19h18"></path></svg>Shelf</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #A3A9C2; text-decoration: none">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>For you</a>
+    <span style="display: flex; justify-content: center">
+      <a href="A-Add.dc.html" aria-label="Add a title" style="width: 52px; height: 52px; border-radius: 18px; background: #FF6B57; color: #1A0B08; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(255,107,87,0.35)">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+      </a>
+    </span>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #A3A9C2; text-decoration: none">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg>Finished</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #A3A9C2; text-decoration: none">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Me</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { watched: { loudest: true }, rating: { loudest: 'love' }, service: 'All', searching: false, q: '' };
+  }
+  renderVals() {
+    const gold = '#F2B83B';
+    const bulbs = Array.from({ length: 14 }, (_, i) => {
+      const on = i % 3 !== 1;
+      return { c: on ? gold : '#4A3F25', glow: on ? '0 0 8px ' + gold : 'none' };
+    });
+    const { service, searching, q } = this.state;
+    const services = [
+      { label: 'All', id: 'All' }, { label: 'Stan', id: 'Stan' }, { label: 'Netflix', id: 'Netflix' }, { label: 'Binge', id: 'Binge' },
+      { label: '6 not streaming', id: 'none', warn: true }
+    ].map(s => ({ ...s, on: s.id === service, pick: () => this.setState({ service: s.id }) })).map(s => s.on
+      ? { ...s, pressed: 'true', bg: '#F4F1EA', fg: '#0D1020', border: '#F4F1EA' }
+      : { ...s, pressed: 'false', bg: 'transparent', fg: s.warn ? '#FF9A6B' : '#F4F1EA', border: s.warn ? '#7A3B26' : '#2A3050' });
+    const genres = ['THRILLER', 'DRAMA', 'COMEDY', 'PERIOD', 'TRUE CRIME', 'ROMANCE'].map(label => label === 'DRAMA'
+      ? { label, fg: '#F4F1EA', line: '2px solid #F2B83B', current: 'page' }
+      : { label, fg: '#8C93AE', line: '2px solid transparent', current: 'false' });
+    const { watched, rating } = this.state;
+    const raw = [
+      { id: 'loudest', title: 'THE LOUDEST VOICE', bg: '#7A2E27', fg: '#FFF1EC' },
+      { id: 'love', title: 'EVERYTHING I KNOW ABOUT LOVE', bg: '#FF6B57', fg: '#1A0B08' },
+      { id: 'dear', title: 'DEAR LIFE', bg: '#2EC4B6', fg: '#06201D' },
+      { id: 'three', title: 'THREE WOMEN', bg: '#3D5AFE', fg: '#F2F4FF' }
+    ];
+    const rateStyle = (on, key) => {
+      const col = key === 'love' ? '#FF6B8A' : '#F2B83B';
+      return on
+        ? { b: col, bg: col, fg: '#0D1020', p: 'true' }
+        : { b: '#2A3050', bg: '#171B2E', fg: '#A3A9C2', p: 'false' };
+    };
+    const needle = (q || '').trim().toLowerCase();
+    const shows = raw
+      .map(s => ({ ...s, service: 'Stan', streaming: true }))
+      .filter(s => service === 'All' || (service === 'none' ? !s.streaming : s.service === service))
+      .filter(s => !needle || s.title.toLowerCase().includes(needle) || s.service.toLowerCase().includes(needle))
+      .map(s => {
+      const w = !!watched[s.id];
+      const r = rating[s.id];
+      const set = v => () => this.setState({ rating: { ...rating, [s.id]: r === v ? null : v } });
+      const u = rateStyle(r === 'up', 'up'), d = rateStyle(r === 'down', 'down'), l = rateStyle(r === 'love', 'love');
+      return {
+        ...s, platform: s.service.toUpperCase(), watched: w, unwatched: !w, pressed: w ? 'true' : 'false',
+        aria: s.title + (w ? ', watched. Tap to undo' : ', tap to mark watched'),
+        toggle: () => this.setState({ watched: { ...watched, [s.id]: !w } }),
+        detailAria: 'Open details for ' + s.title,
+        checkBg: w ? '#F2B83B' : 'rgba(13,16,32,0.72)', checkFg: w ? '#0D1020' : '#F4F1EA',
+        checkBorder: w ? '2px solid #F2B83B' : '2px solid rgba(244,241,234,0.55)',
+        up: set('up'), down: set('down'), love: set('love'),
+        upB: u.b, upBg: u.bg, upFg: u.fg, upP: u.p,
+        downB: d.b, downBg: d.bg, downFg: d.fg, downP: d.p,
+        loveB: l.b, loveBg: l.bg, loveFg: l.fg, loveP: l.p
+      };
+    });
+    const n = shows.length;
+    const where = service === 'All' ? 'All services' : service === 'none' ? 'Not streaming' : service;
+    return {
+      bulbs, services, genres, shows, q,
+      searching, notSearching: !searching,
+      empty: n === 0,
+      countLabel: where + ' · ' + n + (n === 1 ? ' show' : ' shows'),
+      emptyMsg: needle
+        ? 'No Drama show matches “' + q + '”' + (service === 'All' ? '.' : ' on ' + where + '.')
+        : 'No Drama shows on ' + where + ' in your list.',
+      openSearch: () => this.setState({ searching: true }),
+      closeSearch: () => this.setState({ searching: false, q: '' }),
+      onSearch: e => this.setState({ q: e.target.value }),
+      clearAll: () => this.setState({ service: 'All', q: '', searching: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

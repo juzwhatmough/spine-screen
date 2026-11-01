@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Marquee sign in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#F2B83B}a:hover{color:#FFD27A}
+input::placeholder{color:#7F86A3}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0D1020; color: #F4F1EA; font-family: Inter, system-ui, sans-serif; box-sizing: border-box">
+
+  <div aria-hidden="true" style="display: flex; justify-content: space-between; padding: 18px 22px 0">
+    <sc-for list="{{bulbs}}" as="b" hint-placeholder-count="14">
+      <span style="width: 6px; height: 6px; border-radius: 50%; background: {{b.c}}; box-shadow: {{b.glow}}"></span>
+    </sc-for>
+  </div>
+
+  <div aria-hidden="true" style="position: relative; height: 270px; margin-top: 18px">
+    <div style="position: absolute; left: 34px; top: 46px; width: 110px; height: 164px; border-radius: 14px; background: #3D5AFE; transform: rotate(-12deg); box-shadow: 0 16px 30px rgba(0,0,0,0.5); padding: 12px; box-sizing: border-box; font-family: Anton, sans-serif; font-size: 18px; line-height: 1; color: #F2F4FF">THE BERLIN GIRL</div>
+    <div style="position: absolute; right: 34px; top: 46px; width: 110px; height: 164px; border-radius: 14px; background: #2EC4B6; transform: rotate(12deg); box-shadow: 0 16px 30px rgba(0,0,0,0.5); padding: 12px; box-sizing: border-box; font-family: Anton, sans-serif; font-size: 18px; line-height: 1; color: #06201D">DEAR LIFE</div>
+    <div style="position: absolute; left: 50%; top: 20px; margin-left: -64px; width: 128px; height: 190px; border-radius: 16px; background: #E4572E; box-shadow: 0 20px 40px rgba(0,0,0,0.55); padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; color: #FFF6F2">
+      <span style="font-family: Anton, sans-serif; font-size: 22px; line-height: 1">THE SECRET MESSENGER</span>
+      <span style="font-size: 9px; font-weight: 600; letter-spacing: 0.1em">MANDY ROBOTHAM</span>
+    </div>
+  </div>
+
+  <div style="padding: 0 24px">
+    <p style="margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; color: #F2B83B">BOOKS + SHOWS, ONE LIST</p>
+    <h1 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 56px; line-height: 0.92">THE SHELF</h1>
+    <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: #A3A9C2">Genre shelves, AI picks that learn from your ratings, and your list synced to your account.</p>
+  </div>
+
+  <form style="position: absolute; left: 24px; right: 24px; bottom: 34px; display: flex; flex-direction: column; gap: 10px">
+    <label for="si-email" style="font-size: 13px; font-weight: 600">Email</label>
+    <input id="si-email" type="email" placeholder="you@example.com" style="height: 54px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: 1px solid #2A3050; background: #171B2E; color: #F4F1EA; font: 500 16px Inter, sans-serif">
+    <button type="submit" style="height: 56px; border: 0; border-radius: 16px; background: #F2B83B; color: #0D1020; font: 700 16px Inter, sans-serif; cursor: pointer; box-shadow: 0 10px 30px rgba(242,184,59,0.3)">Email me a sign-in link</button>
+    <p style="margin: 2px 0 0; text-align: center; font-size: 13px; color: #A3A9C2">No password needed. Your list stays private.</p>
+  </form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const gold = '#F2B83B';
+    const bulbs = Array.from({ length: 14 }, (_, i) => {
+      const on = i % 3 !== 1;
+      return { c: on ? gold : '#4A3F25', glow: on ? '0 0 8px ' + gold : 'none' };
+    });
+    return { bulbs };
+  }
+}
+</script>
+</body>
+</html>

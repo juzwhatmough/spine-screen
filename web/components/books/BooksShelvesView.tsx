@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ShelfNav } from "./ShelfNav";
 import { BookShelf } from "./BookShelf";
 import { AddBookFab } from "./AddBookFab";
+import { BottomNav } from "@/components/nav/BottomNav";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
-import { useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
+import { useStatusTransitions, type StatusView } from "@/lib/hooks/useStatusTransitions";
 import type { BookShelfData } from "@/lib/books/groupItems";
 
 // Client boundary that owns filter state and does the actual client-side
@@ -18,16 +18,46 @@ import type { BookShelfData } from "@/lib/books/groupItems";
 // Also owns the stats bar now (moved here from the server page) — it
 // needs to reflect the currently filtered/status-scoped view, which only
 // exists client-side.
-export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
-  const [statusView, setStatusView] = useState<StatusView>("shelf");
+export function BooksShelvesView({
+  shelves,
+  userEmail,
+  initialView,
+}: {
+  shelves: BookShelfData[];
+  userEmail: string;
+  initialView: StatusView;
+}) {
+  const [statusView, setStatusView] = useState<StatusView>(initialView);
   const [genre, setGenre] = useState("");
   const [author, setAuthor] = useState("");
   // Tracks whichever shelf is currently in view (ShelfNav's scroll-spy),
   // used only to pre-fill the Add-a-book modal's Genre field.
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
+  const [addOpen, setAddOpen] = useState(false);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
     useStatusTransitions(statusView);
+
+  // statusView lives in the URL (?view=finished) per
+  // web/REDESIGN_SPEC.md section 4.3, so the bottom nav's back button
+  // works — but it's a shallow `history.pushState`, not a router
+  // navigation, so switching views stays client-side with no
+  // server round-trip (same philosophy as the filters below).
+  function handleStatusViewChange(next: StatusView) {
+    setStatusView(next);
+    const url = next === "finished" ? `${window.location.pathname}?view=finished` : window.location.pathname;
+    window.history.pushState(null, "", url);
+  }
+
+  useEffect(() => {
+    function handlePopState() {
+      const params = new URLSearchParams(window.location.search);
+      setStatusView(params.get("view") === "finished" ? "finished" : "shelf");
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
   const authorOptions = useMemo(() => {
@@ -73,8 +103,6 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
 
   return (
     <>
-      <StatusToggle value={statusView} onChange={setStatusView} />
-
       <div className="stats">
         <span>
           <b>{filtered.length}</b> shelves
@@ -124,7 +152,19 @@ export function BooksShelvesView({ shelves }: { shelves: BookShelfData[] }) {
         )}
       </main>
 
-      <AddBookFab activeGenre={activeGenre} />
+      <BottomNav
+        statusView={statusView}
+        onStatusViewChange={handleStatusViewChange}
+        onAddClick={() => setAddOpen(true)}
+        addButtonRef={addButtonRef}
+        userEmail={userEmail}
+      />
+      <AddBookFab
+        activeGenre={activeGenre}
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        returnFocusRef={addButtonRef}
+      />
     </>
   );
 }

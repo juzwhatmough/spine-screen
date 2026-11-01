@@ -14,15 +14,44 @@
   --line: rgba(34, 38, 31, 0.16);
   --card-shadow: 0 1px 0 rgba(34, 38, 31, 0.06), 0 8px 20px -14px rgba(34, 38, 31, 0.35);
   --warn: #C1652E;
+
+  /* ---------- "Marquee" redesign tokens (web/REDESIGN_SPEC.md) ----------
+     Ported alongside the tokens above rather than replacing them: most of
+     the app (cards, filters, modal, auth forms) still reads the --paper/
+     --ink/etc. set above and is restyled in a later PR. Delete the block
+     above once nothing references it. */
+  --mq-bg: #0D1020;
+  --mq-surface: #171B2E;
+  --mq-line: #2A3050;
+  --mq-line-strong: #3A4166;
+  --mq-scrim: rgba(6,8,18,0.72);
+
+  --mq-text: #F4F1EA;
+  --mq-muted: #A3A9C2;
+  --mq-dim: #8C93AE;
+
+  --mq-gold: #F2B83B;
+  --mq-gold-off: #4A3F25;
+  --mq-coral: #FF6B57;
+  --mq-love: #FF6B8A;
+  --mq-warn: #FF9A6B;
+  --mq-warn-line: #7A3B26;
+  --mq-warn-bg: rgba(255,154,107,0.10);
+
+  --mq-r-chip: 20px; --mq-r-input: 14px; --mq-r-btn: 16px;
+  --mq-r-card: 16px; --mq-r-sheet: 28px;
+
+  --mq-ease-out: cubic-bezier(.2,.8,.2,1);
+  --mq-ease-pop: cubic-bezier(.2,.9,.3,1.2);
 }
 
 *{ box-sizing: border-box; }
 html{ scroll-behavior: smooth; }
 body{
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: 'Source Serif 4', serif;
+  background: var(--mq-bg);
+  color: var(--mq-text);
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 ::selection{ background: var(--brass); color: var(--paper); }
@@ -77,39 +106,138 @@ h1 em{ font-style: italic; font-weight: 500; color: var(--spine); }
   opacity: 0.9;
 }
 
-/* ---------- Tab nav (Books / Shows header switcher, and the On the
-   Shelf / Finished status toggle near the stats bar — same component
-   visually, `a` for real navigation, `button` for in-page state) ---------- */
-.tab-nav{
+/* ---------- Marquee lights (web/components/ui/MarqueeLights.tsx) ---------- */
+.marquee-lights{
   display: flex;
-  gap: 8px;
-  margin-top: 24px;
-  position: relative;
+  justify-content: space-between;
+  padding: 18px 22px 0;
 }
-.tab-nav a,
-.tab-nav button{
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  background: transparent;
-  border: 1.5px solid var(--ink);
-  color: var(--ink);
-  padding: 9px 16px;
-  border-radius: 2px;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-  transition: background .15s ease, color .15s ease;
+.mq-bulb{
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mq-gold);
+  box-shadow: 0 0 8px var(--mq-gold);
+  animation: mq-twinkle 3s ease-in-out infinite;
 }
-.tab-nav a:hover,
-.tab-nav button:hover{ background: rgba(34,38,31,0.06); }
-.tab-nav a.active,
-.tab-nav button.active{ background: var(--ink); color: var(--paper); }
+.mq-bulb-off{
+  background: var(--mq-gold-off);
+  box-shadow: none;
+  animation: none;
+}
+@keyframes mq-twinkle{
+  0%, 100%{ opacity: 1; }
+  50%{ opacity: 0.6; }
+}
 
-/* Status toggle sits right above the stats bar, not in the header, so it
-   doesn't need the header's top margin. */
-.status-toggle{ margin: 0; padding: 16px 24px 0; }
+/* ---------- Shelf header (Books/Shows "THE SHELF" title row) ----------
+   Overrides the generic `header{}`/`h1{}` rules above (by selector
+   specificity), which the login/onboarding screens still use unchanged. */
+header.mq-shelf-header{
+  position: static;
+  padding: 16px 22px 0;
+  background: none;
+  border-bottom: none;
+  overflow: visible;
+}
+.mq-title{
+  margin: 0;
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: normal;
+  max-width: none;
+  text-transform: uppercase;
+  color: var(--mq-text);
+}
+
+/* ---------- Books/Shows segmented control (web/components/nav/TabNav.tsx) ---------- */
+.mq-segmented{
+  margin: 16px 22px 0;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  background: var(--mq-surface);
+  border: 1px solid var(--mq-line);
+  border-radius: 16px;
+}
+.mq-segmented-item{
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--mq-muted);
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.mq-segmented-item.active{
+  background: var(--mq-gold);
+  color: var(--mq-bg);
+  font-weight: 700;
+}
+
+/* ---------- Bottom navigation (web/components/nav/BottomNav.tsx) ----------
+   Replaces the old FAB + in-page status toggle on the Books/Shows shelf
+   screens. Fixed so it stays put while the shelf content scrolls. */
+.bottom-nav{
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  height: 68px;
+  border-radius: 24px;
+  background: rgba(23,27,46,0.94);
+  border: 1px solid var(--mq-line);
+  backdrop-filter: blur(16px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  z-index: 30;
+}
+.bottom-nav-item{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mq-muted);
+}
+.bottom-nav-item.active{
+  color: var(--mq-gold);
+  font-weight: 600;
+}
+.bottom-nav-add-slot{
+  display: flex;
+  justify-content: center;
+}
+.bottom-nav-add{
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  border: 0;
+  background: var(--mq-coral);
+  color: #1A0B08;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(255,107,87,0.35);
+}
 
 /* ---------- Stats bar ---------- */
 .stats{
@@ -155,7 +283,7 @@ nav.shelves button{
 nav.shelves button:hover{ color: rgba(241,236,225,0.85); }
 nav.shelves button.active{ color: var(--paper); border-bottom-color: var(--brass); }
 
-main{ max-width: 1080px; margin: 0 auto; padding: 8px 24px 100px; }
+main{ max-width: 1080px; margin: 0 auto; padding: 8px 24px 110px; }
 
 section.shelf{ padding: 56px 0 8px; border-top: 1px solid var(--line); }
 section.shelf:first-of-type{ border-top: none; }
@@ -571,57 +699,6 @@ footer{
   line-height: 1.6;
   max-width: 520px;
   padding: 24px 0 40px;
-}
-
-/* ---------- FAB ---------- */
-.fab{
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  height: 56px;
-  padding: 0;
-  border: none;
-  border-radius: 12px;
-  background: var(--spine);
-  color: var(--paper);
-  box-shadow: 0 4px 12px rgba(34,38,31,0.28), 0 1px 0 rgba(34,38,31,0.1);
-  cursor: pointer;
-  transition: background .15s ease, box-shadow .15s ease, transform .1s ease;
-  overflow: hidden;
-}
-.fab:hover{ background: var(--ink); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(34,38,31,0.32); }
-.fab:active{ transform: translateY(0); }
-.fab:focus-visible{ outline: 2px solid var(--brass); outline-offset: 3px; }
-.fab .fab-icon{
-  flex: 0 0 56px;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Fraunces', serif;
-  font-size: 26px;
-  line-height: 1;
-}
-.fab .fab-label{
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  max-width: 0;
-  opacity: 0;
-  transition: max-width .18s ease, opacity .15s ease, padding .18s ease;
-}
-.fab:hover .fab-label,
-.fab:focus-visible .fab-label{
-  max-width: 200px;
-  opacity: 1;
-  padding-right: 18px;
 }
 
 /* ---------- Modal ---------- */
