@@ -7,9 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 
 // Bottom nav's "Account" item — web/REDESIGN_SPEC.md section 4.3: "Small
 // sheet with the signed-in email and Sign out." Reuses the shared Modal
-// (still its pre-redesign centred-card look; the bottom-sheet variant is
-// a later PR — see section 7) rather than a one-off dialog, so this gets
-// the same focus-trap/Esc/return-focus behaviour as the Add modals.
+// (now the section 7 bottom-sheet variant) rather than a one-off dialog,
+// so this gets the same focus-trap/Esc/return-focus behaviour as the Add
+// sheets.
 export function AccountSheet({
   open,
   onClose,
@@ -33,10 +33,11 @@ export function AccountSheet({
 
   return (
     <Modal open={open} onClose={onClose} title="Account" returnFocusRef={returnFocusRef}>
-      <p>
+      <h2 className="sheet-title">Account</h2>
+      <p className="sheet-account-email">
         Signed in as <strong>{email}</strong>
       </p>
-      <button type="button" className="primary-btn" onClick={handleSignOut} disabled={signingOut}>
+      <button type="button" className="sheet-signout-btn" onClick={handleSignOut} disabled={signingOut}>
         {signingOut ? "Signing out…" : "Sign out"}
       </button>
     </Modal>

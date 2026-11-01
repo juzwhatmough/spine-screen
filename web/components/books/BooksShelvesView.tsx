@@ -5,6 +5,7 @@ import { ShelfNav } from "./ShelfNav";
 import { BookShelf } from "./BookShelf";
 import { AddBookFab } from "./AddBookFab";
 import { BottomNav } from "@/components/nav/BottomNav";
+import { DetailSheet } from "@/components/shared/DetailSheet";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
 import {
@@ -42,6 +43,29 @@ export function BooksShelvesView({
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
   const [addOpen, setAddOpen] = useState(false);
   const addButtonRef = useRef<HTMLButtonElement>(null);
+  // The detail sheet lives here, not inside BookCard — see
+  // components/shared/DetailSheet.tsx's file comment for why. Looked up
+  // from the full, unfiltered `shelves` prop (not `filtered`) so it keeps
+  // showing the right item even if that item has since left the active
+  // On the Shelf/Finished view.
+  const [detailItemId, setDetailItemId] = useState<string | null>(null);
+  const detailReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+
+  function openDetail(itemId: string, trigger: HTMLButtonElement) {
+    detailReturnFocusRef.current = trigger;
+    setDetailItemId(itemId);
+  }
+
+  const detailItem = useMemo(() => {
+    if (!detailItemId) return null;
+    for (const shelf of shelves) {
+      for (const group of shelf.groups) {
+        const found = group.items.find((item) => item.id === detailItemId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }, [shelves, detailItemId]);
 
   const {
     isDone,
@@ -176,6 +200,7 @@ export function BooksShelvesView({
               getRating={getRating}
               onItemStatusChange={handleStatusChange}
               onItemRatingChange={handleRatingChange}
+              onOpenDetail={openDetail}
             />
           ))
         )}
@@ -195,6 +220,20 @@ export function BooksShelvesView({
         onClose={() => setAddOpen(false)}
         returnFocusRef={addButtonRef}
       />
+      {detailItem && (
+        <DetailSheet
+          key={detailItem.id}
+          item={detailItem}
+          kind="book"
+          open={!!detailItemId}
+          onClose={() => setDetailItemId(null)}
+          returnFocusRef={detailReturnFocusRef}
+          done={isDone(detailItem)}
+          rating={getRating(detailItem)}
+          onStatusChange={handleStatusChange}
+          onRatingChange={handleRatingChange}
+        />
+      )}
     </>
   );
 }

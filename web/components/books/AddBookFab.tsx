@@ -22,6 +22,7 @@ export function AddBookFab({
 }) {
   return (
     <Modal open={open} onClose={onClose} title="Add a book" returnFocusRef={returnFocusRef}>
+      <h2 className="sheet-title">Add a book</h2>
       <AddBookForm initialGenre={activeGenre} onSuccess={onClose} />
     </Modal>
   );

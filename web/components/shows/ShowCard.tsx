@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useTransition, useContext } from "react";
-import { toggleRead, setRating, updateShowPlatform } from "@/lib/actions/listItems";
-import { formatRelativeTime, isStale } from "@/lib/shows/relativeTime";
+import { useContext, useTransition } from "react";
+import { toggleRead, setRating } from "@/lib/actions/listItems";
 import { coverColor } from "@/lib/ui/coverColor";
 import { SwipeDelete } from "@/components/ui/SwipeDelete";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
@@ -10,19 +9,14 @@ import { PendingExitContext } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
 // Marquee cover card — see the comment on BookCard.tsx for the shared
-// parts (cover as an inert `<button>` until the detail sheet lands,
-// sibling quick-mark tick, controlled done/rating, swipe-delete and the
+// parts (cover opens the detail sheet via `onOpenDetail`, sibling
+// quick-mark tick, controlled done/rating, swipe-delete and the
 // pending-remove countdown all unchanged).
 //
-// One deliberate deviation from web/REDESIGN_SPEC.md section 6.1 here:
-// the spec's cover tag pill is plain text (platform or "UNCONFIRMED"),
-// because section 8.1 moves platform *editing* into the detail sheet —
-// but that sheet doesn't exist until a later PR, and the cover is now a
-// real `<button>`, so an edit control can no longer live nested inside
-// it (buttons can't contain other interactive controls). Rather than
-// drop platform editing entirely until the detail sheet ships, it's kept
-// here as its own small row below the cover, to be moved into the sheet
-// once that PR lands.
+// Platform editing (the pencil + inline input PR2 kept here as an
+// interim measure) has now moved into DetailSheet.tsx, per section 8.1 —
+// the card just reads `item.creator`/`item.meta` directly, no local
+// editable state.
 export function ShowCard({
   item,
   watched,
@@ -30,6 +24,7 @@ export function ShowCard({
   exiting = false,
   onStatusChange,
   onRatingChange,
+  onOpenDetail,
 }: {
   item: ListItemRow;
   watched: boolean;
@@ -37,19 +32,12 @@ export function ShowCard({
   exiting?: boolean;
   onStatusChange: (itemId: string, nowWatched: boolean, title?: string) => void;
   onRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
+  onOpenDetail: (itemId: string, trigger: HTMLButtonElement) => void;
 }) {
   const [, startTransition] = useTransition();
   const { requestDelete } = useDelete();
   const pending = useContext(PendingExitContext).has(item.id) && !exiting;
-  const [, startSaveTransition] = useTransition();
   const color = coverColor(item.id);
-
-  const [platform, setPlatform] = useState(item.creator ?? "Unknown platform");
-  const [verifiedAt, setVerifiedAt] = useState(item.meta?.platformVerifiedAt ?? null);
-  const [unconfirmed, setUnconfirmed] = useState(!!item.meta?.unconfirmed);
-  const [editing, setEditing] = useState(false);
-  const [draftPlatform, setDraftPlatform] = useState(platform);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   function handleToggle() {
     const nowWatched = !watched;
@@ -67,39 +55,9 @@ export function ShowCard({
     });
   }
 
-  function startEditing() {
-    setDraftPlatform(platform === "Unknown platform" ? "" : platform);
-    setSaveError(null);
-    setEditing(true);
-  }
-
-  function cancelEditing() {
-    setEditing(false);
-    setSaveError(null);
-  }
-
-  function savePlatform() {
-    const trimmed = draftPlatform.trim();
-    if (!trimmed) {
-      setSaveError("Platform is required");
-      return;
-    }
-    const now = new Date().toISOString();
-    setPlatform(trimmed);
-    setVerifiedAt(now);
-    setUnconfirmed(false);
-    setEditing(false);
-    setSaveError(null);
-    startSaveTransition(async () => {
-      try {
-        await updateShowPlatform(item.id, trimmed);
-      } catch {
-        alert("Could not save that platform right now — please try again.");
-      }
-    });
-  }
-
+  const unconfirmed = !!item.meta?.unconfirmed;
   const currentlyStreaming = item.meta?.currentlyStreaming !== false;
+  const platform = item.creator ?? "Unknown platform";
   const tagLabel = unconfirmed ? "UNCONFIRMED" : platform.toUpperCase();
 
   return (
@@ -112,6 +70,7 @@ export function ShowCard({
           className="mq-cover mq-cover-show"
           style={{ background: color.bg, color: color.fg }}
           aria-label={`Open details for ${item.title}`}
+          onClick={(e) => onOpenDetail(item.id, e.currentTarget)}
         >
           <span
             className="mq-cover-tag"
@@ -150,49 +109,6 @@ export function ShowCard({
             <path d="M5 12l5 5 9-10" />
           </svg>
         </button>
-
-        <div className="mq-platform-row">
-          {editing ? (
-            <>
-              <input
-                type="text"
-                className="mq-platform-input"
-                value={draftPlatform}
-                autoFocus
-                onChange={(e) => setDraftPlatform(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") savePlatform();
-                  if (e.key === "Escape") cancelEditing();
-                }}
-              />
-              <button type="button" className="mq-platform-save-btn" aria-label="Save platform" onClick={savePlatform}>
-                ✓
-              </button>
-              <button type="button" className="mq-platform-cancel-btn" aria-label="Cancel" onClick={cancelEditing}>
-                ✕
-              </button>
-            </>
-          ) : (
-            <>
-              <span>{platform}</span>
-              <button
-                type="button"
-                className="mq-platform-edit-btn"
-                aria-label="Edit platform"
-                title="Edit platform"
-                onClick={startEditing}
-              >
-                ✎
-              </button>
-              {verifiedAt && (
-                <span className={`mq-verified-note${isStale(verifiedAt) ? " stale" : ""}`}>
-                  {formatRelativeTime(verifiedAt)}
-                </span>
-              )}
-            </>
-          )}
-        </div>
-        {editing && saveError && <p className="form-error">{saveError}</p>}
 
         {watched ? (
           <div className="mq-rating-row" role="group" aria-label="Rate it">

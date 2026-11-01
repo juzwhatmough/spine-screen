@@ -701,59 +701,102 @@ footer{
   padding: 24px 0 40px;
 }
 
-/* ---------- Modal ---------- */
-.modal-overlay{
+/* ---------- Bottom sheet (web/REDESIGN_SPEC.md section 7) ----------
+   Replaces the old centred .modal-overlay/.modal-content look — every
+   Modal caller (Add book/show, Account, the detail sheet below) now
+   gets this. @keyframes modalFadeIn is still used by .undo-toast, so it
+   stays even though .modal-overlay/.modal-content are gone. */
+@keyframes modalFadeIn{ from{ opacity: 0; } to{ opacity: 1; } }
+
+.sheet-scrim{
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(34,38,31,0.5);
+  background: var(--mq-scrim);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: sheet-scrim-in 320ms var(--mq-ease-out) both;
+}
+.sheet-scrim.closing{ animation: sheet-scrim-out 200ms ease both; }
+@keyframes sheet-scrim-in{ from{ opacity: 0; } to{ opacity: 1; } }
+@keyframes sheet-scrim-out{ from{ opacity: 1; } to{ opacity: 0; } }
+
+.sheet-panel{
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: var(--mq-surface);
+  border: 1px solid var(--mq-line);
+  border-bottom: 0;
+  border-radius: 28px 28px 0 0;
+  padding: 10px 22px calc(30px + env(safe-area-inset-bottom));
+  box-shadow: 0 -20px 60px rgba(0,0,0,.5);
+  animation: sheet-panel-in 320ms var(--mq-ease-out) both;
+}
+.sheet-panel.closing{ animation: sheet-panel-out 200ms ease both; }
+@keyframes sheet-panel-in{ from{ opacity: 0; transform: translateY(40px); } to{ opacity: 1; transform: translateY(0); } }
+@keyframes sheet-panel-out{ from{ opacity: 1; transform: translateY(0); } to{ opacity: 0; transform: translateY(40px); } }
+
+.sheet-grabber{
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--mq-line-strong);
+  margin: 0 auto 14px;
+}
+.sheet-close{
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: 0;
+  background: var(--mq-bg);
+  color: var(--mq-text);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  animation: modalFadeIn .15s ease;
-}
-.modal-content{
-  background: var(--paper);
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  box-shadow: 0 12px 40px rgba(34,38,31,0.35);
-  width: 100%;
-  max-width: 440px;
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
-  padding: 28px;
-  animation: modalScaleIn .18s ease;
-}
-.modal-header{
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-.modal-header h2{
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 22px;
-  margin: 0;
-}
-.modal-close{
-  background: none;
-  border: none;
-  color: var(--ink-soft);
-  font-size: 22px;
-  line-height: 1;
   cursor: pointer;
-  padding: 2px 4px;
 }
-.modal-close:hover{ color: var(--ink); }
-@keyframes modalFadeIn{ from{ opacity: 0; } to{ opacity: 1; } }
-@keyframes modalScaleIn{ from{ opacity: 0; transform: scale(0.96) translateY(6px); } to{ opacity: 1; transform: scale(1) translateY(0); } }
+.sheet-close:focus-visible{ outline: 2px solid var(--mq-gold); outline-offset: 2px; }
+
+.sheet-title{
+  margin: 14px 0 16px;
+  padding-right: 48px;
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--mq-text);
+}
+.sheet-account-email{
+  font: 400 15px var(--font-inter), Inter, sans-serif;
+  color: var(--mq-muted);
+  margin: 0 0 20px;
+}
+.sheet-signout-btn{
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-line);
+  background: var(--mq-surface);
+  color: var(--mq-text);
+  font: 600 14px var(--font-inter), Inter, sans-serif;
+  cursor: pointer;
+}
+.sheet-signout-btn:disabled{ opacity: 0.6; cursor: wait; }
 
 @media (prefers-reduced-motion: reduce){
-  .modal-overlay, .modal-content{ animation: none; }
+  .sheet-scrim, .sheet-panel{ animation: none; }
 }
+
 .form-error{
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
@@ -1187,8 +1230,8 @@ footer{
   border: 2px solid var(--mq-line-strong);
 }
 
-/* ---------- Shows: platform row (interim placement — see the comment at
-   the top of ShowCard.tsx. Moves into the detail sheet in a later PR). */
+/* ---------- Shows: platform edit row — now only used inside
+   DetailSheet.tsx's editing state (moved off the card, section 8.1). */
 .mq-platform-row{
   display: flex;
   align-items: center;
@@ -1197,15 +1240,6 @@ footer{
   font: 600 12px var(--font-inter), Inter, sans-serif;
   color: var(--mq-muted);
 }
-.mq-platform-edit-btn{
-  background: none;
-  border: 0;
-  color: var(--mq-muted);
-  cursor: pointer;
-  padding: 4px;
-  line-height: 1;
-}
-.mq-platform-edit-btn:hover{ color: var(--mq-text); }
 .mq-platform-input{
   flex: 1;
   min-width: 0;
@@ -1234,4 +1268,166 @@ footer{
 
 @media (prefers-reduced-motion: reduce){
   .mq-cover-dim, .mq-stamp, .mq-rating-row{ animation: none; }
+}
+
+/* ---------- Detail sheet (web/REDESIGN_SPEC.md section 8.1) ---------- */
+.detail-top{
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+.detail-thumb{
+  flex: none;
+  position: relative;
+  width: 108px;
+  height: 160px;
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 6px 14px 14px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+.detail-thumb-title{
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.detail-thumb-stamp{
+  width: 84px;
+  height: 40px;
+  font-size: 18px;
+  border-width: 2px;
+}
+.detail-top-info{
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* keeps the title/tag clear of the sheet's floating close button */
+  padding-right: 52px;
+}
+.detail-tag-pill{
+  align-self: flex-start;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(13,16,32,0.55);
+  font: 700 10px/22px var(--font-inter), Inter, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.detail-title{
+  margin: 0;
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: var(--mq-text);
+}
+.detail-creator{
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 15px var(--font-inter), Inter, sans-serif;
+  color: var(--mq-text);
+}
+.detail-edit-btn{
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-line);
+  background: var(--mq-surface);
+  color: var(--mq-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.detail-genre-pill{
+  align-self: flex-start;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-line);
+  color: var(--mq-muted);
+  font: 600 12px var(--font-inter), Inter, sans-serif;
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+.detail-hook{
+  font: 400 16px/1.55 var(--font-inter), Inter, sans-serif;
+  color: #D9DCE8;
+  margin: 18px 0 0;
+}
+.detail-warning{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--mq-warn-bg);
+  border: 1px solid var(--mq-warn-line);
+  color: var(--mq-text);
+}
+.detail-warning svg{ flex: none; margin-top: 2px; color: var(--mq-warn); }
+.detail-warning p{ margin: 0; font: 500 13px/1.5 var(--font-inter), Inter, sans-serif; }
+.detail-primary-btn{
+  width: 100%;
+  height: 56px;
+  margin-top: 18px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--mq-gold);
+  color: var(--mq-bg);
+  font: 700 15px var(--font-inter), Inter, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.detail-primary-btn.done{
+  background: transparent;
+  color: var(--mq-gold);
+  border: 2px solid var(--mq-gold);
+}
+.detail-rate-group{ margin-top: 18px; }
+.detail-rate-label{
+  margin: 0 0 10px;
+  font: 600 13px var(--font-inter), Inter, sans-serif;
+  color: var(--mq-muted);
+}
+.detail-rate-row{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.detail-rate-btn{
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-line);
+  background: var(--mq-surface);
+  color: var(--mq-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: 600 13px var(--font-inter), Inter, sans-serif;
+  cursor: pointer;
+}
+.detail-rate-btn.on{ background: var(--mq-gold); border-color: var(--mq-gold); color: var(--mq-bg); }
+.detail-rate-btn.love.on{ background: var(--mq-love); border-color: var(--mq-love); color: var(--mq-bg); }
+
+@media (max-width: 400px){
+  .detail-thumb{ width: 88px; height: 132px; }
 }
