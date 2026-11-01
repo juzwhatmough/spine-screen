@@ -39,6 +39,7 @@ export function AddBookForm({
 
   const [suggestions, setSuggestions] = useState<BookSuggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchState, setSearchState] = useState<"idle" | "searching" | "none" | "error">("idle");
   const skipNextSearch = useRef(false);
 
   useEffect(() => {
@@ -51,11 +52,14 @@ export function AddBookForm({
       if (trimmed.length < 3) {
         setSuggestions([]);
         setShowDropdown(false);
+        setSearchState("idle");
         return;
       }
-      searchGoogleBooks(trimmed).then((results) => {
+      setSearchState("searching");
+      searchGoogleBooks(trimmed).then(({ results, failed }) => {
         setSuggestions(results);
         setShowDropdown(results.length > 0);
+        setSearchState(results.length > 0 ? "idle" : failed ? "error" : "none");
       });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(handle);
@@ -68,6 +72,7 @@ export function AddBookForm({
     if (s.genre) setGenre(s.genre);
     setShowDropdown(false);
     setSuggestions([]);
+    setSearchState("idle");
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -100,6 +105,15 @@ export function AddBookForm({
             onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
           />
+          {searchState !== "idle" && !showDropdown && (
+            <p className="search-hint" role="status">
+              {searchState === "searching"
+                ? "Searching…"
+                : searchState === "none"
+                  ? "No matches found — fill in the details below."
+                  : "Title search is unavailable right now — fill in the details below."}
+            </p>
+          )}
           {showDropdown && (
             <div className="autocomplete-dropdown">
               {suggestions.map((s, i) => (

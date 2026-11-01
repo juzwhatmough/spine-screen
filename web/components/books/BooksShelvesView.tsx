@@ -6,7 +6,13 @@ import { BookShelf } from "./BookShelf";
 import { AddBookFab } from "./AddBookFab";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { useStatusTransitions, type StatusView } from "@/lib/hooks/useStatusTransitions";
+import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
+import {
+  PendingExitContext,
+  useStatusTransitions,
+  type StatusView,
+} from "@/lib/hooks/useStatusTransitions";
+import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { BookShelfData } from "@/lib/books/groupItems";
 
 // Client boundary that owns filter state and does the actual client-side
@@ -30,14 +36,23 @@ export function BooksShelvesView({
   const [statusView, setStatusView] = useState<StatusView>(initialView);
   const [genre, setGenre] = useState("");
   const [author, setAuthor] = useState("");
+  const [query, setQuery] = useState("");
   // Tracks whichever shelf is currently in view (ShelfNav's scroll-spy),
   // used only to pre-fill the Add-a-book modal's Genre field.
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
   const [addOpen, setAddOpen] = useState(false);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
-    useStatusTransitions(statusView);
+  const {
+    isDone,
+    getRating,
+    leavingView,
+    animatingOut,
+    pendingExit,
+    handleStatusChange,
+    handleRatingChange,
+  } = useStatusTransitions(statusView, "read");
+  const { hiddenIds } = useDelete();
 
   // statusView lives in the URL (?view=finished) per
   // web/REDESIGN_SPEC.md section 4.3, so the bottom nav's back button
@@ -76,6 +91,8 @@ export function BooksShelvesView({
           .map((g) => ({
             ...g,
             items: g.items.filter((item) => {
+              if (hiddenIds.has(item.id)) return false;
+              if (!matchesQuery(query, item.title, item.creator)) return false;
               const done = isDone(item);
               const matchesStatus = statusView === "finished" ? done : !done;
               return matchesStatus || leavingView(item.id);
@@ -84,7 +101,7 @@ export function BooksShelvesView({
           .filter((g) => g.items.length > 0),
       }))
       .filter((s) => s.groups.length > 0);
-  }, [shelves, genre, author, statusView, isDone, leavingView]);
+  }, [shelves, genre, author, query, statusView, isDone, leavingView, hiddenIds]);
 
   const titleCount = useMemo(
     () => filtered.reduce((sum, s) => sum + s.groups.reduce((n, g) => n + g.items.length, 0), 0),
@@ -116,6 +133,13 @@ export function BooksShelvesView({
         </span>
       </div>
 
+      <SearchBox
+        value={query}
+        onChange={setQuery}
+        label="Search books"
+        placeholder="Search by title or author"
+      />
+
       <FilterBar
         filters={[
           { id: "genre", label: "Genre", value: genre, options: genreOptions },
@@ -130,10 +154,15 @@ export function BooksShelvesView({
         onActiveChange={setActiveGenre}
       />
 
+      <PendingExitContext.Provider value={pendingExit}>
       <main>
         {filtered.length === 0 ? (
           <p className="empty-state">
-            {statusView === "finished"
+            {query.trim()
+              ? `No ${statusView === "finished" ? "finished " : ""}books match \u201c${query.trim()}\u201d — try ${
+                  statusView === "finished" ? "the On the Shelf tab" : "the Finished tab"
+                } or clear the search.`
+              : statusView === "finished"
               ? "Nothing finished yet in this combination — mark a card read and it'll show up here."
               : "Nothing on your shelves matches that combination yet — try clearing a filter, or tap the + button to add something new."}
           </p>
@@ -151,6 +180,7 @@ export function BooksShelvesView({
           ))
         )}
       </main>
+      </PendingExitContext.Provider>
 
       <BottomNav
         statusView={statusView}

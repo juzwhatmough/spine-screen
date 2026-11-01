@@ -1,8 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useContext, useTransition } from "react";
 import { toggleRead, setRating } from "@/lib/actions/listItems";
 import { kindLabel } from "@/lib/books/kindLabel";
+import { SwipeDelete } from "@/components/ui/SwipeDelete";
+import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
+import { PendingExitContext } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
 // Direct port of makeCard()'s interaction model from index.html: tap
@@ -34,14 +37,16 @@ export function BookCard({
   // it no longer belong in the active On the Shelf/Finished view — purely
   // a CSS hook (.card.exiting), no bearing on the actual filtering.
   exiting?: boolean;
-  onStatusChange: (itemId: string, nowDone: boolean) => void;
+  onStatusChange: (itemId: string, nowDone: boolean, title?: string) => void;
   onRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
 }) {
   const [, startTransition] = useTransition();
+  const { requestDelete } = useDelete();
+  const pending = useContext(PendingExitContext).has(item.id) && !exiting;
 
   function handleToggle() {
     const nowDone = !done;
-    onStatusChange(item.id, nowDone);
+    onStatusChange(item.id, nowDone, item.title);
     startTransition(() => {
       toggleRead(item.id);
     });
@@ -64,43 +69,47 @@ export function BookCard({
   }
 
   return (
-    <div
-      className={`card${done ? " read" : ""}${exiting ? " exiting" : ""}`}
-      style={{ "--tagcolor": color } as React.CSSProperties}
-      tabIndex={0}
-      onClick={handleToggle}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="kind">{kindLabel(item.meta?.source_status)}</div>
-      <p className="title">{item.title}</p>
-      {item.creator && <p className="author">{item.creator}</p>}
-      <p className="hook">{item.meta?.hook ?? ""}</p>
-      <div className="foot">
-        <span className="status">{done ? "Read" : "To read"}</span>
-        <div className="right-controls">
-          <div className="thumbs">
-            <button
-              type="button"
-              className={`thumb-btn up${rating === "liked" ? " active" : ""}`}
-              title="I liked this"
-              aria-label="Thumbs up"
-              onClick={(e) => handleRating("liked", e)}
-            >
-              👍
-            </button>
-            <button
-              type="button"
-              className={`thumb-btn down${rating === "disliked" ? " active" : ""}`}
-              title="Not for me"
-              aria-label="Thumbs down"
-              onClick={(e) => handleRating("disliked", e)}
-            >
-              👎
-            </button>
+    <SwipeDelete onDelete={() => requestDelete(item)}>
+      <div
+        className={`card${done ? " read" : ""}${exiting ? " exiting" : ""}${pending ? " pending-remove" : ""}`}
+        style={{ "--tagcolor": color } as React.CSSProperties}
+        tabIndex={0}
+        onClick={handleToggle}
+        onKeyDown={handleKeyDown}
+      >
+        <div className="kind">{kindLabel(item.meta?.source_status)}</div>
+        <p className="title">{item.title}</p>
+        {item.creator && <p className="author">{item.creator}</p>}
+        <p className="hook">{item.meta?.hook ?? ""}</p>
+        <div className="foot">
+          <span className="status">{done ? "Read" : "To read"}</span>
+          <div className="right-controls">
+            <div className="thumbs">
+              <button
+                type="button"
+                className={`thumb-btn up${rating === "liked" ? " active" : ""}`}
+                title="I liked this"
+                aria-label="Thumbs up"
+                onClick={(e) => handleRating("liked", e)}
+              >
+                👍
+              </button>
+              <button
+                type="button"
+                className={`thumb-btn down${rating === "disliked" ? " active" : ""}`}
+                title="Not for me"
+                aria-label="Thumbs down"
+                onClick={(e) => handleRating("disliked", e)}
+              >
+                👎
+              </button>
+            </div>
+            <span className="stamp">{done ? "Read ✓" : "Mark read"}</span>
           </div>
-          <span className="stamp">{done ? "Read ✓" : "Mark read"}</span>
         </div>
+        <p className="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
+        <div className="mark-remove-bar" />
       </div>
-    </div>
+    </SwipeDelete>
   );
 }

@@ -6,7 +6,13 @@ import { ShowShelf } from "./ShowShelf";
 import { AddShowFab } from "./AddShowFab";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { useStatusTransitions, type StatusView } from "@/lib/hooks/useStatusTransitions";
+import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
+import {
+  PendingExitContext,
+  useStatusTransitions,
+  type StatusView,
+} from "@/lib/hooks/useStatusTransitions";
+import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { ShowShelfData } from "@/lib/shows/groupItems";
 
 // Same pattern as BooksShelvesView.tsx (Genre + Platform instead of
@@ -25,12 +31,21 @@ export function ShowsShelvesView({
   const [statusView, setStatusView] = useState<StatusView>(initialView);
   const [genre, setGenre] = useState("");
   const [platform, setPlatform] = useState("");
+  const [query, setQuery] = useState("");
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
   const [addOpen, setAddOpen] = useState(false);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { isDone, getRating, leavingView, animatingOut, handleStatusChange, handleRatingChange } =
-    useStatusTransitions(statusView);
+  const {
+    isDone,
+    getRating,
+    leavingView,
+    animatingOut,
+    pendingExit,
+    handleStatusChange,
+    handleRatingChange,
+  } = useStatusTransitions(statusView, "watched");
+  const { hiddenIds } = useDelete();
 
   // See the matching comment in BooksShelvesView.tsx.
   function handleStatusViewChange(next: StatusView) {
@@ -61,6 +76,8 @@ export function ShowsShelvesView({
       .map((s) => ({
         ...s,
         items: s.items.filter((i) => {
+          if (hiddenIds.has(i.id)) return false;
+          if (!matchesQuery(query, i.title, i.creator)) return false;
           if (platform && i.creator !== platform) return false;
           const done = isDone(i);
           const matchesStatus = statusView === "finished" ? done : !done;
@@ -68,7 +85,7 @@ export function ShowsShelvesView({
         }),
       }))
       .filter((s) => s.items.length > 0);
-  }, [shelves, genre, platform, statusView, isDone, leavingView]);
+  }, [shelves, genre, platform, query, statusView, isDone, leavingView, hiddenIds]);
 
   const titleCount = useMemo(
     () => filtered.reduce((sum, s) => sum + s.items.length, 0),
@@ -110,6 +127,13 @@ export function ShowsShelvesView({
         <span>Tap a card to mark it watched, then rate it</span>
       </div>
 
+      <SearchBox
+        value={query}
+        onChange={setQuery}
+        label="Search shows"
+        placeholder="Search by title or streaming service"
+      />
+
       <FilterBar
         filters={[
           { id: "genre", label: "Genre", value: genre, options: genreOptions },
@@ -124,10 +148,15 @@ export function ShowsShelvesView({
         onActiveChange={setActiveGenre}
       />
 
+      <PendingExitContext.Provider value={pendingExit}>
       <main>
         {filtered.length === 0 ? (
           <p className="empty-state">
-            {statusView === "finished"
+            {query.trim()
+              ? `No ${statusView === "finished" ? "watched " : ""}shows match \u201c${query.trim()}\u201d — try ${
+                  statusView === "finished" ? "the On the Shelf tab" : "the Finished tab"
+                } or clear the search.`
+              : statusView === "finished"
               ? "Nothing finished yet in this combination — mark a card watched and it'll show up here."
               : "Nothing on your shelves matches that combination yet — try clearing a filter, or tap the + button to add something new."}
           </p>
@@ -145,6 +174,7 @@ export function ShowsShelvesView({
           ))
         )}
       </main>
+      </PendingExitContext.Provider>
 
       <BottomNav
         statusView={statusView}

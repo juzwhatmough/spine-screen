@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { GENRE_TAGS } from "@/lib/books/genres";
 import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
+import { describeTitle } from "@/lib/anthropic/describeTitle";
+import type { ListItemRow } from "@/types/database";
 
 // Card tap-to-toggle stays binary in v1 (want <-> done) even though the
 // schema's `status` is 3-state (want/in_progress/done) — matches the
@@ -89,6 +91,8 @@ export async function addManualBook(input: {
     throw new Error("Genre must match an existing shelf");
   }
 
+  const hook = await describeTitle({ kind: "book", title, creator: author });
+
   const { error } = await supabase.from("list_items").upsert(
     [
       {
@@ -98,7 +102,7 @@ export async function addManualBook(input: {
         creator: author,
         genre: input.genre,
         status: "want" as const,
-        meta: { source_status: "want" },
+        meta: { source_status: "want", ...(hook ? { hook } : {}) },
       },
     ],
     { onConflict: "user_id,media_type,title,creator", ignoreDuplicates: true }
@@ -112,6 +116,9 @@ export async function addManualShow(input: {
   title: string;
   platform: string;
   genre: string;
+  // True when the platform was taken as-is from TMDB's suggestion rather than
+  // typed/confirmed by the user — then it isn't stamped as "checked today".
+  platformFromSuggestion?: boolean;
 }) {
   const supabase = await createClient();
   const {
@@ -127,6 +134,8 @@ export async function addManualShow(input: {
     throw new Error("Genre must match an existing shelf");
   }
 
+  const hook = await describeTitle({ kind: "show", title });
+
   const { error } = await supabase.from("list_items").upsert(
     [
       {
@@ -136,7 +145,11 @@ export async function addManualShow(input: {
         creator: platform,
         genre: input.genre,
         status: "want" as const,
-        meta: { currentlyStreaming: true, platformVerifiedAt: new Date().toISOString() },
+        meta: {
+          currentlyStreaming: true,
+          ...(input.platformFromSuggestion ? {} : { platformVerifiedAt: new Date().toISOString() }),
+          ...(hook ? { hook } : {}),
+        },
       },
     ],
     { onConflict: "user_id,media_type,title,creator", ignoreDuplicates: true }
@@ -186,5 +199,50 @@ export async function updateShowPlatform(itemId: string, platform: string) {
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
+  revalidatePath("/shows");
+}
+
+// Swipe-to-delete. The row is removed immediately; "Undo" puts the same row
+// back with restoreItem below (see lib/hooks/useDeleteWithUndo.tsx).
+export async function deleteItem(itemId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { error } = await supabase
+    .from("list_items")
+    .delete()
+    .eq("id", itemId)
+    .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/books");
+  revalidatePath("/shows");
+}
+
+export async function restoreItem(row: ListItemRow) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { error } = await supabase.from("list_items").upsert({
+    id: row.id,
+    user_id: user.id,
+    media_type: row.media_type,
+    title: row.title,
+    creator: row.creator,
+    genre: row.genre,
+    status: row.status,
+    rating: row.rating,
+    meta: row.meta,
+    created_at: row.created_at,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/books");
   revalidatePath("/shows");
 }

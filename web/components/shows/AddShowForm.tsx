@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addManualShow } from "@/lib/actions/listItems";
 import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
-import { searchShows, type ShowSuggestion } from "@/lib/shows/tmdbSearch";
+import { searchShows, fetchAuProviders, type ShowSuggestion } from "@/lib/shows/tmdbSearch";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -38,6 +38,9 @@ export function AddShowForm({
 
   const [suggestions, setSuggestions] = useState<ShowSuggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  // Services TMDB says it streams on in Australia (for the picked title)
+  const [providers, setProviders] = useState<string[]>([]);
+  const [searchState, setSearchState] = useState<"idle" | "searching" | "none" | "error">("idle");
   const skipNextSearch = useRef(false);
 
   useEffect(() => {
@@ -50,11 +53,14 @@ export function AddShowForm({
       if (trimmed.length < 3) {
         setSuggestions([]);
         setShowDropdown(false);
+        setSearchState("idle");
         return;
       }
-      searchShows(trimmed).then((results) => {
+      setSearchState("searching");
+      searchShows(trimmed).then(({ results, failed }) => {
         setSuggestions(results);
         setShowDropdown(results.length > 0);
+        setSearchState(results.length > 0 ? "idle" : failed ? "error" : "none");
       });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(handle);
@@ -64,8 +70,17 @@ export function AddShowForm({
     skipNextSearch.current = true;
     setTitle(s.title);
     if (s.genre) setGenre(s.genre);
+    setProviders([]);
+    if (s.tmdbId && s.mediaType) {
+      fetchAuProviders(s.tmdbId, s.mediaType).then((names) => {
+        setProviders(names);
+        // pre-fill only if the user hasn't typed a service themselves
+        setPlatform((current) => (current.trim() ? current : names[0] ?? ""));
+      });
+    }
     setShowDropdown(false);
     setSuggestions([]);
+    setSearchState("idle");
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -73,7 +88,12 @@ export function AddShowForm({
     setError(null);
     startTransition(async () => {
       try {
-        await addManualShow({ title, platform, genre });
+        await addManualShow({
+          title,
+          platform,
+          genre,
+          platformFromSuggestion: providers.includes(platform.trim()),
+        });
         router.refresh();
         onSuccess();
       } catch (err) {
@@ -98,6 +118,15 @@ export function AddShowForm({
             onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
           />
+          {searchState !== "idle" && !showDropdown && (
+            <p className="search-hint" role="status">
+              {searchState === "searching"
+                ? "Searching…"
+                : searchState === "none"
+                  ? "No matches found — fill in the details below."
+                  : "Title search is unavailable right now — fill in the details below."}
+            </p>
+          )}
           {showDropdown && (
             <div className="autocomplete-dropdown">
               {suggestions.map((s, i) => (
@@ -125,6 +154,25 @@ export function AddShowForm({
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
           />
+          {providers.length > 0 && (
+            <>
+              <div className="chip-group" style={{ marginTop: 8 }}>
+                {providers.map((name) => (
+                  <button
+                    type="button"
+                    key={name}
+                    className={`chip${platform.trim() === name ? " active" : ""}`}
+                    onClick={() => setPlatform(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+              <p className="search-hint">
+                Suggested from TMDB (data from JustWatch) — worth a quick check.
+              </p>
+            </>
+          )}
         </div>
         <div className="field">
           <label htmlFor="show-genre">Genre</label>

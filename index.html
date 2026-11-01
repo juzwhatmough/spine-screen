@@ -6,7 +6,11 @@
 <title>The Shelf — Books & Shows</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="icons/icon-512.png" sizes="512x512" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#1B2430">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -120,7 +124,8 @@
   /* ---------- Stats bar ---------- */
   .stats{
     display:flex;
-    gap:28px;
+    align-items:center;
+    gap:16px;
     flex-wrap:wrap;
     padding:18px 24px;
     background:var(--paper-2);
@@ -131,6 +136,69 @@
     color:var(--ink-soft);
   }
   .stats b{ color:var(--ink); font-weight:500; }
+  .stats-text{
+    display:flex;
+    gap:28px;
+    flex-wrap:wrap;
+    flex:1 1 auto;
+  }
+  .filter-toggle{
+    flex:0 0 auto;
+    margin-left:auto;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    padding:7px 12px;
+    border-radius:2px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .filter-toggle:hover:not(:disabled){ border-color:var(--brass); color:var(--ink); }
+  .filter-toggle.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--paper);
+  }
+  .filter-toggle:disabled{ opacity:0.45; cursor:default; }
+
+  /* ---------- Genre/author/platform filters ---------- */
+  .filters-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    padding:0 24px 16px;
+    background:var(--paper-2);
+    border-bottom:1px solid var(--line);
+  }
+  .filters-row:empty{ display:none; }
+  .filter-select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.03em;
+    color:var(--ink);
+    background-color:var(--paper);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:7px 26px 7px 10px;
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234A4E42'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+    max-width:180px;
+  }
+  .filter-select:hover{ border-color:var(--brass); }
+  .filter-select:focus-visible{ outline:2px solid var(--spine); outline-offset:1px; }
 
   /* ---------- Shelf nav ---------- */
   nav.shelves{
@@ -302,6 +370,26 @@
     padding-top:10px;
     border-top:1px dashed var(--line);
   }
+  .mark-remove-bar{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:3px;
+    border-radius:0 0 3px 3px;
+    background:var(--sage);
+    transform:scaleX(0);
+    transform-origin:left;
+    opacity:0;
+  }
+  .card.pending-remove .mark-remove-bar{ opacity:1; }
+  .mark-hint{
+    display:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.02em;
+    color:var(--ink-soft);
+    margin:8px 0 0;
+  }
+  .card.pending-remove .mark-hint{ display:block; }
   .card .status{
     font-family:'IBM Plex Mono', monospace;
     font-size:10.5px;
@@ -353,6 +441,98 @@
     animation:stampIn .28s ease;
   }
   .card.read .title{ text-decoration:line-through; text-decoration-color:rgba(34,38,31,0.35); }
+
+  /* ---------- Swipe-to-delete ---------- */
+  .swipe-wrap{
+    position:relative;
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .swipe-wrap.removing{
+    transition:height .32s ease, opacity .28s ease, margin-bottom .32s ease;
+  }
+  .swipe-wrap .delete-bg{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    padding-right:14px;
+    background:var(--spine-2);
+    border-radius:3px;
+  }
+  .delete-confirm-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:#fff;
+    background:transparent;
+    border:1.5px solid rgba(255,255,255,0.75);
+    border-radius:2px;
+    padding:7px 10px;
+    cursor:pointer;
+    opacity:0;
+    transform:scale(.88);
+    transition:opacity .15s ease, transform .15s ease;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .swipe-wrap.armed .delete-confirm-btn{
+    opacity:1;
+    transform:scale(1);
+    pointer-events:auto;
+  }
+  .swipe-wrap .card{
+    position:relative;
+    z-index:1;
+    background:#FBF8F1;
+    transition:transform .22s cubic-bezier(.22,.7,.3,1);
+    touch-action:pan-y;
+    user-select:none;
+  }
+  .swipe-wrap.dragging .card{ transition:none; }
+  .swipe-wrap.armed .card{ box-shadow:none; }
+
+  /* ---------- Undo toast ---------- */
+  .undo-toast{
+    position:fixed;
+    left:50%;
+    bottom:92px;
+    transform:translate(-50%, 16px);
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.01em;
+    padding:12px 14px 12px 16px;
+    border-radius:4px;
+    box-shadow:0 10px 30px -10px rgba(0,0,0,0.5);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:1000;
+    max-width:calc(100vw - 32px);
+  }
+  .undo-toast.show{ opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
+  .undo-toast .undo-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--paper);
+    background:transparent;
+    border:1.5px solid var(--brass);
+    border-radius:2px;
+    padding:5px 9px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .undo-toast .undo-btn:hover{ background:var(--brass); color:var(--ink); }
+
   @keyframes stampIn{
     0%{ transform:scale(1.6) rotate(-8deg); opacity:0; }
     60%{ transform:scale(0.95) rotate(2deg); opacity:1; }
@@ -392,6 +572,98 @@
   .refresh-btn:hover{ background:var(--spine); }
   .refresh-btn:disabled{ opacity:0.55; cursor:wait; }
 
+  /* ---------- Add a book / show: FAB + modal ---------- */
+  .fab{
+    position:fixed;
+    right:max(20px, env(safe-area-inset-right));
+    bottom:max(20px, env(safe-area-inset-bottom));
+    z-index:40;
+    display:flex; align-items:center; gap:0;
+    height:56px; padding:0;
+    border:none; border-radius:14px;
+    background:var(--spine); color:var(--paper);
+    box-shadow:0 4px 12px rgba(34,38,31,0.28), 0 1px 0 rgba(34,38,31,0.1);
+    cursor:pointer; overflow:hidden;
+    transition:background .15s ease, box-shadow .15s ease, transform .1s ease;
+  }
+  .fab:hover{ background:var(--ink); transform:translateY(-1px); box-shadow:0 6px 16px rgba(34,38,31,0.32); }
+  .fab:active{ transform:translateY(0); }
+  .fab:focus-visible{ outline:2px solid var(--brass); outline-offset:3px; }
+  .fab-icon{ flex:0 0 56px; width:56px; height:56px; display:flex; align-items:center; justify-content:center; }
+  .fab-icon svg{ width:24px; height:24px; }
+  .fab-label{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.05em; text-transform:uppercase;
+    white-space:nowrap; max-width:0; opacity:0;
+    transition:max-width .18s ease, opacity .15s ease, padding .18s ease;
+  }
+  .fab:hover .fab-label, .fab:focus-visible .fab-label{ max-width:200px; opacity:1; padding-right:18px; }
+
+  .modal-overlay{
+    position:fixed; inset:0; z-index:50;
+    background:rgba(34,38,31,0.5);
+    display:none; align-items:center; justify-content:center; padding:24px;
+  }
+  .modal-overlay.open{ display:flex; animation:modalFadeIn .15s ease; }
+  .modal-content{
+    background:var(--paper); border:1px solid var(--line); border-radius:6px;
+    box-shadow:0 12px 40px rgba(34,38,31,0.35);
+    width:100%; max-width:440px; max-height:calc(100vh - 48px); overflow-y:auto;
+    padding:28px; animation:modalScaleIn .18s ease;
+  }
+  .modal-header{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  .modal-header h2{ font-family:'Fraunces', serif; font-weight:600; font-size:22px; margin:0; }
+  .modal-close{ background:none; border:none; color:var(--ink-soft); font-size:22px; line-height:1; cursor:pointer; padding:2px 4px; }
+  .modal-close:hover{ color:var(--ink); }
+  .add-field{ margin-bottom:18px; }
+  .add-field label{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:11px;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;
+  }
+  .add-field input, .add-field select, .add-field textarea{
+    width:100%; font-family:'Source Serif 4', serif; font-size:16px; color:var(--ink);
+    background:#FBF8F1; border:1px solid var(--line); border-radius:3px; padding:10px 12px;
+  }
+  .add-field textarea{ resize:vertical; min-height:70px; }
+  .add-field input:focus-visible, .add-field select:focus-visible, .add-field textarea:focus-visible{ outline:2px solid var(--spine); outline-offset:1px; }
+  .add-field.ac-wrap{ position:relative; }
+  .ac-dropdown{
+    position:absolute; top:100%; left:0; right:0; z-index:5; margin-top:4px;
+    background:#FBF8F1; border:1px solid var(--line); border-radius:3px;
+    box-shadow:var(--card-shadow); max-height:220px; overflow-y:auto;
+  }
+  .ac-dropdown[hidden]{ display:none; }
+  .ac-item{
+    display:block; width:100%; text-align:left; background:none; border:none;
+    border-bottom:1px solid var(--line); padding:9px 10px; cursor:pointer;
+    font-family:'Source Serif 4', serif; font-size:14px; color:var(--ink);
+  }
+  .ac-item:last-child{ border-bottom:none; }
+  .ac-item:hover, .ac-item:focus-visible{ background:var(--paper-2); }
+  .ac-meta{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+  .card .kind{ display:flex; align-items:center; gap:6px; }
+  .kind-edit-btn{ background:none; border:none; color:var(--tagcolor, var(--spine)); opacity:0.6; font-size:12px; line-height:1; padding:4px; cursor:pointer; }
+  .kind-edit-btn:hover, .kind-edit-btn:focus-visible{ opacity:1; }
+  .kind-edit{ display:flex; align-items:center; gap:4px; flex:1; }
+  .kind-edit input{
+    flex:1; min-width:0; font-family:'IBM Plex Mono', monospace; font-size:16px;
+    text-transform:none; letter-spacing:normal; color:var(--ink); background:#fff;
+    border:1px solid var(--line); border-radius:2px; padding:3px 6px;
+  }
+  .kind-edit button{ background:none; border:none; font-size:14px; line-height:1; padding:4px 5px; cursor:pointer; color:var(--ink-soft); }
+  .kind-edit button:hover{ color:var(--ink); }
+  .card .verified-note{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft); opacity:0.75; margin:-4px 0 8px; }
+  .card .verified-note.stale{ color:var(--warn); opacity:0.85; }
+  .card .edit-error{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--warn); margin:-4px 0 8px; }
+  .add-error{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--warn); margin:0 0 14px; }
+  .add-submit{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.05em; text-transform:uppercase;
+    background:var(--spine); color:var(--paper); border:none; padding:11px 20px; border-radius:2px; cursor:pointer;
+    transition:background .15s ease;
+  }
+  .add-submit:hover{ background:var(--ink); }
+  @keyframes modalFadeIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes modalScaleIn{ from{ opacity:0; transform:scale(0.96) translateY(6px); } to{ opacity:1; transform:scale(1) translateY(0); } }
+
   footer{
     text-align:center;
     padding:40px 24px 60px;
@@ -428,20 +700,338 @@
 
 <div class="view active" id="view-books">
   <div class="stats" id="statsBooks"></div>
+  <div class="filters-row" id="filtersBooks"></div>
   <nav class="shelves" id="shelfNavBooks"></nav>
   <main id="mainBooks"></main>
 </div>
 
 <div class="view" id="view-shows">
   <div class="stats" id="statsShows"></div>
+  <div class="filters-row" id="filtersShows"></div>
   <nav class="shelves" id="shelfNavShows"></nav>
   <main id="mainShows"></main>
 </div>
 
-<footer>Tap a card to mark it read or watched, then 👍 or 👎 it · Tap "More suggestions" on any book shelf for fresh picks based on your ratings · Progress is saved on this device</footer>
+<footer>Tap a card to mark it read or watched, then 👍 or 👎 it · Tap "More suggestions" on any shelf for fresh picks based on your ratings · Progress is saved on this device</footer>
+
+<button type="button" class="fab" id="addFab" aria-label="Add a book">
+  <span class="fab-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </span>
+  <span class="fab-label" id="addFabLabel">Add a book</span>
+</button>
+
+<div class="modal-overlay" id="addOverlay">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="modal-header">
+      <h2 id="addTitle">Add a book</h2>
+      <button type="button" class="modal-close" id="addClose" aria-label="Close">✕</button>
+    </div>
+    <p class="add-error" id="addError" role="alert" hidden></p>
+    <form id="addForm" novalidate>
+      <div class="add-field ac-wrap"><label for="addItemTitle">Title</label><input id="addItemTitle" type="text" required autocomplete="off"><div class="ac-dropdown" id="addSuggest" hidden></div></div>
+      <div class="add-field"><label for="addItemCreator" id="addCreatorLabel">Author</label><input id="addItemCreator" type="text" required autocomplete="off" list="addPlatformList"></div>
+      <datalist id="addPlatformList"></datalist>
+      <div class="add-field"><label for="addItemGenre">Genre</label><select id="addItemGenre"></select></div>
+      <div class="add-field"><label for="addItemHook">Short note (optional)</label><textarea id="addItemHook" maxlength="240"></textarea></div>
+      <button type="submit" class="add-submit">Add</button>
+    </form>
+  </div>
+</div>
 
 <script>
 const STORAGE_KEY_PREFIX = 'reading-list:';
+
+// ---------- Swipe-to-delete (shared by Books & Shows) ----------
+// Two-step by design: a left swipe only *arms* the card (reveals a Delete
+// button behind it) — nothing is removed until that button is deliberately
+// tapped, which also gives an "Undo" toast a few seconds to catch mistakes.
+let armedSwipeWrap = null;
+
+function showUndoToast(message, onUndo){
+  const existing = document.getElementById('undoToast');
+  if(existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'undoToast';
+  toast.className = 'undo-toast';
+  toast.innerHTML = `<span></span><button type="button" class="undo-btn">Undo</button>`;
+  toast.querySelector('span').textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  let settled = false;
+  const timer = setTimeout(dismiss, 5000);
+  function dismiss(){
+    if(settled) return;
+    settled = true;
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 220);
+  }
+  toast.querySelector('.undo-btn').addEventListener('click', () => {
+    if(settled) return;
+    settled = true;
+    clearTimeout(timer);
+    toast.remove();
+    onUndo();
+  });
+}
+
+function attachSwipeDelete(cardEl, { itemLabel, onConfirm, onUndo }){
+  const REVEAL = 88;
+  const ARM_THRESHOLD = 40;
+  const AUTO_DISMISS_MS = 4500;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'swipe-wrap';
+
+  const deleteBg = document.createElement('div');
+  deleteBg.className = 'delete-bg';
+  deleteBg.setAttribute('aria-hidden', 'true');
+  deleteBg.innerHTML = `<button type="button" class="delete-confirm-btn">🗑 Delete</button>`;
+  const confirmBtn = deleteBg.querySelector('.delete-confirm-btn');
+
+  wrap.appendChild(deleteBg);
+  wrap.appendChild(cardEl);
+
+  let dragging = false, locked = null, startX = 0, startY = 0, armTimer = null;
+
+  function isArmed(){ return wrap.classList.contains('armed'); }
+
+  function setArmed(on){
+    wrap.classList.toggle('armed', on);
+    clearTimeout(armTimer);
+    if(on){
+      if(armedSwipeWrap && armedSwipeWrap !== wrap && armedSwipeWrap.__resetSwipe) armedSwipeWrap.__resetSwipe();
+      armedSwipeWrap = wrap;
+      armTimer = setTimeout(resetPosition, AUTO_DISMISS_MS);
+    } else if(armedSwipeWrap === wrap){
+      armedSwipeWrap = null;
+    }
+  }
+
+  function resetPosition(){
+    cardEl.style.transform = '';
+    setArmed(false);
+  }
+  wrap.__resetSwipe = resetPosition;
+
+  function onPointerDown(e){
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    dragging = true;
+    locked = null;
+    startX = e.clientX;
+    startY = e.clientY;
+    wrap.classList.add('dragging');
+  }
+
+  function onPointerMove(e){
+    if(!dragging) return;
+    const moveX = e.clientX - startX, moveY = e.clientY - startY;
+    if(locked === null){
+      if(Math.abs(moveX) < 6 && Math.abs(moveY) < 6) return;
+      locked = Math.abs(moveX) > Math.abs(moveY) ? 'x' : 'y';
+    }
+    if(locked !== 'x') return;
+    if(e.cancelable) e.preventDefault();
+    const base = isArmed() ? -REVEAL : 0;
+    let translate = base + moveX;
+    translate = Math.min(0, Math.max(translate, -(REVEAL + 24)));
+    cardEl.style.transform = `translateX(${translate}px)`;
+  }
+
+  function onPointerUp(e){
+    if(!dragging) return;
+    dragging = false;
+    wrap.classList.remove('dragging');
+    const wasLockedX = locked === 'x';
+    locked = null;
+    if(!wasLockedX) return;
+    const base = isArmed() ? -REVEAL : 0;
+    const moveX = (e.clientX ?? startX) - startX;
+    const finalTranslate = base + moveX;
+    if(finalTranslate <= -ARM_THRESHOLD){
+      cardEl.style.transform = `translateX(-${REVEAL}px)`;
+      setArmed(true);
+    } else {
+      resetPosition();
+    }
+  }
+
+  cardEl.addEventListener('pointerdown', onPointerDown);
+  cardEl.addEventListener('pointermove', onPointerMove);
+  cardEl.addEventListener('pointerup', onPointerUp);
+  cardEl.addEventListener('pointercancel', () => {
+    dragging = false; locked = null;
+    wrap.classList.remove('dragging');
+    resetPosition();
+  });
+
+  confirmBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearTimeout(armTimer);
+    if(armedSwipeWrap === wrap) armedSwipeWrap = null;
+    const parent = wrap.parentNode;
+    const nextSibling = wrap.nextSibling;
+    collapseAndDetach(wrap);
+
+    onConfirm();
+
+    showUndoToast(`Removed "${itemLabel}"`, () => {
+      onUndo();
+      restoreWrap(wrap, cardEl, parent, nextSibling);
+    });
+  });
+
+  return { wrap, isArmed, resetPosition };
+}
+
+document.addEventListener('click', (e) => {
+  if(armedSwipeWrap && !armedSwipeWrap.contains(e.target)) armedSwipeWrap.__resetSwipe();
+}, true);
+
+// Shrinks a swipe-wrap out of the layout, then detaches it from the DOM.
+function collapseAndDetach(wrap, onDetached){
+  const height = wrap.getBoundingClientRect().height;
+  wrap.style.height = height + 'px';
+  wrap.style.overflow = 'hidden';
+  wrap.classList.add('removing');
+  requestAnimationFrame(() => {
+    wrap.style.height = '0px';
+    wrap.style.opacity = '0';
+    wrap.style.marginBottom = '0px';
+  });
+  setTimeout(() => {
+    if(wrap.parentNode) wrap.parentNode.removeChild(wrap);
+    if(onDetached) onDetached();
+  }, 330);
+}
+
+// Clears the inline styles collapseAndDetach/animateCollapseToHidden apply.
+function expandWrapInPlace(wrap, cardEl){
+  wrap.classList.remove('removing');
+  wrap.style.removeProperty('height');
+  wrap.style.removeProperty('opacity');
+  wrap.style.removeProperty('margin-bottom');
+  wrap.style.removeProperty('overflow');
+  if(cardEl) cardEl.style.transform = '';
+}
+
+// Undoes collapseAndDetach — puts the wrap back where it was.
+function restoreWrap(wrap, cardEl, parent, nextSibling){
+  wrap.classList.remove('armed');
+  expandWrapInPlace(wrap, cardEl);
+  if(parent){
+    if(nextSibling && nextSibling.parentNode === parent) parent.insertBefore(wrap, nextSibling);
+    else parent.appendChild(wrap);
+  }
+}
+
+// Shrinks a swipe-wrap in place (unlike collapseAndDetach, it stays in the
+// DOM) — used when a "read"/"watched" card leaves the active shelf so a
+// filter (genre/author/platform/"show read") can reveal it again at full
+// size later, with no rebuild needed.
+function animateCollapseToHidden(wrap, onDone){
+  const height = wrap.getBoundingClientRect().height;
+  wrap.style.height = height + 'px';
+  wrap.style.overflow = 'hidden';
+  wrap.classList.add('removing');
+  requestAnimationFrame(() => {
+    wrap.style.height = '0px';
+    wrap.style.opacity = '0';
+    wrap.style.marginBottom = '0px';
+  });
+  setTimeout(() => {
+    expandWrapInPlace(wrap);
+    if(onDone) onDone();
+  }, 330);
+}
+
+// Marks a card "complete" for its view's completion filter and, unless
+// that filter is already open, animates it off the active shelf. Always
+// reversible for a few seconds via the Undo toast. `recompute` re-applies
+// every active filter (genre/author/platform/"show read") to the shelf.
+function markCardComplete(wrap, filter, itemLabel, verbPast, onUndoRevert, recompute){
+  filter.registerComplete();
+  if(filter.isShowing()) recompute();
+  else animateCollapseToHidden(wrap, recompute);
+  showUndoToast(`Marked ${verbPast}: "${itemLabel}"`, () => {
+    filter.registerIncomplete();
+    onUndoRevert(); // sets the card's state back to unread/unwatched, then recomputes
+  });
+}
+
+// Reverses markCardComplete when a filter-revealed completed card is
+// tapped back to unread/unwatched directly (no Undo toast needed).
+function unmarkCardComplete(wrap, filter, recompute){
+  filter.registerIncomplete();
+  expandWrapInPlace(wrap);
+  recompute();
+}
+
+// Powers each view's "Show read/watched" toggle: tracks how many
+// completed items are on that shelf and whether they're currently visible.
+// `onToggle` re-applies the view's other filters (genre/author/platform)
+// whenever this one flips.
+function createCompletionFilter(btn, label, onToggle){
+  let count = 0, showing = false;
+
+  function render(){
+    btn.textContent = showing ? `👁 Hide ${label}` : `👁 Show ${label} (${count})`;
+    btn.classList.toggle('active', showing);
+    btn.setAttribute('aria-pressed', String(showing));
+    btn.disabled = !showing && count === 0;
+  }
+
+  btn.addEventListener('click', () => {
+    showing = !showing;
+    render();
+    onToggle();
+  });
+
+  render();
+
+  return {
+    isShowing: () => showing,
+    registerComplete(){ count++; render(); },
+    registerIncomplete(){ count = Math.max(0, count - 1); render(); }
+  };
+}
+
+// A card marked read/watched gets a few seconds to be rated (👍/👎 feed the
+// AI suggestions) before it leaves the active shelf — with its own Undo,
+// same as a swipe-delete, in case the mark itself was a mistake.
+const MARK_REMOVE_DELAY_MS = 5000;
+
+function attachMarkAndRemove(cardEl){
+  let timer = null;
+
+  function cancel(){
+    if(timer){ clearTimeout(timer); timer = null; }
+    cardEl.classList.remove('pending-remove');
+    const bar = cardEl.querySelector('.mark-remove-bar');
+    if(bar){ bar.style.transition = 'none'; bar.style.transform = 'scaleX(0)'; }
+  }
+
+  function schedule(onExpire){
+    cancel();
+    cardEl.classList.add('pending-remove');
+    const bar = cardEl.querySelector('.mark-remove-bar');
+    if(bar){
+      bar.style.transition = 'none';
+      bar.style.transform = 'scaleX(1)';
+      void bar.offsetWidth; // force reflow so the transition below actually animates
+      bar.style.transition = `transform ${MARK_REMOVE_DELAY_MS}ms linear`;
+      bar.style.transform = 'scaleX(0)';
+    }
+    timer = setTimeout(() => {
+      timer = null;
+      cardEl.classList.remove('pending-remove');
+      onExpire();
+    }, MARK_REMOVE_DELAY_MS);
+  }
+
+  return { schedule, cancel };
+}
 
 const shelves = [
   {
@@ -656,10 +1246,97 @@ const shelves = [
   }
 ];
 
+// ---------- Manually added titles (saved on this device) ----------
+// Stored separately from the seed data above and merged in at load, so the
+// seed arrays stay untouched. Text is HTML-escaped because cards are built
+// with innerHTML.
+const CUSTOM_KEY_BOOKS = 'shelf-custom:books';
+const CUSTOM_KEY_SHOWS = 'shelf-custom:shows';
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function loadCustom(key){
+  try { const v = JSON.parse(localStorage.getItem(key)); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function saveCustom(key, list){
+  try { localStorage.setItem(key, JSON.stringify(list)); return true; }
+  catch(e){ return false; }
+}
+loadCustom(CUSTOM_KEY_BOOKS).forEach(item => {
+  const shelf = shelves.find(s => s.tag === item.genre);
+  if(!shelf) return;
+  let group = shelf.groups.find(g => g.author.toLowerCase() === item.author.toLowerCase());
+  if(!group){ group = { author: item.author, why: 'Added by you', books: [] }; shelf.groups.push(group); }
+  group.books.push({ title: item.title, author: item.author, hook: item.hook || 'Added by you.', status: 'want' });
+});
+
 // ---------- Render: Books ----------
 const main = document.getElementById('mainBooks');
 const nav = document.getElementById('shelfNavBooks');
 let allBookCount = 0, wantCount = 0;
+
+const statsBooksEl = document.getElementById('statsBooks');
+const statsBooksText = document.createElement('div');
+statsBooksText.className = 'stats-text';
+const filterToggleBooksBtn = document.createElement('button');
+filterToggleBooksBtn.type = 'button';
+filterToggleBooksBtn.className = 'filter-toggle';
+statsBooksEl.appendChild(statsBooksText);
+statsBooksEl.appendChild(filterToggleBooksBtn);
+
+// Genre and author filters — narrow the shelf down without hiding data;
+// each is independent and combines with the others and with "Show read".
+const filtersBooksEl = document.getElementById('filtersBooks');
+const genreSelectBooks = document.createElement('select');
+genreSelectBooks.className = 'filter-select';
+genreSelectBooks.setAttribute('aria-label', 'Filter books by genre');
+const authorSelectBooks = document.createElement('select');
+authorSelectBooks.className = 'filter-select';
+authorSelectBooks.setAttribute('aria-label', 'Filter books by author');
+filtersBooksEl.appendChild(genreSelectBooks);
+filtersBooksEl.appendChild(authorSelectBooks);
+
+genreSelectBooks.innerHTML = `<option value="all">All genres</option>` +
+  shelves.map(s => `<option value="${s.id}">${s.tag}</option>`).join('');
+
+const allBookAuthors = Array.from(new Set(
+  shelves.flatMap(s => [
+    ...s.groups.map(g => g.author),
+    ...(s.similar || []).map(x => x.name)
+  ])
+)).sort((a, b) => a.localeCompare(b));
+authorSelectBooks.innerHTML = `<option value="all">All authors</option>` +
+  allBookAuthors.map(a => `<option value="${a}">${a}</option>`).join('');
+
+const bookCardEntries = []; // { wrap, author, shelfId, isComplete }
+const bookShelfSections = []; // { id, el, navBtn }
+
+function recomputeBookVisibility(){
+  const genre = genreSelectBooks.value;
+  const author = authorSelectBooks.value;
+  const showCompleted = filterBooks.isShowing();
+  bookCardEntries.forEach(entry => {
+    const ok = (genre === 'all' || entry.shelfId === genre)
+      && (author === 'all' || entry.author === author)
+      && (showCompleted || !entry.isComplete());
+    entry.wrap.style.display = ok ? '' : 'none';
+  });
+  bookShelfSections.forEach(s => {
+    const show = genre === 'all' || s.id === genre;
+    s.el.style.display = show ? '' : 'none';
+    if(s.navBtn) s.navBtn.style.display = show ? '' : 'none';
+  });
+  main.querySelectorAll('.author-group').forEach(g => {
+    const anyVisible = Array.from(g.querySelectorAll('.swipe-wrap')).some(w => w.style.display !== 'none');
+    g.style.display = anyVisible ? '' : 'none';
+  });
+}
+
+genreSelectBooks.addEventListener('change', recomputeBookVisibility);
+authorSelectBooks.addEventListener('change', recomputeBookVisibility);
+
+const filterBooks = createCompletionFilter(filterToggleBooksBtn, 'read', recomputeBookVisibility);
 
 shelves.forEach((shelf, si) => {
   // nav button
@@ -676,6 +1353,7 @@ shelves.forEach((shelf, si) => {
   section.className = 'shelf';
   section.id = shelf.id;
   section.style.setProperty('--tagcolor', shelf.color);
+  bookShelfSections.push({ id: shelf.id, el: section, navBtn: btn });
 
   section.innerHTML = `
     <div class="shelf-head">
@@ -699,10 +1377,9 @@ shelves.forEach((shelf, si) => {
     `;
     const cardsWrap = g.querySelector('.cards');
     group.books.forEach(b => {
-      allBookCount++;
       shelfExistingTitles.add(b.title.toLowerCase());
-      const card = makeCard(b, shelf.color, group.author);
-      cardsWrap.appendChild(card);
+      const card = makeCard(b, shelf.color, group.author, shelf.id);
+      if(card){ allBookCount++; cardsWrap.appendChild(card); }
     });
     section.appendChild(g);
   });
@@ -721,10 +1398,9 @@ shelves.forEach((shelf, si) => {
   const cardsWrap = document.createElement('div');
   cardsWrap.className = 'cards';
   (shelf.similar || []).forEach(s => {
-    allBookCount++;
     shelfExistingTitles.add(s.pick.toLowerCase());
-    const card = makeCard({title:s.pick, author:s.name, hook:s.hook, status:'discover'}, shelf.color, s.name);
-    cardsWrap.appendChild(card);
+    const card = makeCard({title:s.pick, author:s.name, hook:s.hook, status:'discover'}, shelf.color, s.name, shelf.id);
+    if(card){ allBookCount++; cardsWrap.appendChild(card); }
   });
   section.appendChild(cardsWrap);
 
@@ -733,6 +1409,8 @@ shelves.forEach((shelf, si) => {
 
   main.appendChild(section);
 });
+
+recomputeBookVisibility();
 
 function kindLabel(status){
   if(status==='want') return 'From your list';
@@ -744,7 +1422,7 @@ function kindLabel(status){
 
 const STORAGE_KEY_PREFIX_LOCAL_CACHE = {}; // key -> {read, rating, title, author}, populated as cards load
 
-function makeCard(book, color, authorKey){
+function makeCard(book, color, authorKey, shelfId){
   const key = STORAGE_KEY_PREFIX + (authorKey+':'+book.title).toLowerCase().replace(/[^a-z0-9]+/g,'-');
   const card = document.createElement('div');
   card.className = 'card';
@@ -765,13 +1443,15 @@ function makeCard(book, color, authorKey){
         <span class="stamp">Mark read</span>
       </div>
     </div>
+    <p class="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
+    <div class="mark-remove-bar"></div>
   `;
   const statusEl = card.querySelector('.status');
   const stampEl = card.querySelector('.stamp');
   const upBtn = card.querySelector('.thumb-btn.up');
   const downBtn = card.querySelector('.thumb-btn.down');
 
-  let state = { read:false, rating:null };
+  let state = { read:false, rating:null, deleted:false };
 
   function render(){
     card.classList.toggle('read', state.read);
@@ -782,8 +1462,9 @@ function makeCard(book, color, authorKey){
   }
 
   function persist(){
-    const payload = JSON.stringify({ read: state.read, rating: state.rating, title: book.title, author: book.author });
-    STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author };
+    const payload = JSON.stringify({ read: state.read, rating: state.rating, deleted: state.deleted, title: book.title, author: book.author });
+    if(state.deleted){ delete STORAGE_KEY_PREFIX_LOCAL_CACHE[key]; }
+    else { STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author }; }
     try { localStorage.setItem(key, payload); } catch(e){ /* storage unavailable */ }
   }
 
@@ -795,18 +1476,41 @@ function makeCard(book, color, authorKey){
         const parsed = JSON.parse(raw);
         state.read = !!parsed.read;
         state.rating = parsed.rating || null;
+        state.deleted = !!parsed.deleted;
       } catch(e){
         state.read = raw === 'true';
       }
-      STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author };
+      if(!state.deleted){
+        STORAGE_KEY_PREFIX_LOCAL_CACHE[key] = { read: state.read, rating: state.rating, title: book.title, author: book.author };
+      }
     }
   } catch(e){ /* storage unavailable */ }
 
+  // deleted on a previous visit — skip rendering it entirely
+  if(state.deleted) return null;
+
   function toggleRead(){
+    if(swipe.isArmed()){ swipe.resetPosition(); return; }
+    const wasRead = state.read;
     state.read = !state.read;
-    if(!state.read) state.rating = null; // clear rating if unmarking as read
+    if(state.read){
+      persist();
+      markRemove.schedule(() => {
+        markCardComplete(swipe.wrap, filterBooks, book.title, 'read', () => {
+          state.read = false;
+          state.rating = null;
+          render();
+          persist();
+          recomputeBookVisibility();
+        }, recomputeBookVisibility);
+      });
+    } else {
+      state.rating = null; // clear rating if unmarking as read
+      markRemove.cancel();
+      if(wasRead) unmarkCardComplete(swipe.wrap, filterBooks, recomputeBookVisibility);
+      persist();
+    }
     render();
-    persist();
   }
 
   function setRating(r, evt){
@@ -822,7 +1526,27 @@ function makeCard(book, color, authorKey){
   downBtn.addEventListener('click', (e) => setRating('down', e));
 
   render();
-  return card;
+
+  const swipe = attachSwipeDelete(card, {
+    itemLabel: book.title,
+    onConfirm: () => {
+      markRemove.cancel();
+      if(state.read) filterBooks.registerIncomplete();
+      state.deleted = true;
+      persist();
+    },
+    onUndo: () => { state.deleted = false; persist(); }
+  });
+  const markRemove = attachMarkAndRemove(card);
+
+  bookCardEntries.push({ wrap: swipe.wrap, author: authorKey, shelfId, isComplete: () => state.read });
+
+  // already read on a previous visit — counts toward the "Show read"
+  // filter; recomputeBookVisibility() (called once all cards are built)
+  // is what actually keeps it off the active shelf, with no animation
+  if(state.read) filterBooks.registerComplete();
+
+  return swipe.wrap;
 }
 
 // ---------- Feedback-aware AI suggestions ----------
@@ -873,12 +1597,22 @@ Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly th
       const norm = it.title.toLowerCase();
       if(existingTitles.has(norm)) return;
       existingTitles.add(norm);
-      allBookCount++;
       const isKnownAuthor = shelfAuthors.some(a => a.toLowerCase() === it.author.toLowerCase());
       const kind = isKnownAuthor ? 'ai-known' : 'ai';
-      const card = makeCard({ title: it.title, author: it.author, hook: it.hook || '', status: kind }, shelf.color, it.author);
-      cardsWrap.appendChild(card);
+      const card = makeCard({ title: it.title, author: it.author, hook: it.hook || '', status: kind }, shelf.color, it.author, shelf.id);
+      if(card){
+        allBookCount++;
+        cardsWrap.appendChild(card);
+        if(!allBookAuthors.includes(it.author)){
+          allBookAuthors.push(it.author);
+          const opt = document.createElement('option');
+          opt.value = it.author;
+          opt.textContent = it.author;
+          authorSelectBooks.appendChild(opt);
+        }
+      }
     });
+    recomputeBookVisibility();
 
     if(!items.length){
       alert('No new suggestions came back — try again in a moment.');
@@ -892,7 +1626,7 @@ Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly th
   }
 }
 
-document.getElementById('statsBooks').innerHTML =
+statsBooksText.innerHTML =
   `<span><b>${shelves.length}</b> shelves</span><span><b>${allBookCount}</b> titles</span><span>Tap a card to mark it read, then rate it — your ratings shape "More suggestions"</span>`;
 
 // active nav highlight on scroll
@@ -1024,6 +1758,11 @@ const showGenreMeta = {
   "Documentary": { color:'#9C4136', note:"Real people, real stories, no script required." }
 };
 
+loadCustom(CUSTOM_KEY_SHOWS).forEach(item => {
+  if(!showGenreOrder.includes(item.genre)) return;
+  shows.push({ title:item.title, platform:item.platform, genre:item.genre, note:null, currentlyStreaming:true, hook:item.hook || 'Added by you.' });
+});
+
 const showShelves = showGenreOrder.map(genre => ({
   id: 'show-' + genre.toLowerCase().replace(/[^a-z0-9]+/g,'-'),
   tag: genre,
@@ -1035,6 +1774,71 @@ const showShelves = showGenreOrder.map(genre => ({
 const mainShows = document.getElementById('mainShows');
 const navShows = document.getElementById('shelfNavShows');
 let allShowCount = 0, notStreamingCount = 0;
+
+const statsShowsEl = document.getElementById('statsShows');
+const statsShowsText = document.createElement('div');
+statsShowsText.className = 'stats-text';
+const filterToggleShowsBtn = document.createElement('button');
+filterToggleShowsBtn.type = 'button';
+filterToggleShowsBtn.className = 'filter-toggle';
+statsShowsEl.appendChild(statsShowsText);
+statsShowsEl.appendChild(filterToggleShowsBtn);
+
+// Genre and platform filters, same pattern as the Books view.
+const filtersShowsEl = document.getElementById('filtersShows');
+const genreSelectShows = document.createElement('select');
+genreSelectShows.className = 'filter-select';
+genreSelectShows.setAttribute('aria-label', 'Filter shows by genre');
+const platformSelectShows = document.createElement('select');
+platformSelectShows.className = 'filter-select';
+platformSelectShows.setAttribute('aria-label', 'Filter shows by streaming service');
+filtersShowsEl.appendChild(genreSelectShows);
+filtersShowsEl.appendChild(platformSelectShows);
+
+genreSelectShows.innerHTML = `<option value="all">All genres</option>` +
+  showShelves.map(s => `<option value="${s.id}">${s.tag}</option>`).join('');
+
+const allPlatforms = Array.from(new Set(shows.map(s => s.platform))).sort((a, b) => a.localeCompare(b));
+platformSelectShows.innerHTML = `<option value="all">All platforms</option>` +
+  allPlatforms.map(p => `<option value="${p}">${p}</option>`).join('');
+
+const showCardEntries = []; // { wrap, platform, shelfId, isComplete }
+const SHOW_FEEDBACK_CACHE = {}; // key -> { rating, title }, feeds the shows "More suggestions" prompt
+
+// Keep the platform filter (and the type-ahead list in the add form) in
+// step when a card is edited or a suggestion arrives with a new platform.
+function registerPlatformOption(name){
+  if(!name || allPlatforms.includes(name)) return;
+  allPlatforms.push(name);
+  allPlatforms.sort((a, b) => a.localeCompare(b));
+  const cur = platformSelectShows.value;
+  platformSelectShows.innerHTML = `<option value="all">All platforms</option>` +
+    allPlatforms.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  platformSelectShows.value = allPlatforms.includes(cur) || cur === 'all' ? cur : 'all';
+}
+const showShelfSections = []; // { id, el, navBtn }
+
+function recomputeShowVisibility(){
+  const genre = genreSelectShows.value;
+  const platform = platformSelectShows.value;
+  const showCompleted = filterShows.isShowing();
+  showCardEntries.forEach(entry => {
+    const ok = (genre === 'all' || entry.shelfId === genre)
+      && (platform === 'all' || entry.platform === platform)
+      && (showCompleted || !entry.isComplete());
+    entry.wrap.style.display = ok ? '' : 'none';
+  });
+  showShelfSections.forEach(s => {
+    const show = genre === 'all' || s.id === genre;
+    s.el.style.display = show ? '' : 'none';
+    if(s.navBtn) s.navBtn.style.display = show ? '' : 'none';
+  });
+}
+
+genreSelectShows.addEventListener('change', recomputeShowVisibility);
+platformSelectShows.addEventListener('change', recomputeShowVisibility);
+
+const filterShows = createCompletionFilter(filterToggleShowsBtn, 'watched', recomputeShowVisibility);
 
 showShelves.forEach((shelf, si) => {
   const btn = document.createElement('button');
@@ -1049,6 +1853,7 @@ showShelves.forEach((shelf, si) => {
   section.className = 'shelf';
   section.id = shelf.id;
   section.style.setProperty('--tagcolor', shelf.color);
+  showShelfSections.push({ id: shelf.id, el: section, navBtn: btn });
   section.innerHTML = `
     <div class="shelf-head">
       <span class="shelf-tag" style="background:${shelf.color}">${shelf.tag}</span>
@@ -1060,26 +1865,109 @@ showShelves.forEach((shelf, si) => {
   const cardsWrap = document.createElement('div');
   cardsWrap.className = 'cards';
   shelf.items.forEach(item => {
-    allShowCount++;
-    if(!item.currentlyStreaming) notStreamingCount++;
-    cardsWrap.appendChild(makeShowCard(item, shelf.color));
+    const card = makeShowCard(item, shelf.color, shelf.id);
+    if(card){
+      allShowCount++;
+      if(!item.currentlyStreaming) notStreamingCount++;
+      cardsWrap.appendChild(card);
+    }
   });
   section.appendChild(cardsWrap);
+
+  // "More to explore" — AI suggestions, same idea as the Books shelves but
+  // starting empty (shows have no seed suggestions).
+  const subheadRow = document.createElement('div');
+  subheadRow.className = 'subhead-row';
+  subheadRow.innerHTML = `
+    <span class="subhead">More to explore</span>
+    <button type="button" class="refresh-btn">🔄 More suggestions</button>
+  `;
+  section.appendChild(subheadRow);
+  const suggestWrap = document.createElement('div');
+  suggestWrap.className = 'cards';
+  section.appendChild(suggestWrap);
+  const shelfShowTitles = new Set(shows.map(x => x.title.toLowerCase()));
+  const refreshBtn = subheadRow.querySelector('.refresh-btn');
+  refreshBtn.addEventListener('click', () => fetchMoreShowSuggestions(shelf, suggestWrap, shelfShowTitles, refreshBtn));
 
   mainShows.appendChild(section);
 });
 
-function makeShowCard(item, color){
+recomputeShowVisibility();
+
+
+// ---------- Feedback-aware AI suggestions (Shows) ----------
+// Deliberately never asks the model for a streaming platform — there's no
+// live availability data, so suggestions arrive as "Unconfirmed" and the
+// reader sets the real platform with the ✎ button once they've checked.
+async function fetchMoreShowSuggestions(shelf, cardsWrap, knownTitles, btn){
+  btn.disabled = true;
+  btn.textContent = 'Finding more…';
+  try {
+    const fb = Object.values(SHOW_FEEDBACK_CACHE);
+    const liked = fb.filter(e => e.rating === 'up').map(e => e.title);
+    const disliked = fb.filter(e => e.rating === 'down').map(e => e.title);
+    const onShelf = shelf.items.map(i => i.title);
+    const list = a => a.length ? a.join('; ') : 'none rated yet';
+    const prompt = `You are a TV/film recommendation engine inside a personal watchlist app.
+Genre shelf: "${shelf.tag}".
+Shows/films already on this shelf: ${onShelf.length ? onShelf.join('; ') : 'none yet'}.
+Reader has liked (after watching): ${list(liked)}.
+Reader has disliked (after watching): ${list(disliked)}.
+Do not suggest any of these titles, already in the reader's list: ${Array.from(knownTitles).join('; ') || 'none'}.
+Suggest exactly 4 shows or films for this genre that the reader doesn't already have, leaning toward what they liked and away from anything similar to what they disliked.
+IMPORTANT: Do not name a streaming platform or make any claim about where or whether this is currently available to watch — we cannot verify real-time Australian streaming availability, so never assert one. Only return a title and a one-sentence hook.
+Respond with ONLY a JSON array, no prose, no markdown code fences, in exactly this shape:
+[{"title":"...","hook":"one sentence, under 20 words, no spoilers, no mention of any streaming service"}]`;
+
+    const response = await fetch('/api/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || 'Request failed');
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    let added = 0;
+    items.forEach(it => {
+      if(!it || !it.title) return;
+      const norm = String(it.title).toLowerCase();
+      if(knownTitles.has(norm)) return;
+      knownTitles.add(norm);
+      const card = makeShowCard({
+        title: escapeHtml(it.title), platform: 'Unconfirmed', genre: shelf.tag,
+        note: null, currentlyStreaming: true, unconfirmed: true,
+        hook: escapeHtml(it.hook || '')
+      }, shelf.color, shelf.id);
+      if(card){ allShowCount++; added++; cardsWrap.appendChild(card); }
+    });
+    registerPlatformOption('Unconfirmed');
+    recomputeShowVisibility();
+    if(!added) alert('No new suggestions came back — try again in a moment.');
+  } catch(err){
+    console.error(err);
+    alert('Could not fetch new suggestions right now — please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 More suggestions';
+  }
+}
+
+function makeShowCard(item, color, shelfId){
   const key = WATCH_STORAGE_KEY_PREFIX + (item.platform+':'+item.title).toLowerCase().replace(/[^a-z0-9]+/g,'-');
   const card = document.createElement('div');
   card.className = 'card';
   card.tabIndex = 0;
   card.style.setProperty('--tagcolor', color);
-  const warnBadge = !item.currentlyStreaming
-    ? `<p class="warn-badge">⚠ Not currently streaming — ${item.note || 'rent/buy only'}</p>`
-    : '';
+  const warnBadge = item.unconfirmed
+    ? `<p class="warn-badge unconfirmed-badge">⚠ Unconfirmed — verify streaming availability</p>`
+    : (!item.currentlyStreaming
+      ? `<p class="warn-badge">⚠ Not currently streaming — ${item.note || 'rent/buy only'}</p>`
+      : '');
   card.innerHTML = `
-    <div class="kind">${item.platform}</div>
+    <div class="kind"><span class="kind-text"></span><button type="button" class="kind-edit-btn" aria-label="Edit streaming service" title="Edit streaming service">✎</button></div>
+    <p class="verified-note" hidden></p>
     <p class="title">${item.title}</p>
     <p class="hook">${item.hook}</p>
     ${warnBadge}
@@ -1093,13 +1981,108 @@ function makeShowCard(item, color){
         <span class="stamp">Mark watched</span>
       </div>
     </div>
+    <p class="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
+    <div class="mark-remove-bar"></div>
   `;
   const statusEl = card.querySelector('.status');
   const stampEl = card.querySelector('.stamp');
   const upBtn = card.querySelector('.thumb-btn.up');
   const downBtn = card.querySelector('.thumb-btn.down');
 
-  let state = { watched:false, rating:null };
+  let state = { watched:false, rating:null, deleted:false };
+
+  // ---- Editable streaming service (saved on this device) ----
+  // Kept under a separate key so the card's own state key (built from the
+  // original platform) never changes and watched/rating marks stay put.
+  const platKey = 'shelf-platform:' + key;
+  const kindEl = card.querySelector('.kind');
+  const editBtn = card.querySelector('.kind-edit-btn');
+  const verifiedEl = card.querySelector('.verified-note');
+  const entryRef = { wrap:null, platform:null, shelfId:null, isComplete:() => false };
+  let currentPlatform = item.platform;
+  let verifiedAt = null;
+  try {
+    const rawP = JSON.parse(localStorage.getItem(platKey));
+    if(rawP && rawP.platform){ currentPlatform = rawP.platform; verifiedAt = rawP.at || null; }
+  } catch(e){}
+
+  function daysSince(iso){ return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
+  function relTime(iso){
+    const d = daysSince(iso);
+    if(d <= 0) return 'checked today';
+    if(d === 1) return 'checked yesterday';
+    if(d < 7) return `checked ${d} days ago`;
+    if(d < 30){ const w = Math.round(d / 7); return `checked ${w} week${w === 1 ? '' : 's'} ago`; }
+    if(d < 365){ const m = Math.round(d / 30); return `checked ${m} month${m === 1 ? '' : 's'} ago`; }
+    const y = Math.round(d / 365); return `checked ${y} year${y === 1 ? '' : 's'} ago`;
+  }
+  function renderPlatform(){
+    kindEl.querySelector('.kind-text').textContent = currentPlatform;
+    if(verifiedAt){
+      verifiedEl.textContent = relTime(verifiedAt);
+      verifiedEl.classList.toggle('stale', daysSince(verifiedAt) >= 60);
+      verifiedEl.hidden = false;
+    } else { verifiedEl.hidden = true; }
+    if(verifiedAt && item.unconfirmed){
+      const b = card.querySelector('.unconfirmed-badge');
+      if(b) b.remove();
+    }
+  }
+  entryRef.platform = currentPlatform;
+  renderPlatform();
+
+  function startEditPlatform(ev){
+    ev.stopPropagation();
+    const original = kindEl.innerHTML;
+    kindEl.innerHTML = '';
+    const wrap = document.createElement('span');
+    wrap.className = 'kind-edit';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = (currentPlatform === 'Unconfirmed' || currentPlatform === 'Not Currently Streaming') ? '' : currentPlatform;
+    input.setAttribute('list', 'addPlatformList');
+    input.setAttribute('aria-label', 'Streaming service');
+    document.getElementById('addPlatformList').innerHTML = allPlatforms.filter(p => p !== 'Not Currently Streaming' && p !== 'Unconfirmed').map(p => `<option value="${escapeHtml(p)}">`).join('');
+    const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = '✓'; ok.setAttribute('aria-label', 'Save streaming service');
+    const no = document.createElement('button'); no.type = 'button'; no.textContent = '✕'; no.setAttribute('aria-label', 'Cancel');
+    wrap.append(input, ok, no);
+    wrap.addEventListener('click', e => e.stopPropagation());
+    kindEl.appendChild(wrap);
+    input.focus();
+
+    function cancel(){
+      kindEl.innerHTML = original;
+      kindEl.querySelector('.kind-edit-btn').addEventListener('click', startEditPlatform);
+      card.querySelectorAll('.edit-error').forEach(n => n.remove());
+    }
+    function save(){
+      const val = input.value.trim();
+      if(!val){
+        if(!card.querySelector('.edit-error')){
+          const er = document.createElement('p'); er.className = 'edit-error'; er.textContent = 'Streaming service is required';
+          kindEl.after(er);
+        }
+        return;
+      }
+      currentPlatform = val;
+      verifiedAt = new Date().toISOString();
+      try { localStorage.setItem(platKey, JSON.stringify({ platform: val, at: verifiedAt })); } catch(e){}
+      entryRef.platform = val;
+      registerPlatformOption(val);
+      cancel();
+      renderPlatform();
+      recomputeShowVisibility();
+    }
+    ok.addEventListener('click', save);
+    no.addEventListener('click', cancel);
+    input.addEventListener('keydown', e => {
+      e.stopPropagation();
+      if(e.key === 'Enter'){ e.preventDefault(); save(); }
+      if(e.key === 'Escape'){ e.preventDefault(); cancel(); }
+    });
+  }
+  editBtn.addEventListener('click', startEditPlatform);
+  editBtn.addEventListener('keydown', e => e.stopPropagation());
 
   // Reuses the .read class/animation for the "watched" state — same
   // stamp/strikethrough/thumbs behaviour as books, just relabelled.
@@ -1112,7 +2095,9 @@ function makeShowCard(item, color){
   }
 
   function persist(){
-    const payload = JSON.stringify({ watched: state.watched, rating: state.rating, title: item.title, platform: item.platform });
+    if(state.deleted){ delete SHOW_FEEDBACK_CACHE[key]; }
+    else { SHOW_FEEDBACK_CACHE[key] = { rating: state.rating, title: item.title }; }
+    const payload = JSON.stringify({ watched: state.watched, rating: state.rating, deleted: state.deleted, title: item.title, platform: item.platform });
     try { localStorage.setItem(key, payload); } catch(e){ /* storage unavailable */ }
   }
 
@@ -1122,14 +2107,36 @@ function makeShowCard(item, color){
       const parsed = JSON.parse(raw);
       state.watched = !!parsed.watched;
       state.rating = parsed.rating || null;
+      state.deleted = !!parsed.deleted;
     }
   } catch(e){ /* storage unavailable */ }
 
+  // deleted on a previous visit — skip rendering it entirely
+  if(state.deleted) return null;
+  SHOW_FEEDBACK_CACHE[key] = { rating: state.rating, title: item.title };
+
   function toggleWatched(){
+    if(swipe.isArmed()){ swipe.resetPosition(); return; }
+    const wasWatched = state.watched;
     state.watched = !state.watched;
-    if(!state.watched) state.rating = null;
+    if(state.watched){
+      persist();
+      markRemove.schedule(() => {
+        markCardComplete(swipe.wrap, filterShows, item.title, 'watched', () => {
+          state.watched = false;
+          state.rating = null;
+          render();
+          persist();
+          recomputeShowVisibility();
+        }, recomputeShowVisibility);
+      });
+    } else {
+      state.rating = null;
+      markRemove.cancel();
+      if(wasWatched) unmarkCardComplete(swipe.wrap, filterShows, recomputeShowVisibility);
+      persist();
+    }
     render();
-    persist();
   }
 
   function setRating(r, evt){
@@ -1145,10 +2152,33 @@ function makeShowCard(item, color){
   downBtn.addEventListener('click', (e) => setRating('down', e));
 
   render();
-  return card;
+
+  const swipe = attachSwipeDelete(card, {
+    itemLabel: item.title,
+    onConfirm: () => {
+      markRemove.cancel();
+      if(state.watched) filterShows.registerIncomplete();
+      state.deleted = true;
+      persist();
+    },
+    onUndo: () => { state.deleted = false; persist(); }
+  });
+  const markRemove = attachMarkAndRemove(card);
+
+  entryRef.wrap = swipe.wrap;
+  entryRef.shelfId = shelfId;
+  entryRef.isComplete = () => state.watched;
+  showCardEntries.push(entryRef);
+
+  // already watched on a previous visit — counts toward the "Show watched"
+  // filter; recomputeShowVisibility() (called once all cards are built)
+  // is what actually keeps it off the active shelf, with no animation
+  if(state.watched) filterShows.registerComplete();
+
+  return swipe.wrap;
 }
 
-document.getElementById('statsShows').innerHTML =
+statsShowsText.innerHTML =
   `<span><b>${showShelves.length}</b> shelves</span><span><b>${allShowCount}</b> titles</span><span><b>${notStreamingCount}</b> not currently streaming</span><span>Tap a card to mark it watched, then rate it</span>`;
 
 const showSections = showShelves.map(s => document.getElementById(s.id));
@@ -1178,6 +2208,182 @@ viewButtons.forEach(btn => {
     Object.entries(views).forEach(([key, el]) => el.classList.toggle('active', key === target));
   });
 });
+
+// ---------- Add a book / show (FAB + modal) ----------
+(function(){
+  const fab = document.getElementById('addFab');
+  const fabLabel = document.getElementById('addFabLabel');
+  const overlay = document.getElementById('addOverlay');
+  const form = document.getElementById('addForm');
+  const titleEl = document.getElementById('addTitle');
+  const errorEl = document.getElementById('addError');
+  const fTitle = document.getElementById('addItemTitle');
+  const fCreator = document.getElementById('addItemCreator');
+  const fCreatorLabel = document.getElementById('addCreatorLabel');
+  const fGenre = document.getElementById('addItemGenre');
+  const fHook = document.getElementById('addItemHook');
+  const platformList = document.getElementById('addPlatformList');
+
+  const isShows = () => views.shows.classList.contains('active');
+
+  function syncFabLabel(){
+    const label = isShows() ? 'Add a show' : 'Add a book';
+    fab.setAttribute('aria-label', label);
+    fabLabel.textContent = label;
+  }
+  viewButtons.forEach(b => b.addEventListener('click', syncFabLabel));
+
+  function activeIndex(buttons){ return Array.from(buttons).findIndex(b => b.classList.contains('active')); }
+
+  function openModal(){
+    const shows_ = isShows();
+    titleEl.textContent = shows_ ? 'Add a show' : 'Add a book';
+    fCreatorLabel.textContent = shows_ ? 'Streaming service' : 'Author';
+    if(shows_){ fCreator.setAttribute('list', 'addPlatformList'); } else { fCreator.removeAttribute('list'); }
+    platformList.innerHTML = shows_ ? allPlatforms.filter(p => p !== 'Not Currently Streaming' && p !== 'Unconfirmed').map(p => `<option value="${escapeHtml(p)}">`).join('') : '';
+    const options = shows_ ? showShelves.map(s => s.tag) : shelves.map(s => s.tag);
+    const all = shows_ ? showGenreOrder : options;
+    fGenre.innerHTML = all.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    // pre-select whichever shelf is currently in view
+    const idx = shows_ ? activeIndex(showNavButtons) : activeIndex(nav.children);
+    const current = shows_ ? showShelves[idx] : shelves[idx];
+    if(current) fGenre.value = current.tag;
+    form.reset && (fTitle.value = fCreator.value = fHook.value = '');
+    errorEl.hidden = true;
+    hideSuggestions();
+    overlay.classList.add('open');
+    fTitle.focus();
+  }
+  function closeModal(){
+    overlay.classList.remove('open');
+    fab.focus();
+  }
+  function showError(msg){ errorEl.textContent = msg; errorEl.hidden = false; }
+
+  fab.addEventListener('click', openModal);
+  document.getElementById('addClose').addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if(!overlay.classList.contains('open')) return;
+    if(e.key === 'Escape'){ e.preventDefault(); closeModal(); return; }
+    if(e.key !== 'Tab') return;
+    const f = Array.from(overlay.querySelectorAll('button, input, select, textarea')).filter(el => !el.disabled && el.offsetParent !== null);
+    if(!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const title = fTitle.value.trim();
+    const creator = fCreator.value.trim();
+    const genre = fGenre.value;
+    const hook = fHook.value.trim();
+    const shows_ = isShows();
+    if(!title || !creator){ showError(shows_ ? 'Please add a title and a streaming service.' : 'Please add a title and an author.'); return; }
+    const norm = x => x.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const exists = shows_
+      ? shows.some(s => norm(s.title) === norm(title) && norm(s.platform) === norm(creator))
+      : shelves.some(sh => sh.groups.some(g => g.books.some(b => norm(b.title) === norm(title) && norm(b.author) === norm(creator))));
+    if(exists){ showError('That one is already on your shelf.'); return; }
+    const key = shows_ ? CUSTOM_KEY_SHOWS : CUSTOM_KEY_BOOKS;
+    const list = loadCustom(key);
+    list.push(shows_
+      ? { title: escapeHtml(title), platform: escapeHtml(creator), genre, hook: escapeHtml(hook) }
+      : { title: escapeHtml(title), author: escapeHtml(creator), genre, hook: escapeHtml(hook) });
+    if(!saveCustom(key, list)){ showError('Could not save — storage is unavailable on this device.'); return; }
+    try { sessionStorage.setItem('shelf-view', shows_ ? 'shows' : 'books'); } catch(err){}
+    location.reload();
+  });
+
+
+  // ---- Title type-ahead: Google Books (books) / TMDB via /api/search-shows (shows) ----
+  // Autofill only: every field stays editable, and any failure or empty
+  // result silently leaves manual entry as-is.
+  const suggestEl = document.getElementById('addSuggest');
+  let searchTimer = null, searchSeq = 0;
+
+  function bookGenreFromCategories(cats){
+    if(!cats || !cats.length) return null;
+    const j = cats.join(' / ').toLowerCase();
+    const tag = t => shelves.some(s => s.tag === t) ? t : null;
+    if(/\b(war|historical|history)\b/.test(j)) return tag('WWII & Historical Fiction');
+    if(/\b(thriller|suspense|mystery|crime)\b/.test(j)) return tag('Psychological Thriller & Domestic Suspense');
+    if(/\b(humor|humorous|comedy|family)\b/.test(j)) return tag('Contemporary Comedy & Family Life');
+    if(/\b(biography|autobiography|memoir|nonfiction|non-fiction)\b/.test(j)) return tag('Narrative Nonfiction');
+    if(/\bfiction\b/.test(j)) return tag('Literary Fiction');
+    return null;
+  }
+
+  async function searchBooks(q){
+    try {
+      const res = await fetch('https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=5');
+      if(!res.ok) return [];
+      const data = await res.json();
+      return (data.items || []).map(it => {
+        const v = it.volumeInfo || {};
+        if(!v.title) return null;
+        return { title: v.title, creator: (v.authors || []).join(', '), year: (v.publishedDate || '').slice(0, 4), genre: bookGenreFromCategories(v.categories) };
+      }).filter(Boolean);
+    } catch(e){ return []; }
+  }
+  async function searchShowsApi(q){
+    try {
+      const res = await fetch('/api/search-shows?q=' + encodeURIComponent(q));
+      if(!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data.results) ? data.results.map(r => ({ title: r.title, creator: '', year: r.year, genre: r.genre })) : [];
+    } catch(e){ return []; }
+  }
+
+  function hideSuggestions(){ suggestEl.hidden = true; suggestEl.innerHTML = ''; }
+  function showSuggestions(list){
+    if(!list.length){ hideSuggestions(); return; }
+    suggestEl.innerHTML = '';
+    list.forEach(item => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ac-item';
+      b.textContent = item.title;
+      const meta = document.createElement('span');
+      meta.className = 'ac-meta';
+      meta.textContent = [item.creator, item.year].filter(Boolean).join(' · ') || (isShows() ? 'Movie / series' : 'Unknown author');
+      b.appendChild(meta);
+      b.addEventListener('mousedown', ev => ev.preventDefault());
+      b.addEventListener('click', () => {
+        fTitle.value = item.title;
+        if(item.creator && !isShows()) fCreator.value = item.creator;
+        if(item.genre && Array.from(fGenre.options).some(o => o.value === item.genre)) fGenre.value = item.genre;
+        hideSuggestions();
+        (fCreator.value ? fHook : fCreator).focus();
+      });
+      suggestEl.appendChild(b);
+    });
+    suggestEl.hidden = false;
+  }
+
+  fTitle.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = fTitle.value.trim();
+    if(q.length < 3){ hideSuggestions(); return; }
+    const seq = ++searchSeq;
+    searchTimer = setTimeout(async () => {
+      const results = await (isShows() ? searchShowsApi(q) : searchBooks(q));
+      if(seq === searchSeq && document.activeElement === fTitle) showSuggestions(results);
+    }, 300);
+  });
+  fTitle.addEventListener('blur', () => setTimeout(hideSuggestions, 150));
+  fTitle.addEventListener('keydown', e => { if(e.key === 'Escape' && !suggestEl.hidden){ e.stopPropagation(); hideSuggestions(); } });
+
+  // come back to the tab the title was added on
+  try {
+    const v = sessionStorage.getItem('shelf-view');
+    sessionStorage.removeItem('shelf-view');
+    if(v === 'shows'){ document.querySelector('.view-toggle button[data-view="shows"]').click(); }
+  } catch(err){}
+  syncFabLabel();
+})();
 </script>
 </body>
 </html>

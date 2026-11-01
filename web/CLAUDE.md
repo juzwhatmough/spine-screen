@@ -68,7 +68,8 @@ app/
   layout.tsx, globals.css             fonts + design tokens, ported from index.html/DESIGN_SPEC.md
   page.tsx                            redirect: signed-in -> /books, signed-out -> /login
   login/page.tsx                      magic-link email form
-  auth/callback/route.ts               exchanges the auth code for a session
+  auth/confirm/page.tsx                CLIENT: magic-link landing. supabase-js parses the session from the URL hash (implicit flow), then full-page nav to /books. Cross-browser safe — no PKCE verifier needed (phones open the email in a different browser). flowType:"implicit" is set in lib/supabase/client.ts; chosen over PKCE because the built-in email service locks the template needed for a token_hash link unless you add custom SMTP.
+  auth/callback/route.ts               legacy PKCE fallback (verifyOtp/exchangeCodeForSession) — not hit while implicit flow is on; kept as a safety net, failures redirect to /login?error=
   onboarding/page.tsx                  gate + form (Books only; Juz never sees this)
   books/page.tsx                       gate (auth, onboarding, Juz auto-seed) + groupItems -> BooksShelvesView
   shows/page.tsx                       gate (auth, Juz auto-seed — no onboarding) + groupShowItems -> ShowsShelvesView
@@ -390,3 +391,12 @@ instructions for anything requiring a dashboard or the terminal (see this
 folder's own `README.md`), values design coherence over generic UI
 patterns, and would rather be asked than have a data or UX judgment call
 made silently.
+
+**PR workflow: merge to `main` (production) automatically once a PR is
+green**, rather than waiting for an explicit "merge"/"push to prod" each
+time. Open a PR per batch of work as usual (still flag judgment calls in
+its description) — but once `gh pr view` shows it mergeable/clean, merge
+it and let Vercel promote to Production without a separate ask. Still
+pause and ask first if a PR isn't cleanly mergeable, or if the change is
+the kind covered by the standing "explicit permission required" rules
+(e.g. touches auth/security config) rather than routine app code.

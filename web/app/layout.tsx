@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Anton, Inter } from "next/font/google";
 import "./globals.css";
+import { DeleteProvider } from "@/lib/hooks/useDeleteWithUndo";
 
 // Self-hosted via next/font (no runtime request to Google Fonts, no
 // layout shift) — see web/REDESIGN_SPEC.md section 3. Replaces the old
@@ -29,7 +30,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${anton.variable} ${inter.variable}`}>
-      <body>{children}</body>
+      <body>
+        <DeleteProvider>{children}</DeleteProvider>
+      </body>
     </html>
   );
 }

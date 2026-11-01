@@ -28,6 +28,14 @@ deploys as its own, second Vercel project from the same GitHub repo.
   (step 6) — for now, just note this page
 - Add `https://*.vercel.app/**` to **Redirect URLs** so preview deploys
   work too
+- Note: sign-in uses Supabase's **implicit** auth flow (set in
+  `lib/supabase/client.ts`), not the default PKCE flow. This is
+  deliberate — PKCE breaks magic links opened on a phone (the email
+  opens in a different in-app browser than the one that requested the
+  link), and fixing it the "proper" way needs an edited email template,
+  which Supabase locks unless you add custom SMTP. Implicit flow needs
+  neither. If you ever add custom SMTP for branded emails, you can
+  switch back to PKCE + a `token_hash` template link.
 
 **4. Copy your API keys**
 - Go to **Settings → API**
@@ -64,6 +72,11 @@ the same `spine-screen` repo as the static site.
 - Copy the real `*.vercel.app` URL Vercel gave you
 - Back in Supabase (**Authentication → URL Configuration**), set
   **Site URL** to that URL
+
+- Make sure **Site URL** includes the `https://` prefix
+  (`https://spineandscreen.vercel.app`, not `spineandscreen.vercel.app`)
+- No email-template change is needed — the app uses the implicit auth
+  flow (see step 3), which works with Supabase's default magic-link email
 
 **9. Try it**
 - Visit your new URL, enter your email, click the link that arrives

@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useContext } from "react";
 import { toggleRead, setRating, updateShowPlatform } from "@/lib/actions/listItems";
 import { formatRelativeTime, isStale } from "@/lib/shows/relativeTime";
+import { SwipeDelete } from "@/components/ui/SwipeDelete";
+import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
+import { PendingExitContext } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
 // Same interaction model as BookCard (shared toggleRead/setRating actions
@@ -32,10 +35,12 @@ export function ShowCard({
   watched: boolean;
   rating: ListItemRow["rating"];
   exiting?: boolean;
-  onStatusChange: (itemId: string, nowWatched: boolean) => void;
+  onStatusChange: (itemId: string, nowWatched: boolean, title?: string) => void;
   onRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
 }) {
   const [, startTransition] = useTransition();
+  const { requestDelete } = useDelete();
+  const pending = useContext(PendingExitContext).has(item.id) && !exiting;
   const [, startSaveTransition] = useTransition();
 
   const [platform, setPlatform] = useState(item.creator ?? "Unknown platform");
@@ -47,7 +52,7 @@ export function ShowCard({
 
   function handleToggle() {
     const nowWatched = !watched;
-    onStatusChange(item.id, nowWatched);
+    onStatusChange(item.id, nowWatched, item.title);
     startTransition(() => {
       toggleRead(item.id);
     });
@@ -108,96 +113,100 @@ export function ShowCard({
   const currentlyStreaming = item.meta?.currentlyStreaming !== false;
 
   return (
-    <div
-      className={`card${watched ? " read" : ""}${exiting ? " exiting" : ""}`}
-      style={{ "--tagcolor": color } as React.CSSProperties}
-      tabIndex={0}
-      onClick={handleToggle}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="kind">
-        {editing ? (
-          <span className="kind-edit" onClick={(e) => e.stopPropagation()}>
-            <input
-              type="text"
-              value={draftPlatform}
-              autoFocus
-              onChange={(e) => setDraftPlatform(e.target.value)}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === "Enter") savePlatform();
-                if (e.key === "Escape") cancelEditing();
-              }}
-            />
-            <button type="button" aria-label="Save platform" onClick={savePlatform}>
-              ✓
-            </button>
-            <button type="button" aria-label="Cancel" onClick={cancelEditing}>
-              ✕
-            </button>
-          </span>
-        ) : (
-          <>
-            {platform}
-            <button
-              type="button"
-              className="kind-edit-btn"
-              aria-label="Edit platform"
-              title="Edit platform"
-              onClick={startEditing}
-            >
-              ✎
-            </button>
-          </>
-        )}
-      </div>
-      {editing && saveError && (
-        <p className="form-error" style={{ margin: "-4px 0 8px", fontSize: 11 }}>
-          {saveError}
-        </p>
-      )}
-      {verifiedAt && !editing && (
-        <p className={`verified-note${isStale(verifiedAt) ? " stale" : ""}`}>
-          {formatRelativeTime(verifiedAt)}
-        </p>
-      )}
-      <p className="title">{item.title}</p>
-      <p className="hook">{item.meta?.hook ?? ""}</p>
-      {unconfirmed ? (
-        <p className="warn-badge">⚠ Unconfirmed — verify streaming availability</p>
-      ) : (
-        !currentlyStreaming && (
-          <p className="warn-badge">
-            ⚠ Not currently streaming — {item.meta?.note || "rent/buy only"}
-          </p>
-        )
-      )}
-      <div className="foot">
-        <span className="status">{watched ? "Watched" : "To watch"}</span>
-        <div className="right-controls">
-          <div className="thumbs">
-            <button
-              type="button"
-              className={`thumb-btn up${rating === "liked" ? " active" : ""}`}
-              title="I liked this"
-              aria-label="Thumbs up"
-              onClick={(e) => handleRating("liked", e)}
-            >
-              👍
-            </button>
-            <button
-              type="button"
-              className={`thumb-btn down${rating === "disliked" ? " active" : ""}`}
-              title="Not for me"
-              aria-label="Thumbs down"
-              onClick={(e) => handleRating("disliked", e)}
-            >
-              👎
-            </button>
-          </div>
-          <span className="stamp">{watched ? "Watched ✓" : "Mark watched"}</span>
+    <SwipeDelete onDelete={() => requestDelete(item)}>
+      <div
+        className={`card${watched ? " read" : ""}${exiting ? " exiting" : ""}${pending ? " pending-remove" : ""}`}
+        style={{ "--tagcolor": color } as React.CSSProperties}
+        tabIndex={0}
+        onClick={handleToggle}
+        onKeyDown={handleKeyDown}
+      >
+        <div className="kind">
+          {editing ? (
+            <span className="kind-edit" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="text"
+                value={draftPlatform}
+                autoFocus
+                onChange={(e) => setDraftPlatform(e.target.value)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") savePlatform();
+                  if (e.key === "Escape") cancelEditing();
+                }}
+              />
+              <button type="button" aria-label="Save platform" onClick={savePlatform}>
+                ✓
+              </button>
+              <button type="button" aria-label="Cancel" onClick={cancelEditing}>
+                ✕
+              </button>
+            </span>
+          ) : (
+            <>
+              {platform}
+              <button
+                type="button"
+                className="kind-edit-btn"
+                aria-label="Edit platform"
+                title="Edit platform"
+                onClick={startEditing}
+              >
+                ✎
+              </button>
+            </>
+          )}
         </div>
+        {editing && saveError && (
+          <p className="form-error" style={{ margin: "-4px 0 8px", fontSize: 11 }}>
+            {saveError}
+          </p>
+        )}
+        {verifiedAt && !editing && (
+          <p className={`verified-note${isStale(verifiedAt) ? " stale" : ""}`}>
+            {formatRelativeTime(verifiedAt)}
+          </p>
+        )}
+        <p className="title">{item.title}</p>
+        <p className="hook">{item.meta?.hook ?? ""}</p>
+        {unconfirmed ? (
+          <p className="warn-badge">⚠ Unconfirmed — verify streaming availability</p>
+        ) : (
+          !currentlyStreaming && (
+            <p className="warn-badge">
+              ⚠ Not currently streaming — {item.meta?.note || "rent/buy only"}
+            </p>
+          )
+        )}
+        <div className="foot">
+          <span className="status">{watched ? "Watched" : "To watch"}</span>
+          <div className="right-controls">
+            <div className="thumbs">
+              <button
+                type="button"
+                className={`thumb-btn up${rating === "liked" ? " active" : ""}`}
+                title="I liked this"
+                aria-label="Thumbs up"
+                onClick={(e) => handleRating("liked", e)}
+              >
+                👍
+              </button>
+              <button
+                type="button"
+                className={`thumb-btn down${rating === "disliked" ? " active" : ""}`}
+                title="Not for me"
+                aria-label="Thumbs down"
+                onClick={(e) => handleRating("disliked", e)}
+              >
+                👎
+              </button>
+            </div>
+            <span className="stamp">{watched ? "Watched ✓" : "Mark watched"}</span>
+          </div>
+        </div>
+        <p className="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
+        <div className="mark-remove-bar" />
       </div>
-    </div>
+    </SwipeDelete>
   );
 }
