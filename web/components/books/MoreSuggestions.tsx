@@ -36,11 +36,16 @@ export function MoreSuggestions({ genre }: { genre: string }) {
   return (
     <button
       type="button"
-      className="refresh-btn"
+      className="mq-suggest-btn"
       disabled={loading}
       onClick={handleClick}
     >
-      {loading ? "Finding more…" : "🔄 Suggest more"}
+      {!loading && (
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+        </svg>
+      )}
+      {loading ? "Finding more…" : "Suggest more"}
     </button>
   );
 }

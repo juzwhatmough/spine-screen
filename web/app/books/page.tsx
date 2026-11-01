@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { groupItems } from "@/lib/books/groupItems";
 import { seedJuzLibrary } from "@/lib/actions/seedJuz";
 import { BooksShelvesView } from "@/components/books/BooksShelvesView";
-import { TabNav } from "@/components/nav/TabNav";
-import { MarqueeLights } from "@/components/ui/MarqueeLights";
 import type { StatusView } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
@@ -51,15 +49,5 @@ export default async function BooksPage({
   const rows = (items ?? []) as ListItemRow[];
   const shelves = groupItems(rows);
 
-  return (
-    <>
-      <MarqueeLights />
-      <header className="mq-shelf-header">
-        <h1 className="mq-title">The Shelf</h1>
-      </header>
-      <TabNav active="books" />
-
-      <BooksShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />
-    </>
-  );
+  return <BooksShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />;
 }

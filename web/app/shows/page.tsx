@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { groupShowItems } from "@/lib/shows/groupItems";
 import { seedJuzShows } from "@/lib/actions/seedJuzShows";
 import { ShowsShelvesView } from "@/components/shows/ShowsShelvesView";
-import { TabNav } from "@/components/nav/TabNav";
-import { MarqueeLights } from "@/components/ui/MarqueeLights";
 import type { StatusView } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
@@ -51,15 +49,5 @@ export default async function ShowsPage({
   const rows = (items ?? []) as ListItemRow[];
   const shelves = groupShowItems(rows);
 
-  return (
-    <>
-      <MarqueeLights />
-      <header className="mq-shelf-header">
-        <h1 className="mq-title">The Shelf</h1>
-      </header>
-      <TabNav active="shows" />
-
-      <ShowsShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />
-    </>
-  );
+  return <ShowsShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />;
 }

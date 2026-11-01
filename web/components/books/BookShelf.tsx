@@ -5,6 +5,7 @@ import type { ListItemRow } from "@/types/database";
 
 export function BookShelf({
   shelf,
+  authorLabel,
   animatingOut,
   isDone,
   getRating,
@@ -13,6 +14,11 @@ export function BookShelf({
   onOpenDetail,
 }: {
   shelf: BookShelfData;
+  // "All authors" or the selected author's name (section 5.3's Author
+  // chip) — combined with this shelf's own (already-filtered) title
+  // count for the section 5.1/5.6 subline, e.g. "Mandy Robotham · 8
+  // titles". Replaces the removed stats bar.
+  authorLabel: string;
   animatingOut: Set<string>;
   isDone: (item: ListItemRow) => boolean;
   getRating: (item: ListItemRow) => ListItemRow["rating"];
@@ -20,19 +26,19 @@ export function BookShelf({
   onItemRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
   onOpenDetail: (itemId: string, trigger: HTMLButtonElement) => void;
 }) {
+  const titleCount = shelf.groups.reduce((n, g) => n + g.items.length, 0);
+
   return (
-    <section
-      className="shelf"
-      id={shelf.id}
-      style={{ "--tagcolor": shelf.color } as React.CSSProperties}
-    >
-      <div className="shelf-head">
-        <span className="shelf-tag" style={{ background: shelf.color }}>
-          {shelf.tag}
-        </span>
-        <h2>{shelf.tag}</h2>
+    <section className="shelf" id={shelf.id}>
+      <div className="mq-shelf-head-row">
+        <div>
+          <h2 className="mq-shelf-heading">{shelf.tag}</h2>
+          <p className="mq-shelf-subline">
+            {authorLabel} · {titleCount} {titleCount === 1 ? "title" : "titles"}
+          </p>
+        </div>
+        <MoreSuggestions genre={shelf.tag} />
       </div>
-      <p className="shelf-note">{shelf.note}</p>
 
       {shelf.groups.map((group) => (
         <AuthorGroup
@@ -46,11 +52,6 @@ export function BookShelf({
           onOpenDetail={onOpenDetail}
         />
       ))}
-
-      <div className="subhead-row">
-        <span className="subhead">More to explore</span>
-        <MoreSuggestions genre={shelf.tag} />
-      </div>
     </section>
   );
 }

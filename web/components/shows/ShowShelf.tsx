@@ -5,6 +5,7 @@ import type { ListItemRow } from "@/types/database";
 
 export function ShowShelf({
   shelf,
+  platformLabel,
   animatingOut,
   isDone,
   getRating,
@@ -13,6 +14,10 @@ export function ShowShelf({
   onOpenDetail,
 }: {
   shelf: ShowShelfData;
+  // Mirrors BookShelf.tsx's authorLabel — "All services", the selected
+  // platform, "Not currently streaming" or "Unconfirmed" depending on
+  // which filter chip is active.
+  platformLabel: string;
   animatingOut: Set<string>;
   isDone: (item: ListItemRow) => boolean;
   getRating: (item: ListItemRow) => ListItemRow["rating"];
@@ -21,18 +26,16 @@ export function ShowShelf({
   onOpenDetail: (itemId: string, trigger: HTMLButtonElement) => void;
 }) {
   return (
-    <section
-      className="shelf"
-      id={shelf.id}
-      style={{ "--tagcolor": shelf.color } as React.CSSProperties}
-    >
-      <div className="shelf-head">
-        <span className="shelf-tag" style={{ background: shelf.color }}>
-          {shelf.tag}
-        </span>
-        <h2>{shelf.tag}</h2>
+    <section className="shelf" id={shelf.id}>
+      <div className="mq-shelf-head-row">
+        <div>
+          <h2 className="mq-shelf-heading">{shelf.tag}</h2>
+          <p className="mq-shelf-subline">
+            {platformLabel} · {shelf.items.length} {shelf.items.length === 1 ? "show" : "shows"}
+          </p>
+        </div>
+        <MoreSuggestionsShow genre={shelf.tag} />
       </div>
-      <p className="shelf-note">{shelf.note}</p>
 
       <div className="cards">
         {shelf.items.map((item) => (
@@ -47,11 +50,6 @@ export function ShowShelf({
             onOpenDetail={onOpenDetail}
           />
         ))}
-      </div>
-
-      <div className="subhead-row">
-        <span className="subhead">More to explore</span>
-        <MoreSuggestionsShow genre={shelf.tag} />
       </div>
     </section>
   );

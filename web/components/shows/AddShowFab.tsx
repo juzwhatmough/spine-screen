@@ -8,11 +8,13 @@ import { AddShowForm } from "./AddShowForm";
 // parent ShowsShelvesView.
 export function AddShowFab({
   activeGenre,
+  initialTitle,
   open,
   onClose,
   returnFocusRef,
 }: {
   activeGenre?: string;
+  initialTitle?: string;
   open: boolean;
   onClose: () => void;
   returnFocusRef: React.RefObject<HTMLElement | null>;
@@ -20,7 +22,7 @@ export function AddShowFab({
   return (
     <Modal open={open} onClose={onClose} title="Add a show" returnFocusRef={returnFocusRef}>
       <h2 className="sheet-title">Add a show</h2>
-      <AddShowForm initialGenre={activeGenre} onSuccess={onClose} />
+      <AddShowForm initialGenre={activeGenre} initialTitle={initialTitle} onSuccess={onClose} />
     </Modal>
   );
 }
