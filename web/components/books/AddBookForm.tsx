@@ -23,13 +23,18 @@ const SEARCH_DEBOUNCE_MS = 300;
 // error surfaced.
 export function AddBookForm({
   initialGenre,
+  initialTitle,
   onSuccess,
 }: {
   initialGenre?: string;
+  // Pre-fills from the "NOTHING ON THIS SHELF" empty state's
+  // 'Add "{query}"' button (section 5.7) — same remount-on-open
+  // reasoning as initialGenre.
+  initialTitle?: string;
   onSuccess: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialTitle ?? "");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState(
     initialGenre && GENRE_TAGS.includes(initialGenre) ? initialGenre : GENRE_TAGS[0]

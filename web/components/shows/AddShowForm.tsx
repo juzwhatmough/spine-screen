@@ -22,13 +22,15 @@ const SEARCH_DEBOUNCE_MS = 300;
 // manual, on purpose (see the route's comment).
 export function AddShowForm({
   initialGenre,
+  initialTitle,
   onSuccess,
 }: {
   initialGenre?: string;
+  initialTitle?: string;
   onSuccess: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialTitle ?? "");
   const [platform, setPlatform] = useState("");
   const [genre, setGenre] = useState(
     initialGenre && SHOW_GENRE_TAGS.includes(initialGenre) ? initialGenre : SHOW_GENRE_TAGS[0]

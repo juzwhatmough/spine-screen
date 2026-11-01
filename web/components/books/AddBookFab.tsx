@@ -11,11 +11,13 @@ import { AddBookForm } from "./AddBookForm";
 // opened it.
 export function AddBookFab({
   activeGenre,
+  initialTitle,
   open,
   onClose,
   returnFocusRef,
 }: {
   activeGenre?: string;
+  initialTitle?: string;
   open: boolean;
   onClose: () => void;
   returnFocusRef: React.RefObject<HTMLElement | null>;
@@ -23,7 +25,7 @@ export function AddBookFab({
   return (
     <Modal open={open} onClose={onClose} title="Add a book" returnFocusRef={returnFocusRef}>
       <h2 className="sheet-title">Add a book</h2>
-      <AddBookForm initialGenre={activeGenre} onSuccess={onClose} />
+      <AddBookForm initialGenre={activeGenre} initialTitle={initialTitle} onSuccess={onClose} />
     </Modal>
   );
 }

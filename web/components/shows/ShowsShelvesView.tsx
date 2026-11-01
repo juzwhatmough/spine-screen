@@ -5,9 +5,10 @@ import { ShelfNav } from "@/components/books/ShelfNav";
 import { ShowShelf } from "./ShowShelf";
 import { AddShowFab } from "./AddShowFab";
 import { BottomNav } from "@/components/nav/BottomNav";
+import { ShelfHeader } from "@/components/nav/ShelfHeader";
 import { DetailSheet } from "@/components/shared/DetailSheet";
-import { FilterBar } from "@/components/filters/FilterBar";
-import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { matchesQuery } from "@/lib/search/matchesQuery";
 import {
   PendingExitContext,
   useStatusTransitions,
@@ -15,6 +16,13 @@ import {
 } from "@/lib/hooks/useStatusTransitions";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { ShowShelfData } from "@/lib/shows/groupItems";
+
+const SEARCH_DEBOUNCE_MS = 120;
+
+// Single-select across the whole chip row (section 5.3): "All", one chip
+// per platform, then "N not streaming" and "N unconfirmed" when N > 0 —
+// all mutually exclusive options in the same row, not a separate toggle.
+type PlatformFilter = "" | "not-streaming" | "unconfirmed" | string;
 
 // Same pattern as BooksShelvesView.tsx (Genre + Platform instead of
 // Genre + Author, no author-group nesting). Platform comes from
@@ -30,11 +38,12 @@ export function ShowsShelvesView({
   initialView: StatusView;
 }) {
   const [statusView, setStatusView] = useState<StatusView>(initialView);
-  const [genre, setGenre] = useState("");
-  const [platform, setPlatform] = useState("");
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("");
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
   const [addOpen, setAddOpen] = useState(false);
+  const [addInitialTitle, setAddInitialTitle] = useState<string | undefined>();
   const addButtonRef = useRef<HTMLButtonElement>(null);
   // See the matching comment in BooksShelvesView.tsx.
   const [detailItemId, setDetailItemId] = useState<string | null>(null);
@@ -81,85 +90,135 @@ export function ShowsShelvesView({
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
-  const platformOptions = useMemo(() => {
-    const names = new Set<string>();
-    shelves.forEach((s) => s.items.forEach((i) => i.creator && names.add(i.creator)));
-    return [...names].sort((a, b) => a.localeCompare(b));
-  }, [shelves]);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [query]);
 
-  const filtered = useMemo(() => {
+  // Stage 1: status view + search only — this is what the chip row's own
+  // option list and counts are derived from, so "4 not streaming" doesn't
+  // change (or disappear) depending on which chip happens to be selected.
+  const statusAndSearchFiltered = useMemo(() => {
     return shelves
-      .filter((s) => !genre || s.tag === genre)
       .map((s) => ({
         ...s,
         items: s.items.filter((i) => {
           if (hiddenIds.has(i.id)) return false;
-          if (!matchesQuery(query, i.title, i.creator)) return false;
-          if (platform && i.creator !== platform) return false;
+          if (!matchesQuery(debouncedQuery, i.title, i.creator)) return false;
           const done = isDone(i);
           const matchesStatus = statusView === "finished" ? done : !done;
           return matchesStatus || leavingView(i.id);
         }),
       }))
       .filter((s) => s.items.length > 0);
-  }, [shelves, genre, platform, query, statusView, isDone, leavingView, hiddenIds]);
+  }, [shelves, debouncedQuery, statusView, isDone, leavingView, hiddenIds]);
 
-  const titleCount = useMemo(
-    () => filtered.reduce((sum, s) => sum + s.items.length, 0),
-    [filtered]
-  );
+  const platformOptions = useMemo(() => {
+    const names = new Set<string>();
+    statusAndSearchFiltered.forEach((s) =>
+      s.items.forEach((i) => i.creator && i.creator !== "Unconfirmed" && names.add(i.creator))
+    );
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [statusAndSearchFiltered]);
+
   const notStreamingCount = useMemo(
     () =>
-      filtered.reduce(
+      statusAndSearchFiltered.reduce(
         (sum, s) => sum + s.items.filter((i) => i.meta?.currentlyStreaming === false).length,
         0
       ),
-    [filtered]
+    [statusAndSearchFiltered]
+  );
+  const unconfirmedCount = useMemo(
+    () => statusAndSearchFiltered.reduce((sum, s) => sum + s.items.filter((i) => !!i.meta?.unconfirmed).length, 0),
+    [statusAndSearchFiltered]
   );
 
-  function handleFilterChange(id: string, value: string) {
-    if (id === "genre") setGenre(value);
-    if (id === "platform") setPlatform(value);
+  // Stage 2: + the selected chip.
+  const filtered = useMemo(() => {
+    return statusAndSearchFiltered
+      .map((s) => ({
+        ...s,
+        items: s.items.filter((i) => {
+          if (platformFilter === "not-streaming") return i.meta?.currentlyStreaming === false;
+          if (platformFilter === "unconfirmed") return !!i.meta?.unconfirmed;
+          if (platformFilter) return i.creator === platformFilter;
+          return true;
+        }),
+      }))
+      .filter((s) => s.items.length > 0);
+  }, [statusAndSearchFiltered, platformFilter]);
+
+  const filtersActive = !!platformFilter;
+  const platformLabel =
+    platformFilter === "not-streaming"
+      ? "Not currently streaming"
+      : platformFilter === "unconfirmed"
+        ? "Unconfirmed"
+        : platformFilter || "All services";
+
+  function handleClearFilters() {
+    setPlatformFilter("");
   }
 
-  function handleClear() {
-    setGenre("");
-    setPlatform("");
+  function handleAddFromEmptyState(e: React.MouseEvent<HTMLButtonElement>) {
+    // See the matching comment in BooksShelvesView.tsx.
+    addButtonRef.current = e.currentTarget;
+    setAddInitialTitle(debouncedQuery.trim());
+    setAddOpen(true);
   }
 
   return (
     <>
-      <div className="stats">
-        <span>
-          <b>{filtered.length}</b> shelves
-        </span>
-        <span>
-          <b>{titleCount}</b> titles
-        </span>
+      <ShelfHeader
+        active="shows"
+        query={query}
+        onQueryChange={setQuery}
+        searchLabel="Search shows"
+        searchPlaceholder="Title or streaming service"
+      />
+
+      <div className="mq-chip-row" role="group" aria-label="Filter by streaming service">
+        <button
+          type="button"
+          aria-pressed={platformFilter === ""}
+          className={`mq-chip${platformFilter === "" ? " on" : ""}`}
+          onClick={() => setPlatformFilter("")}
+        >
+          All
+        </button>
+        {platformOptions.map((name) => (
+          <button
+            key={name}
+            type="button"
+            aria-pressed={platformFilter === name}
+            className={`mq-chip${platformFilter === name ? " on" : ""}`}
+            onClick={() => setPlatformFilter(name)}
+          >
+            {name}
+          </button>
+        ))}
         {notStreamingCount > 0 && (
-          <span>
-            <b>{notStreamingCount}</b> not currently streaming
-          </span>
+          <button
+            type="button"
+            aria-pressed={platformFilter === "not-streaming"}
+            className={`mq-chip mq-chip-warn${platformFilter === "not-streaming" ? " on" : ""}`}
+            onClick={() => setPlatformFilter("not-streaming")}
+          >
+            {notStreamingCount} not streaming
+          </button>
         )}
-        <span>Tap a card to mark it watched, then rate it</span>
+        {unconfirmedCount > 0 && (
+          <button
+            type="button"
+            aria-pressed={platformFilter === "unconfirmed"}
+            className={`mq-chip mq-chip-warn${platformFilter === "unconfirmed" ? " on" : ""}`}
+            onClick={() => setPlatformFilter("unconfirmed")}
+          >
+            {unconfirmedCount} unconfirmed
+          </button>
+        )}
       </div>
-
-      <SearchBox
-        value={query}
-        onChange={setQuery}
-        label="Search shows"
-        placeholder="Search by title or streaming service"
-      />
-
-      <FilterBar
-        filters={[
-          { id: "genre", label: "Genre", value: genre, options: genreOptions },
-          { id: "platform", label: "Streaming Service", value: platform, options: platformOptions },
-        ]}
-        onChange={handleFilterChange}
-        onClear={handleClear}
-      />
 
       <ShelfNav
         shelves={filtered.map((s) => ({ id: s.id, tag: s.tag }))}
@@ -169,20 +228,43 @@ export function ShowsShelvesView({
       <PendingExitContext.Provider value={pendingExit}>
       <main>
         {filtered.length === 0 ? (
-          <p className="empty-state">
-            {query.trim()
-              ? `No ${statusView === "finished" ? "watched " : ""}shows match \u201c${query.trim()}\u201d — try ${
-                  statusView === "finished" ? "the On the Shelf tab" : "the Finished tab"
-                } or clear the search.`
-              : statusView === "finished"
-              ? "Nothing finished yet in this combination — mark a card watched and it'll show up here."
-              : "Nothing on your shelves matches that combination yet — try clearing a filter, or tap the + button to add something new."}
-          </p>
+          debouncedQuery.trim() ? (
+            <EmptyState
+              heading="Nothing on this shelf"
+              message={`No match for "${debouncedQuery.trim()}". Try another title or service, or add it.`}
+              action={
+                <button type="button" className="mq-empty-btn" onClick={handleAddFromEmptyState}>
+                  {`Add "${debouncedQuery.trim()}"`}
+                </button>
+              }
+            />
+          ) : statusView === "finished" ? (
+            <EmptyState
+              heading="Nothing finished yet"
+              message="Mark a card watched and it'll show up here."
+            />
+          ) : filtersActive ? (
+            <EmptyState
+              heading="Nothing here yet"
+              message="Nothing on your shelves matches that combination yet."
+              action={
+                <button type="button" className="mq-empty-btn" onClick={handleClearFilters}>
+                  Clear filters
+                </button>
+              }
+            />
+          ) : (
+            <EmptyState
+              heading="Nothing here yet"
+              message="Tap the + button to add something new."
+            />
+          )
         ) : (
           filtered.map((shelf) => (
             <ShowShelf
               key={shelf.id}
               shelf={shelf}
+              platformLabel={platformLabel}
               animatingOut={animatingOut}
               isDone={isDone}
               getRating={getRating}
@@ -198,12 +280,16 @@ export function ShowsShelvesView({
       <BottomNav
         statusView={statusView}
         onStatusViewChange={handleStatusViewChange}
-        onAddClick={() => setAddOpen(true)}
+        onAddClick={() => {
+          setAddInitialTitle(undefined);
+          setAddOpen(true);
+        }}
         addButtonRef={addButtonRef}
         userEmail={userEmail}
       />
       <AddShowFab
         activeGenre={activeGenre}
+        initialTitle={addInitialTitle}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         returnFocusRef={addButtonRef}
