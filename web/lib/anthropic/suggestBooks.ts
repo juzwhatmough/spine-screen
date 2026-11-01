@@ -11,6 +11,7 @@ export type SuggestionItem = { title: string; author: string; hook: string };
 type SuggestParams = {
   genre: string;
   authorsOnShelf: string[];
+  lovedTitles: string[];
   likedTitles: string[];
   dislikedTitles: string[];
   avoidTitles: string[];
@@ -20,6 +21,7 @@ type SuggestParams = {
 export async function suggestBooks({
   genre,
   authorsOnShelf,
+  lovedTitles,
   likedTitles,
   dislikedTitles,
   avoidTitles,
@@ -33,6 +35,7 @@ export async function suggestBooks({
   }
 
   const authorsStr = authorsOnShelf.length ? authorsOnShelf.join(", ") : "none yet";
+  const lovedStr = lovedTitles.length ? lovedTitles.join("; ") : "none yet";
   const likedStr = likedTitles.length ? likedTitles.join("; ") : "none rated yet";
   const dislikedStr = dislikedTitles.length ? dislikedTitles.join("; ") : "none rated yet";
   const avoidStr = avoidTitles.length ? avoidTitles.join("; ") : "none";
@@ -41,6 +44,7 @@ export async function suggestBooks({
   const prompt = `You are a book recommendation engine inside a personal reading-list app.
 Genre shelf: "${genre}".
 Authors already on this shelf, whose other books the reader may not have discovered yet: ${authorsStr}.
+Reader has loved (strongest signal, weight these most): ${lovedStr}.
 Reader has liked: ${likedStr}.
 Reader has disliked: ${dislikedStr}.
 Do not suggest any of these titles, already shown on this shelf: ${avoidStr}.

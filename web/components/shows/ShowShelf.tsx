@@ -37,7 +37,6 @@ export function ShowShelf({
           <ShowCard
             key={item.id}
             item={item}
-            color={shelf.color}
             watched={isDone(item)}
             rating={getRating(item)}
             exiting={animatingOut.has(item.id)}

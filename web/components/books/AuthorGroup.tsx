@@ -4,7 +4,6 @@ import type { ListItemRow } from "@/types/database";
 
 export function AuthorGroup({
   group,
-  color,
   animatingOut,
   isDone,
   getRating,
@@ -12,7 +11,6 @@ export function AuthorGroup({
   onItemRatingChange,
 }: {
   group: AuthorGroupData;
-  color: string;
   animatingOut: Set<string>;
   isDone: (item: ListItemRow) => boolean;
   getRating: (item: ListItemRow) => ListItemRow["rating"];
@@ -29,7 +27,6 @@ export function AuthorGroup({
           <BookCard
             key={item.id}
             item={item}
-            color={color}
             done={isDone(item)}
             rating={getRating(item)}
             exiting={animatingOut.has(item.id)}

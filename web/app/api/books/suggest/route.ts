@@ -35,6 +35,10 @@ export async function POST(request: Request) {
 
   const rows = (items ?? []) as ListItemRow[];
   const authorsOnShelf = [...new Set(rows.map((r) => r.creator).filter((c): c is string => !!c))];
+  // "loved" also counts as "liked" here (strongest signal still shapes the
+  // by-author mix below) as well as getting its own, more strongly-worded
+  // line in the prompt — see lib/anthropic/suggestBooks.ts.
+  const lovedTitles = rows.filter((r) => r.rating === "loved").map((r) => r.title);
   const likedTitles = rows.filter((r) => r.rating === "liked" || r.rating === "loved").map((r) => r.title);
   const dislikedTitles = rows.filter((r) => r.rating === "disliked").map((r) => r.title);
   const avoidTitles = rows.map((r) => r.title);
@@ -44,6 +48,7 @@ export async function POST(request: Request) {
     suggestions = await suggestBooks({
       genre,
       authorsOnShelf,
+      lovedTitles,
       likedTitles,
       dislikedTitles,
       avoidTitles,
