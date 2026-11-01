@@ -60,6 +60,7 @@ export function OnboardingForm() {
         A couple of quick questions so your first shelf isn&rsquo;t empty —
         you can always add more later.
       </p>
+      <div className="mq-add-form">
       {error && <p className="form-error">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div className="field">
@@ -124,6 +125,7 @@ export function OnboardingForm() {
           {isPending ? "Building your shelf…" : "Build my shelf"}
         </button>
       </form>
+      </div>
     </div>
   );
 }
