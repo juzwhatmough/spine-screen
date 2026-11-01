@@ -6,9 +6,8 @@ import type { StatusView } from "@/lib/hooks/useStatusTransitions";
 
 // Floating bottom nav — web/REDESIGN_SPEC.md section 4.3. Replaces the old
 // floating FAB (Add) and the in-page StatusToggle (Shelf/Finished). The
-// Add button is a sibling of the Account button here, not the FAB's own
-// trigger any more — see AddBookFab.tsx/AddShowFab.tsx, now controlled by
-// the parent *ShelvesView via `onAddClick`/`addButtonRef`.
+// Add button opens components/shared/AddSheet.tsx, controlled by the
+// parent *ShelvesView via `onAddClick`/`addButtonRef`.
 export function BottomNav({
   statusView,
   onStatusViewChange,

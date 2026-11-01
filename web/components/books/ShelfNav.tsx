@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 
 // Port of the sticky-nav scroll-spy from index.html — same
 // IntersectionObserver + rootMargin approach. `onActiveChange` is used by
-// the Add FAB (see AddBookFab.tsx/AddShowFab.tsx) to pre-fill the modal's
-// Genre dropdown with whatever shelf is currently in view — this is the
-// only reason that callback exists, ShelfNav itself doesn't need it.
+// the Add sheet (see components/shared/AddSheet.tsx) to pre-fill the
+// form's Genre chips with whatever shelf is currently in view — this is
+// the only reason that callback exists, ShelfNav itself doesn't need it.
 export function ShelfNav({
   shelves,
   onActiveChange,

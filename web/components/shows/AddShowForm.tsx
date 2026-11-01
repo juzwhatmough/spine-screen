@@ -8,12 +8,18 @@ import { searchShows, fetchAuProviders, type ShowSuggestion } from "@/lib/shows/
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-// Lives inside a Modal now (see components/shows/AddShowFab.tsx) — no
-// longer renders its own section/title. There's still no AI/onboarding
-// path for Shows (the original static feature never had one either) —
-// this is the only way a non-Juz user builds up their Shows list at all.
-// See AddBookForm.tsx for why `initialGenre` doesn't need an effect to
-// stay in sync.
+// Fixed platform chip set (web/REDESIGN_SPEC.md section 8.2) — "Other"
+// reveals a free-text input. The platform is still always typed or
+// picked by a human, never autofilled from the TMDB search below; see
+// the route's comment for why.
+const PLATFORM_CHIPS = ["Netflix", "Stan", "Binge", "Disney+", "Prime Video", "Apple TV+"];
+
+// Lives inside the shared Add sheet now (see
+// components/shared/AddSheet.tsx) — no longer renders its own
+// section/title. There's still no AI/onboarding path for Shows (the
+// original static feature never had one either) — this is the only way
+// a non-Juz user builds up their Shows list at all. See AddBookForm.tsx
+// for why `initialGenre` doesn't need an effect to stay in sync.
 //
 // Same debounced-search-and-dropdown pattern as AddBookForm.tsx, but
 // backed by TMDB via the server route (app/api/shows/search/route.ts —
@@ -37,6 +43,7 @@ export function AddShowForm({
   );
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const isCanonicalPlatform = PLATFORM_CHIPS.includes(platform.trim());
 
   const [suggestions, setSuggestions] = useState<ShowSuggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -147,47 +154,79 @@ export function AddShowForm({
           )}
         </div>
         <div className="field">
-          <label htmlFor="show-platform">Platform</label>
-          <input
-            id="show-platform"
-            type="text"
-            required
-            placeholder="Netflix, Stan…"
-            value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
-          />
+          <label id="show-platform-label">Platform</label>
+          <div className="mq-add-chip-group" role="group" aria-labelledby="show-platform-label">
+            {PLATFORM_CHIPS.map((name) => (
+              <button
+                key={name}
+                type="button"
+                aria-pressed={platform.trim() === name}
+                className={`mq-add-chip${platform.trim() === name ? " on" : ""}`}
+                onClick={() => setPlatform(name)}
+              >
+                {name}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-pressed={!isCanonicalPlatform}
+              className={`mq-add-chip${!isCanonicalPlatform ? " on" : ""}`}
+              onClick={() => {
+                if (isCanonicalPlatform) setPlatform("");
+              }}
+            >
+              Other
+            </button>
+          </div>
+          {!isCanonicalPlatform && (
+            <input
+              type="text"
+              required
+              placeholder="Streaming service"
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
+              style={{ marginTop: 10 }}
+            />
+          )}
           {providers.length > 0 && (
             <>
-              <div className="chip-group" style={{ marginTop: 8 }}>
+              <p className="search-hint" style={{ marginTop: 10 }}>
+                Suggested from TMDB (data from JustWatch) — tap to select:
+              </p>
+              <div className="mq-add-chip-group">
                 {providers.map((name) => (
                   <button
                     type="button"
                     key={name}
-                    className={`chip${platform.trim() === name ? " active" : ""}`}
+                    aria-pressed={platform.trim() === name}
+                    className={`mq-add-chip${platform.trim() === name ? " on" : ""}`}
                     onClick={() => setPlatform(name)}
                   >
                     {name}
                   </button>
                 ))}
               </div>
-              <p className="search-hint">
-                Suggested from TMDB (data from JustWatch) — worth a quick check.
-              </p>
             </>
           )}
         </div>
         <div className="field">
-          <label htmlFor="show-genre">Genre</label>
-          <select id="show-genre" value={genre} onChange={(e) => setGenre(e.target.value)}>
+          <label id="show-genre-label">Genre</label>
+          <div className="mq-add-chip-group" role="group" aria-labelledby="show-genre-label">
             {SHOW_GENRE_TAGS.map((tag) => (
-              <option key={tag} value={tag}>
+              <button
+                key={tag}
+                type="button"
+                aria-pressed={genre === tag}
+                className={`mq-add-chip${genre === tag ? " on" : ""}`}
+                onClick={() => setGenre(tag)}
+              >
                 {tag}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
         <button type="submit" className="primary-btn" disabled={isPending}>
-          {isPending ? "Adding…" : "Add"}
+          {isPending ? "Adding…" : "+ Add show"}
         </button>
       </form>
     </>

@@ -31,9 +31,9 @@ function useIsClient() {
 //
 // No title bar: section 7 lists the grabber and the close button as the
 // sheet's only chrome, not a heading row — every caller now renders its
-// own visible heading inside `children` (see AddBookFab.tsx,
-// AddShowFab.tsx, AccountSheet.tsx, DetailSheet.tsx). `title` is used
-// only for the dialog's `aria-label`.
+// own visible heading inside `children` (see AddSheet.tsx,
+// AccountSheet.tsx, DetailSheet.tsx). `title` is used only for the
+// dialog's `aria-label`.
 export function Modal({
   open,
   onClose,
