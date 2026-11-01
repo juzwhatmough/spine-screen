@@ -41,10 +41,11 @@ export async function toggleRead(itemId: string) {
   revalidatePath("/shows");
 }
 
-// Card thumbs stay binary (liked/disliked) even though `rating` is 3-state
-// (loved/liked/disliked) — `loved` is only reachable via the onboarding
-// "loved books" field, a separate mechanism (user_profile.loved_books).
-export async function setRating(itemId: string, rating: "liked" | "disliked") {
+// Widened to the schema's full 3-state rating (web/REDESIGN_SPEC.md
+// section 10.1) — the card's rating row now has a Loved (heart) button
+// alongside thumbs up/down, not just the onboarding "loved books" field.
+// Same toggle-off-if-already-set logic as before.
+export async function setRating(itemId: string, rating: "liked" | "disliked" | "loved") {
   const supabase = await createClient();
   const {
     data: { user },

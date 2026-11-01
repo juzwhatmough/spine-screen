@@ -38,6 +38,9 @@ export async function POST(request: Request) {
   const allRows = (allItems ?? []) as ListItemRow[];
   const genreRows = allRows.filter((r) => r.genre === genre);
   const titlesOnShelf = genreRows.map((r) => r.title);
+  // "loved" also counts as "liked" here, plus its own stronger line in the
+  // prompt — see lib/anthropic/suggestShows.ts.
+  const lovedTitles = allRows.filter((r) => r.rating === "loved").map((r) => r.title);
   const likedTitles = allRows.filter((r) => r.rating === "liked" || r.rating === "loved").map((r) => r.title);
   const dislikedTitles = allRows.filter((r) => r.rating === "disliked").map((r) => r.title);
   // avoid duplicating anything already anywhere in the user's show list,
@@ -49,6 +52,7 @@ export async function POST(request: Request) {
     suggestions = await suggestShows({
       genre,
       titlesOnShelf,
+      lovedTitles,
       likedTitles,
       dislikedTitles,
       avoidTitles,

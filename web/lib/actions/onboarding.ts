@@ -75,6 +75,10 @@ export async function submitOnboarding(
       const suggestions = await suggestBooks({
         genre,
         authorsOnShelf: input.favoriteAuthors,
+        // onboarding's free-text field is literally "books you loved" —
+        // counts as both, same as everywhere else "loved" folds into
+        // "liked" (web/REDESIGN_SPEC.md section 10.2).
+        lovedTitles: input.lovedBooks,
         likedTitles: input.lovedBooks,
         dislikedTitles: input.dislikedBooks,
         avoidTitles: manualTitles,

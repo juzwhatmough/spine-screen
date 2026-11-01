@@ -11,6 +11,7 @@ export type ShowSuggestionItem = { title: string; hook: string };
 type SuggestParams = {
   genre: string;
   titlesOnShelf: string[];
+  lovedTitles: string[];
   likedTitles: string[];
   dislikedTitles: string[];
   avoidTitles: string[];
@@ -20,6 +21,7 @@ type SuggestParams = {
 export async function suggestShows({
   genre,
   titlesOnShelf,
+  lovedTitles,
   likedTitles,
   dislikedTitles,
   avoidTitles,
@@ -33,6 +35,7 @@ export async function suggestShows({
   }
 
   const shelfStr = titlesOnShelf.length ? titlesOnShelf.join("; ") : "none yet";
+  const lovedStr = lovedTitles.length ? lovedTitles.join("; ") : "none yet";
   const likedStr = likedTitles.length ? likedTitles.join("; ") : "none rated yet";
   const dislikedStr = dislikedTitles.length ? dislikedTitles.join("; ") : "none rated yet";
   const avoidStr = avoidTitles.length ? avoidTitles.join("; ") : "none";
@@ -40,6 +43,7 @@ export async function suggestShows({
   const prompt = `You are a TV/film recommendation engine inside a personal watchlist app.
 Genre shelf: "${genre}".
 Shows/films already on this shelf: ${shelfStr}.
+Reader has loved (strongest signal, weight these most): ${lovedStr}.
 Reader has liked (after watching): ${likedStr}.
 Reader has disliked (after watching): ${dislikedStr}.
 Do not suggest any of these titles, already in the reader's list: ${avoidStr}.

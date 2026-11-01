@@ -916,7 +916,11 @@ footer{
   margin: 6px 0 0;
 }
 
-/* ---------- Mark read/watched: rate window countdown ---------- */
+/* ---------- Mark read/watched: rate window countdown ----------
+   Lives inside .mq-cover now (see BookCard.tsx/ShowCard.tsx) rather than
+   spanning the whole card stack, so it reads as "this cover is about to
+   leave" rather than a bar floating under the rating row. Gold, not
+   --sage, to fit the dark Marquee palette — a restyle, same mechanic. */
 .mark-remove-bar{
   position: absolute;
   left: 0;
@@ -924,7 +928,7 @@ footer{
   bottom: 0;
   height: 3px;
   border-radius: 0 0 3px 3px;
-  background: var(--sage);
+  background: var(--mq-gold);
   transform: scaleX(0);
   transform-origin: left;
   opacity: 0;
@@ -936,11 +940,11 @@ footer{
 @keyframes markCountdown{ from{ transform: scaleX(1); } to{ transform: scaleX(0); } }
 .mark-hint{
   display: none;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 11px;
   letter-spacing: 0.02em;
-  color: var(--ink-soft);
-  margin: 8px 0 0;
+  color: var(--mq-dim);
+  margin: 0;
 }
 .card.pending-remove .mark-hint{ display: block; }
 
@@ -993,4 +997,241 @@ footer{
 .search-clear:hover{ color: var(--ink); }
 @media (max-width: 640px){
   .search-row{ padding: 14px 16px 0; }
+}
+
+/* ---------- Marquee cover card (web/REDESIGN_SPEC.md section 6) ----------
+   BookCard.tsx/ShowCard.tsx keep the wrapper's `card` class (so the
+   swipe-to-delete and pending-remove-countdown CSS above still targets
+   it unchanged) and add `mq-card`, which resets the old ivory-card chrome
+   back to a plain, transparent stack. */
+.mq-card{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  min-height: 0;
+  cursor: auto;
+}
+.mq-card:hover{ transform: none; }
+.mq-card:focus-visible{ outline: none; }
+.mq-card::before{ content: none; }
+.mq-card.read{ background: none; }
+/* .swipe-wrap .card unconditionally painted an ivory background to match
+   the old card chrome — needs a same-specificity override here, not just
+   .mq-card alone, since `.swipe-wrap .card` has two classes too. */
+.swipe-wrap .card.mq-card,
+.swipe-wrap .card.mq-card:hover{ background: none; }
+
+.mq-cover{
+  position: relative;
+  border: 0;
+  padding: 12px;
+  box-sizing: border-box;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 160ms ease;
+}
+.mq-cover:active{ transform: scale(0.97); }
+.mq-cover:focus-visible{ outline: 2px solid var(--mq-gold); outline-offset: 3px; }
+.mq-cover-book{
+  height: 200px;
+  border-radius: 6px 14px 14px 6px;
+  padding-left: 20px;
+  box-shadow: inset 8px 0 0 rgba(0,0,0,.18), inset 10px 0 0 rgba(255,255,255,.12), 0 12px 26px rgba(0,0,0,.45);
+}
+.mq-cover-show{
+  height: 190px;
+  border-radius: 16px;
+  box-shadow: 0 12px 26px rgba(0,0,0,.45);
+}
+.mq-cover-tag{
+  align-self: flex-start;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(13,16,32,0.78);
+  font: 700 10px/22px var(--font-inter), Inter, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.mq-cover-title{
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.02;
+  text-transform: uppercase;
+}
+.mq-cover-author{
+  font: 600 9px var(--font-inter), Inter, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.mq-cover-dim{
+  position: absolute;
+  inset: 0;
+  background: rgba(13,16,32,0.62);
+  animation: mq-fade-in 240ms ease-out both;
+}
+@keyframes mq-fade-in{ from{ opacity: 0; } to{ opacity: 1; } }
+.mq-stamp{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  box-sizing: border-box;
+  border: 3px solid var(--mq-gold);
+  border-radius: 10px;
+  color: var(--mq-gold);
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 24px rgba(242,184,59,.35), inset 0 0 12px rgba(242,184,59,.2);
+  transform: translate(-50%, -50%) rotate(-14deg);
+  animation: mq-stamp-in 420ms cubic-bezier(.2,.9,.3,1.2) both;
+}
+.mq-stamp-book{ width: 104px; height: 52px; font-size: 30px; letter-spacing: 0.1em; }
+.mq-stamp-show{ width: 132px; height: 48px; font-size: 26px; letter-spacing: 0.06em; }
+@keyframes mq-stamp-in{
+  0%{ opacity: 0; transform: translate(-50%,-50%) scale(2.2) rotate(-14deg); }
+  55%{ opacity: 1; transform: translate(-50%,-50%) scale(.9) rotate(-14deg); }
+  75%{ transform: translate(-50%,-50%) scale(1.06) rotate(-14deg); }
+  100%{ opacity: 1; transform: translate(-50%,-50%) scale(1) rotate(-14deg); }
+}
+.mq-warn-badge-cover{
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: rgba(13,16,32,0.78);
+  color: var(--mq-warn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mq-quickmark{
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  background: rgba(13,16,32,0.72);
+  border: 2px solid rgba(244,241,234,0.55);
+  color: var(--mq-text);
+}
+.mq-quickmark.on{
+  background: var(--mq-gold);
+  border-color: var(--mq-gold);
+  color: var(--mq-bg);
+}
+.mq-quickmark:focus-visible{ outline: 2px solid var(--mq-gold); outline-offset: 3px; }
+
+.mq-rating-row{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  animation: mq-rise-in 260ms 120ms ease-out both;
+}
+@keyframes mq-rise-in{ from{ opacity: 0; transform: translateY(6px); } to{ opacity: 1; transform: none; } }
+.mq-rate-btn{
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-line);
+  background: var(--mq-surface);
+  color: var(--mq-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.mq-rate-btn.up.on, .mq-rate-btn.down.on{ background: var(--mq-gold); border-color: var(--mq-gold); color: var(--mq-bg); }
+.mq-rate-btn.love.on{ background: var(--mq-love); border-color: var(--mq-love); color: var(--mq-bg); }
+.mq-rate-btn:focus-visible{ outline: 2px solid var(--mq-gold); outline-offset: 2px; }
+
+.mq-unread{
+  margin: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 12px var(--font-inter), Inter, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mq-muted);
+}
+.mq-unread-ring{
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  border: 2px solid var(--mq-line-strong);
+}
+
+/* ---------- Shows: platform row (interim placement — see the comment at
+   the top of ShowCard.tsx. Moves into the detail sheet in a later PR). */
+.mq-platform-row{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  font: 600 12px var(--font-inter), Inter, sans-serif;
+  color: var(--mq-muted);
+}
+.mq-platform-edit-btn{
+  background: none;
+  border: 0;
+  color: var(--mq-muted);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+.mq-platform-edit-btn:hover{ color: var(--mq-text); }
+.mq-platform-input{
+  flex: 1;
+  min-width: 0;
+  font: 500 13px var(--font-inter), Inter, sans-serif;
+  color: var(--mq-text);
+  background: var(--mq-bg);
+  border: 1px solid var(--mq-line);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+.mq-platform-save-btn,
+.mq-platform-cancel-btn{
+  background: none;
+  border: 0;
+  color: var(--mq-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  line-height: 1;
+}
+.mq-verified-note{
+  font: 500 11px var(--font-inter), Inter, sans-serif;
+  color: var(--mq-dim);
+}
+.mq-verified-note.stale{ color: var(--mq-warn); }
+
+@media (prefers-reduced-motion: reduce){
+  .mq-cover-dim, .mq-stamp, .mq-rating-row{ animation: none; }
 }

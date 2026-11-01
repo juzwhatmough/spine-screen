@@ -36,7 +36,6 @@ export function BookShelf({
         <AuthorGroup
           key={group.author}
           group={group}
-          color={shelf.color}
           animatingOut={animatingOut}
           isDone={isDone}
           getRating={getRating}
