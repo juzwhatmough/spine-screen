@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { MarqueeLights } from "@/components/ui/MarqueeLights";
 
 // Landing page for the magic link (implicit flow). supabase-js parses the
 // session out of the URL hash on init (detectSessionInUrl, on by default),
@@ -54,13 +55,7 @@ export default function ConfirmPage() {
 
   return (
     <>
-      <header>
-        <div className="spine-strip" />
-        <p className="eyebrow">Personal library · Est. Aug 2026</p>
-        <h1>
-          The <em>Shelf</em>
-        </h1>
-      </header>
+      <MarqueeLights />
 
       <div className="auth-shell">
         {error ? (

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingForm } from "@/components/onboarding/OnboardingForm";
+import { MarqueeLights } from "@/components/ui/MarqueeLights";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -26,14 +27,7 @@ export default async function OnboardingPage() {
 
   return (
     <>
-      <header>
-        <div className="spine-strip" />
-        <p className="eyebrow">Personal library · Est. Aug 2026</p>
-        <h1>
-          The <em>Shelf</em>
-        </h1>
-        <p className="sub">Just a couple of questions before we build your shelf.</p>
-      </header>
+      <MarqueeLights />
       <OnboardingForm />
     </>
   );

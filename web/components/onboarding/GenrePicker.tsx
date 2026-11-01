@@ -34,12 +34,13 @@ export function GenrePicker({
 
   return (
     <div>
-      <div className="chip-group">
+      <div className="mq-add-chip-group">
         {GENRE_TAGS.map((tag) => (
           <button
             key={tag}
             type="button"
-            className={`chip${value.includes(tag) ? " active" : ""}`}
+            aria-pressed={value.includes(tag)}
+            className={`mq-add-chip${value.includes(tag) ? " on" : ""}`}
             onClick={() => toggle(tag)}
           >
             {tag}
@@ -47,7 +48,8 @@ export function GenrePicker({
         ))}
         <button
           type="button"
-          className={`chip${otherActive ? " active" : ""}`}
+          aria-pressed={otherActive}
+          className={`mq-add-chip${otherActive ? " on" : ""}`}
           onClick={toggleOther}
         >
           Other

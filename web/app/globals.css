@@ -55,56 +55,12 @@ body{
   -webkit-font-smoothing: antialiased;
 }
 ::selection{ background: var(--brass); color: var(--paper); }
-
-/* ---------- Header ---------- */
-header{
-  position: relative;
-  padding: 64px 24px 40px;
-  background:
-    radial-gradient(1200px 300px at 20% -10%, rgba(122,46,39,0.08), transparent 60%),
-    var(--paper);
-  border-bottom: 2px solid var(--ink);
-  overflow: hidden;
-}
-.eyebrow{
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--spine);
-  margin: 0 0 14px;
-}
-h1{
-  font-family: 'Fraunces', serif;
-  font-optical-sizing: auto;
-  font-weight: 600;
-  font-size: clamp(38px, 7vw, 66px);
-  line-height: 0.98;
-  letter-spacing: -0.01em;
-  margin: 0 0 16px;
-  max-width: 780px;
-}
-h1 em{ font-style: italic; font-weight: 500; color: var(--spine); }
-.sub{
-  font-size: 17px;
-  color: var(--ink-soft);
-  max-width: 560px;
-  line-height: 1.55;
-  margin: 0;
-}
-.spine-strip{
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 14px;
-  background: repeating-linear-gradient(
-    180deg,
-    var(--spine) 0 34px,
-    var(--brass) 34px 40px,
-    var(--sage) 40px 68px,
-    var(--ink) 68px 72px
-  );
-  opacity: 0.9;
-}
+/* Matches the reference designs' own a{color:#F2B83B} convention —
+   only reaches anchors that don't already set their own color (every
+   nav/tab/button-styled link does), so this just gives plain inline
+   links like auth/confirm's "Back to sign in" a sensible default. */
+a{ color: var(--mq-gold); }
+a:hover{ color: #FFD27A; }
 
 /* ---------- Marquee lights (web/components/ui/MarqueeLights.tsx) ---------- */
 .marquee-lights{
@@ -400,19 +356,25 @@ footer{
   letter-spacing: 0.04em;
 }
 
-/* ---------- Auth / onboarding forms (new — not in the original app) ---------- */
+/* ---------- Auth / onboarding forms ----------
+   Onboarding (web/REDESIGN_SPEC.md section 8.4) is the only remaining
+   user of .auth-shell — login moved to its own mq-auth- and mq-login-
+   prefixed classes below, so this is restyled in place rather than
+   kept paper-themed "until nothing references it" (nothing else does). */
 .auth-shell{
   max-width: 420px;
   margin: 0 auto;
-  padding: 64px 24px 100px;
+  padding: 24px 22px 100px;
 }
 .auth-shell h2{
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
   font-size: 28px;
+  text-transform: uppercase;
+  color: var(--mq-text);
   margin: 0 0 12px;
 }
-.auth-shell p{ color: var(--ink-soft); line-height: 1.55; margin: 0 0 24px; }
+.auth-shell p{ color: var(--mq-muted); line-height: 1.55; margin: 0 0 24px; }
 .field{ margin-bottom: 18px; }
 .field label{
   display: block;
@@ -471,7 +433,7 @@ footer{
 .link-btn{
   background: none;
   border: none;
-  color: var(--spine);
+  color: var(--mq-gold);
   font-size: 13px;
   cursor: pointer;
   padding: 0;
@@ -623,8 +585,6 @@ footer{
 }
 
 @media (max-width: 640px){
-  header{ padding: 48px 20px 32px; }
-  .spine-strip{ width: 9px; }
   .author-row{ flex-direction: column; align-items: flex-start; }
   .author-why{ text-align: left; max-width: none; }
 }
@@ -1421,3 +1381,142 @@ footer{
 .mq-add-form .autocomplete-item:hover,
 .mq-add-form .autocomplete-item:focus-visible{ background: rgba(255,255,255,0.06); }
 .mq-add-form .autocomplete-item .ac-meta{ color: var(--mq-muted); }
+
+/* ---------- Login (web/REDESIGN_SPEC.md section 8.3) ---------- */
+.mq-round-btn{
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid var(--mq-line);
+  background: var(--mq-surface);
+  color: var(--mq-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mq-login-fan{
+  position: relative;
+  height: 270px;
+  margin-top: 18px;
+}
+.mq-login-fan-book{
+  position: absolute;
+  width: 110px;
+  height: 164px;
+  border-radius: 14px;
+  box-shadow: 0 16px 30px rgba(0,0,0,0.5);
+  padding: 12px;
+  box-sizing: border-box;
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-size: 18px;
+  line-height: 1;
+}
+.mq-login-fan-left{ left: 34px; top: 46px; transform: rotate(-12deg); }
+.mq-login-fan-right{ right: 34px; top: 46px; transform: rotate(12deg); }
+.mq-login-fan-center{
+  left: 50%;
+  top: 20px;
+  margin-left: -64px;
+  width: 128px;
+  height: 190px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.55);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.mq-login-fan-title{ font-family: var(--font-anton), Impact, sans-serif; font-size: 22px; line-height: 1; text-transform: uppercase; }
+.mq-login-fan-author{ font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.mq-auth-copy{ padding: 0 24px; }
+.mq-auth-eyebrow{
+  margin: 0 0 8px;
+  font: 600 11px var(--font-inter), Inter, sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mq-gold);
+}
+.mq-auth-heading{
+  margin: 0;
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 44px;
+  line-height: 0.98;
+  text-transform: uppercase;
+  color: var(--mq-text);
+}
+.mq-auth-heading-lg{ font-size: 56px; line-height: 0.92; }
+.mq-auth-sub{ margin: 12px 0 0; font: 400 15px/1.5 var(--font-inter), Inter, sans-serif; color: var(--mq-muted); }
+
+.mq-login-bottom{
+  padding: 34px 24px calc(34px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mq-login-input{
+  height: 54px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-line);
+  background: var(--mq-surface);
+  color: var(--mq-text);
+  font: 500 16px var(--font-inter), Inter, sans-serif;
+}
+.mq-login-input::placeholder{ color: #7F86A3; }
+.mq-login-input:focus-visible{
+  outline: none;
+  border-color: var(--mq-gold);
+  box-shadow: 0 0 0 3px rgba(242,184,59,.25);
+}
+.mq-auth-submit{
+  height: 56px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--mq-gold);
+  color: var(--mq-bg);
+  font: 700 16px var(--font-inter), Inter, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(242,184,59,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.mq-auth-submit:disabled{ opacity: 0.6; cursor: wait; }
+.mq-login-footnote{ margin: 2px 0 0; text-align: center; font-size: 13px; color: var(--mq-muted); }
+.mq-login-error{ margin: 0; font-size: 13px; color: var(--mq-warn); }
+
+.mq-envelope-row{ display: flex; justify-content: center; margin-top: 50px; }
+.mq-envelope-badge{
+  width: 132px;
+  height: 132px;
+  border-radius: 66px;
+  background: var(--mq-surface);
+  border: 1px solid var(--mq-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 14px rgba(242,184,59,0.06), 0 0 60px rgba(242,184,59,0.18);
+}
+.mq-login-resend-row{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mq-login-resend-row p{ margin: 0; font-size: 14px; color: var(--mq-muted); }
+.mq-login-link-btn{
+  padding: 12px 0;
+  background: none;
+  border: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mq-gold);
+  cursor: pointer;
+}
