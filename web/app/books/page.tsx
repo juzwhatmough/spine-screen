@@ -4,9 +4,18 @@ import { groupItems } from "@/lib/books/groupItems";
 import { seedJuzLibrary } from "@/lib/actions/seedJuz";
 import { BooksShelvesView } from "@/components/books/BooksShelvesView";
 import { TabNav } from "@/components/nav/TabNav";
+import { MarqueeLights } from "@/components/ui/MarqueeLights";
+import type { StatusView } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
-export default async function BooksPage() {
+export default async function BooksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view } = await searchParams;
+  const initialView: StatusView = view === "finished" ? "finished" : "shelf";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,27 +53,13 @@ export default async function BooksPage() {
 
   return (
     <>
-      <header>
-        <div className="spine-strip" />
-        <p className="eyebrow">Personal library · Est. Aug 2026</p>
-        <h1>
-          The <em>Shelf</em>
-        </h1>
-        <p className="sub">
-          Your favourite authors, more of their own work, and the writers
-          you might fall for next — sorted the way a good bookshop shelves
-          them, by genre rather than app.
-        </p>
-        <TabNav active="books" />
+      <MarqueeLights />
+      <header className="mq-shelf-header">
+        <h1 className="mq-title">The Shelf</h1>
       </header>
+      <TabNav active="books" />
 
-      <BooksShelvesView shelves={shelves} />
-
-      <footer>
-        Tap a card to mark it read, then 👍 or 👎 it · Tap &quot;Suggest
-        more&quot; on any shelf for fresh picks based on your ratings ·
-        Your list is saved to your account
-      </footer>
+      <BooksShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />
     </>
   );
 }

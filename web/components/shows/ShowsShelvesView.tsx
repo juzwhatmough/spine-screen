@@ -1,13 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ShelfNav } from "@/components/books/ShelfNav";
 import { ShowShelf } from "./ShowShelf";
 import { AddShowFab } from "./AddShowFab";
+import { BottomNav } from "@/components/nav/BottomNav";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
-import { StatusToggle, type StatusView } from "@/components/ui/StatusToggle";
-import { PendingExitContext, useStatusTransitions } from "@/lib/hooks/useStatusTransitions";
+import {
+  PendingExitContext,
+  useStatusTransitions,
+  type StatusView,
+} from "@/lib/hooks/useStatusTransitions";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
 import type { ShowShelfData } from "@/lib/shows/groupItems";
 
@@ -15,12 +19,22 @@ import type { ShowShelfData } from "@/lib/shows/groupItems";
 // Genre + Author, no author-group nesting). Platform comes from
 // `item.creator` — see types/database.ts's ListItemMeta comment for why
 // shows store platform there instead of a dedicated column.
-export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
-  const [statusView, setStatusView] = useState<StatusView>("shelf");
+export function ShowsShelvesView({
+  shelves,
+  userEmail,
+  initialView,
+}: {
+  shelves: ShowShelfData[];
+  userEmail: string;
+  initialView: StatusView;
+}) {
+  const [statusView, setStatusView] = useState<StatusView>(initialView);
   const [genre, setGenre] = useState("");
   const [platform, setPlatform] = useState("");
   const [query, setQuery] = useState("");
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
+  const [addOpen, setAddOpen] = useState(false);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   const {
     isDone,
@@ -32,6 +46,22 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
     handleRatingChange,
   } = useStatusTransitions(statusView, "watched");
   const { hiddenIds } = useDelete();
+
+  // See the matching comment in BooksShelvesView.tsx.
+  function handleStatusViewChange(next: StatusView) {
+    setStatusView(next);
+    const url = next === "finished" ? `${window.location.pathname}?view=finished` : window.location.pathname;
+    window.history.pushState(null, "", url);
+  }
+
+  useEffect(() => {
+    function handlePopState() {
+      const params = new URLSearchParams(window.location.search);
+      setStatusView(params.get("view") === "finished" ? "finished" : "shelf");
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const genreOptions = useMemo(() => shelves.map((s) => s.tag), [shelves]);
   const platformOptions = useMemo(() => {
@@ -82,8 +112,6 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
 
   return (
     <>
-      <StatusToggle value={statusView} onChange={setStatusView} />
-
       <div className="stats">
         <span>
           <b>{filtered.length}</b> shelves
@@ -148,7 +176,19 @@ export function ShowsShelvesView({ shelves }: { shelves: ShowShelfData[] }) {
       </main>
       </PendingExitContext.Provider>
 
-      <AddShowFab activeGenre={activeGenre} />
+      <BottomNav
+        statusView={statusView}
+        onStatusViewChange={handleStatusViewChange}
+        onAddClick={() => setAddOpen(true)}
+        addButtonRef={addButtonRef}
+        userEmail={userEmail}
+      />
+      <AddShowFab
+        activeGenre={activeGenre}
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        returnFocusRef={addButtonRef}
+      />
     </>
   );
 }

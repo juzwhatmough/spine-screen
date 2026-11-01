@@ -3,8 +3,14 @@
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { toggleRead } from "@/lib/actions/listItems";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
-import type { StatusView } from "@/components/ui/StatusToggle";
 import type { ListItemRow } from "@/types/database";
+
+// Was defined in components/ui/StatusToggle.tsx, which rendered this as an
+// in-page segmented control. The redesign moves that control into
+// components/nav/BottomNav.tsx (see web/REDESIGN_SPEC.md section 4.3) —
+// the type lives here now, next to the hook that's actually responsible
+// for the statusView logic.
+export type StatusView = "shelf" | "finished";
 
 // How long a card stays fully visible and interactive (thumbs clickable)
 // after being marked done, before the fade-out even begins. Long enough

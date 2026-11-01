@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Marquee home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#F2B83B}a:hover{color:#FFD27A}
+.scroller::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0D1020; color: #F4F1EA; font-family: Inter, system-ui, sans-serif; box-sizing: border-box">
+
+  <div aria-hidden="true" style="display: flex; justify-content: space-between; padding: 18px 22px 0">
+    <sc-for list="{{bulbs}}" as="b" hint-placeholder-count="14">
+      <span style="width: 6px; height: 6px; border-radius: 50%; background: {{b.c}}; box-shadow: {{b.glow}}"></span>
+    </sc-for>
+  </div>
+
+  <header style="display: flex; align-items: flex-end; justify-content: space-between; padding: 22px 22px 0">
+    <div>
+      <p style="margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; color: {{gold}}">PERSONAL LIBRARY</p>
+      <h1 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 52px; line-height: 0.92; letter-spacing: 0.01em">THE SHELF</h1>
+    </div>
+    <button aria-label="Search" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid #2A3050; background: #171B2E; color: #F4F1EA; display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+    </button>
+  </header>
+
+  <div role="tablist" aria-label="Library" style="margin: 20px 22px 0; padding: 4px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #171B2E; border: 1px solid #2A3050; border-radius: 16px">
+    <button role="tab" aria-selected="true" style="height: 44px; border: 0; border-radius: 12px; background: {{gold}}; color: #0D1020; font: 700 14px Inter, sans-serif; cursor: pointer">Books</button>
+    <button role="tab" aria-selected="false" style="height: 44px; border: 0; border-radius: 12px; background: transparent; color: #A3A9C2; font: 600 14px Inter, sans-serif; cursor: pointer">Shows</button>
+  </div>
+
+  <section aria-label="Picked for you" style="margin: 22px 22px 0; padding: 16px; border-radius: 22px; background: #171B2E; border: 1px solid #2A3050; display: flex; gap: 16px">
+    <div style="width: 92px; height: 136px; flex: none; border-radius: 12px; background: #1F4E5F; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 12px 28px rgba(0,0,0,0.45)">
+      <span style="font-family: Anton, sans-serif; font-size: 17px; line-height: 1; color: #F4F1EA">THE NIGHT-INGALE</span>
+      <span style="font-size: 9px; letter-spacing: 0.08em; color: #CFE3EA">KRISTIN HANNAH</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+      <p style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; color: {{gold}}">
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+        PICKED FOR YOU
+      </p>
+      <h2 style="margin: 0; font-size: 19px; font-weight: 700; line-height: 1.2">The Nightingale</h2>
+      <p style="margin: 0; font-size: 13px; line-height: 1.45; color: #A3A9C2">Because you loved The Secret Messenger</p>
+      <div style="display: flex; gap: 8px; margin-top: auto">
+        <button style="height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: #FF6B57; color: #1A0B08; font: 700 13px Inter, sans-serif; cursor: pointer">Add to shelf</button>
+        <button style="height: 44px; padding: 0 14px; border: 1px solid #2A3050; border-radius: 12px; background: transparent; color: #F4F1EA; font: 600 13px Inter, sans-serif; cursor: pointer">Not for me</button>
+      </div>
+    </div>
+  </section>
+
+  <nav aria-label="Genres" class="scroller" style="margin-top: 24px; padding: 0 22px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none">
+    <sc-for list="{{genres}}" as="g" hint-placeholder-count="5">
+      <button style="flex: none; height: 40px; padding: 0 16px; border-radius: 20px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.fg}}; font: 600 13px Inter, sans-serif; white-space: nowrap; cursor: pointer">{{g.label}}</button>
+    </sc-for>
+  </nav>
+
+  <section aria-label="WWII and Historical Fiction" style="margin-top: 24px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 22px">
+      <h2 style="margin: 0; font-family: Anton, sans-serif; font-weight: 400; font-size: 22px; letter-spacing: 0.02em">WWII &amp; HISTORICAL</h2>
+      <a href="#" style="font-size: 13px; font-weight: 600; text-decoration: none">See all</a>
+    </div>
+    <p style="margin: 4px 22px 0; font-size: 13px; color: #A3A9C2">Mandy Robotham</p>
+    <div class="scroller" style="display: flex; gap: 12px; padding: 14px 22px 0; overflow-x: auto; scrollbar-width: none">
+      <sc-for list="{{covers}}" as="c" hint-placeholder-count="4">
+        <button aria-label="{{c.aria}}" style="flex: none; width: 118px; height: 174px; position: relative; border: 0; border-radius: 14px; padding: 12px; box-sizing: border-box; background: {{c.bg}}; color: {{c.fg}}; text-align: left; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; box-shadow: 0 10px 24px rgba(0,0,0,0.4)">
+          <span style="font-family: Anton, sans-serif; font-size: 19px; line-height: 1.02">{{c.title}}</span>
+          <span style="font: 600 9px Inter, sans-serif; letter-spacing: 0.1em; opacity: 0.85">{{c.tag}}</span>
+          <sc-if value="{{c.read}}" hint-placeholder-val="{{false}}">
+            <span style="position: absolute; top: -6px; right: -6px; width: 28px; height: 28px; border-radius: 14px; background: #F2B83B; color: #0D1020; display: flex; align-items: center; justify-content: center; border: 3px solid #0D1020">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
+            </span>
+          </sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+
+  <nav aria-label="Main" style="position: absolute; left: 14px; right: 14px; bottom: 18px; height: 68px; border-radius: 24px; background: rgba(23,27,46,0.92); border: 1px solid #2A3050; backdrop-filter: blur(16px); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center">
+    <a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: {{gold}}; text-decoration: none">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M9 19V5M14 19l-1-14M19 19l-3.5-13"></path><path d="M3 19h18"></path></svg>Shelf</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #A3A9C2; text-decoration: none">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>For you</a>
+    <span style="display: flex; justify-content: center">
+      <button aria-label="Add a title" style="width: 52px; height: 52px; border-radius: 18px; border: 0; background: #FF6B57; color: #1A0B08; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 8px 20px rgba(255,107,87,0.35)">
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+      </button>
+    </span>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #A3A9C2; text-decoration: none">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg>Finished</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #A3A9C2; text-decoration: none">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Me</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"gold":{"editor":"color","default":"#F2B83B","options":["#F2B83B","#FF6B57","#8EC5FF"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const gold = this.props.gold ?? '#F2B83B';
+    const bulbs = Array.from({ length: 14 }, (_, i) => {
+      const on = i % 3 !== 1;
+      return { c: on ? gold : '#4A3F25', glow: on ? '0 0 8px ' + gold : 'none' };
+    });
+    const labels = ['All', 'WWII & Historical', 'Literary', 'Thriller & Suspense', 'Comedy & Family', 'Nonfiction'];
+    const genres = labels.map((label, i) => i === 1
+      ? { label, bg: '#F4F1EA', fg: '#0D1020', border: '#F4F1EA' }
+      : { label, bg: 'transparent', fg: '#F4F1EA', border: '#2A3050' });
+    const covers = [
+      { title: 'THE SECRET MESSENGER', tag: 'FROM YOUR LIST', bg: '#E4572E', fg: '#FFF6F2', read: true },
+      { title: 'THE BERLIN GIRL', tag: 'MORE BY AUTHOR', bg: '#3D5AFE', fg: '#F2F4FF', read: false },
+      { title: 'THE GIRL BEHIND THE WALL', tag: 'MORE BY AUTHOR', bg: '#F2C14E', fg: '#1D1606', read: false },
+      { title: 'THE RESIST-ANCE GIRL', tag: 'MORE BY AUTHOR', bg: '#2EC4B6', fg: '#06201D', read: false }
+    ].map(c => ({ ...c, aria: c.title + (c.read ? ', read' : ', tap to mark read') }));
+    return { gold, bulbs, genres, covers };
+  }
+}
+</script>
+</body>
+</html>

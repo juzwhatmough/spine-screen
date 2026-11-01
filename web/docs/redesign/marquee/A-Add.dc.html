@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Marquee add a title</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#F2B83B}a:hover{color:#FFD27A}
+input::placeholder{color:#7F86A3}
+input:focus{outline:none;border-color:#F2B83B !important;box-shadow:0 0 0 3px rgba(242,184,59,0.25)}
+@keyframes mq-sheet{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.mq-sheet{animation:mq-sheet 320ms cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion: reduce){.mq-sheet{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0D1020; color: #F4F1EA; font-family: Inter, system-ui, sans-serif; box-sizing: border-box">
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; padding: 70px 22px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; opacity: 0.5">
+    <div style="height: 190px; border-radius: 16px; background: #7A2E27"></div>
+    <div style="height: 190px; border-radius: 16px; background: #FF6B57"></div>
+    <div style="height: 190px; border-radius: 16px; background: #2EC4B6"></div>
+    <div style="height: 190px; border-radius: 16px; background: #3D5AFE"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(6,8,18,0.72); backdrop-filter: blur(6px)"></div>
+
+  <section class="mq-sheet" role="dialog" aria-modal="true" aria-labelledby="add-title" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 22px 30px; border-radius: 28px 28px 0 0; background: #171B2E; border-top: 1px solid #2A3050; box-shadow: 0 -20px 60px rgba(0,0,0,0.5)">
+    <div aria-hidden="true" style="width: 40px; height: 5px; border-radius: 3px; background: #3A4166; margin: 0 auto"></div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px">
+      <h2 id="add-title" style="margin: 0; font-family: Anton, sans-serif; font-weight: 400; font-size: 32px; line-height: 1">ADD TO YOUR SHELF</h2>
+      <a href="A-Shows.dc.html" aria-label="Close" style="width: 44px; height: 44px; border-radius: 22px; background: #0D1020; color: #F4F1EA; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </a>
+    </div>
+
+    <div role="tablist" aria-label="Type" style="margin-top: 18px; padding: 4px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #0D1020; border-radius: 14px">
+      <button role="tab" aria-selected="{{bookSel}}" onClick="{{pickBook}}" style="height: 42px; border: 0; border-radius: 11px; background: {{bookBg}}; color: {{bookFg}}; font: 700 14px Inter, sans-serif; cursor: pointer">Book</button>
+      <button role="tab" aria-selected="{{showSel}}" onClick="{{pickShow}}" style="height: 42px; border: 0; border-radius: 11px; background: {{showBg}}; color: {{showFg}}; font: 700 14px Inter, sans-serif; cursor: pointer">Show</button>
+    </div>
+
+    <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 8px">
+      <label for="add-name" style="font-size: 13px; font-weight: 600">Title</label>
+      <input id="add-name" placeholder="{{titleHint}}" style="height: 52px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: 1px solid #2A3050; background: #0D1020; color: #F4F1EA; font: 500 16px Inter, sans-serif">
+    </div>
+
+    <sc-if value="{{isBook}}" hint-placeholder-val="{{false}}">
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px">
+        <label for="add-author" style="font-size: 13px; font-weight: 600">Author</label>
+        <input id="add-author" placeholder="Who wrote it?" style="height: 52px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: 1px solid #2A3050; background: #0D1020; color: #F4F1EA; font: 500 16px Inter, sans-serif">
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isShow}}" hint-placeholder-val="{{true}}">
+      <fieldset style="margin: 16px 0 0; padding: 0; border: 0">
+        <legend style="padding: 0; font-size: 13px; font-weight: 600">Where is it streaming?</legend>
+        <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{platforms}}" as="p" hint-placeholder-count="6">
+            <button aria-pressed="{{p.pressed}}" onClick="{{p.pick}}" style="height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid {{p.border}}; background: {{p.bg}}; color: {{p.fg}}; font: 600 13px Inter, sans-serif; cursor: pointer">{{p.label}}</button>
+          </sc-for>
+        </div>
+      </fieldset>
+    </sc-if>
+
+    <fieldset style="margin: 16px 0 0; padding: 0; border: 0">
+      <legend style="padding: 0; font-size: 13px; font-weight: 600">Shelf</legend>
+      <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{genres}}" as="g" hint-placeholder-count="6">
+          <button aria-pressed="{{g.pressed}}" onClick="{{g.pick}}" style="height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid {{g.border}}; background: {{g.bg}}; color: {{g.fg}}; font: 600 13px Inter, sans-serif; cursor: pointer">{{g.label}}</button>
+        </sc-for>
+      </div>
+    </fieldset>
+
+    <a href="A-Shows.dc.html" style="margin-top: 22px; height: 56px; border-radius: 16px; background: #F2B83B; color: #0D1020; font: 700 16px Inter, sans-serif; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 30px rgba(242,184,59,0.3)">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>{{cta}}</a>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { kind: 'show', platform: 'Stan', genre: 'Drama' };
+  }
+  renderVals() {
+    const { kind, platform, genre } = this.state;
+    const isShow = kind === 'show';
+    const on = { bg: '#F2B83B', fg: '#0D1020', border: '#F2B83B', pressed: 'true' };
+    const off = { bg: 'transparent', fg: '#F4F1EA', border: '#2A3050', pressed: 'false' };
+    const platforms = ['Netflix', 'Stan', 'Binge', 'Disney+', 'Prime Video', 'Other'].map(label => ({
+      label, ...(label === platform ? on : off), pick: () => this.setState({ platform: label })
+    }));
+    const showGenres = ['Thriller & Mystery', 'Drama', 'Comedy', 'Period Drama', 'True Crime', 'Romance', 'Sci-Fi & Fantasy', 'Documentary'];
+    const bookGenres = ['WWII & Historical', 'Literary Fiction', 'Thriller & Suspense', 'Comedy & Family', 'Narrative Nonfiction'];
+    const list = isShow ? showGenres : bookGenres;
+    const current = list.includes(genre) ? genre : list[0];
+    const genres = list.map(label => ({
+      label, ...(label === current ? on : off), pick: () => this.setState({ genre: label })
+    }));
+    const tabOn = { bg: '#F2B83B', fg: '#0D1020' }, tabOff = { bg: 'transparent', fg: '#A3A9C2' };
+    return {
+      isShow, isBook: !isShow, platforms, genres,
+      bookSel: isShow ? 'false' : 'true', showSel: isShow ? 'true' : 'false',
+      bookBg: (isShow ? tabOff : tabOn).bg, bookFg: (isShow ? tabOff : tabOn).fg,
+      showBg: (isShow ? tabOn : tabOff).bg, showFg: (isShow ? tabOn : tabOff).fg,
+      pickBook: () => this.setState({ kind: 'book', genre: 'WWII & Historical' }),
+      pickShow: () => this.setState({ kind: 'show', genre: 'Drama' }),
+      titleHint: isShow ? 'e.g. a show a friend recommended' : 'e.g. the book from book club',
+      cta: isShow ? 'Add show' : 'Add book'
+    };
+  }
+}
+</script>
+</body>
+</html>

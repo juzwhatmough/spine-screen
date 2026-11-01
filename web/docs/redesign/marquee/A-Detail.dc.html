@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Marquee detail sheet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#F2B83B}a:hover{color:#FFD27A}
+@keyframes mq-sheet{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes mq-stamp{0%{opacity:0;transform:scale(2.2) rotate(-14deg)}55%{opacity:1;transform:scale(0.9) rotate(-14deg)}75%{transform:scale(1.06) rotate(-14deg)}100%{opacity:1;transform:scale(1) rotate(-14deg)}}
+@keyframes mq-rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mq-sheet{animation:mq-sheet 320ms cubic-bezier(.2,.8,.2,1) both}
+.mq-stamp{animation:mq-stamp 420ms cubic-bezier(.2,.9,.3,1.2) both}
+.mq-rise{animation:mq-rise 260ms 80ms ease-out both}
+@media (prefers-reduced-motion: reduce){.mq-sheet,.mq-stamp,.mq-rise{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0D1020; color: #F4F1EA; font-family: Inter, system-ui, sans-serif; box-sizing: border-box">
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; padding: 70px 22px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; opacity: 0.5">
+    <div style="height: 200px; border-radius: 14px; background: #E4572E"></div>
+    <div style="height: 200px; border-radius: 14px; background: #3D5AFE"></div>
+    <div style="height: 200px; border-radius: 14px; background: #F2C14E"></div>
+    <div style="height: 200px; border-radius: 14px; background: #2EC4B6"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(6,8,18,0.72); backdrop-filter: blur(6px)"></div>
+
+  <section class="mq-sheet" role="dialog" aria-modal="true" aria-labelledby="dt-title" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 22px 30px; border-radius: 28px 28px 0 0; background: #171B2E; border-top: 1px solid #2A3050; box-shadow: 0 -20px 60px rgba(0,0,0,0.5)">
+    <div aria-hidden="true" style="width: 40px; height: 5px; border-radius: 3px; background: #3A4166; margin: 0 auto"></div>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 8px">
+      <a href="{{backHref}}" aria-label="Close" style="width: 44px; height: 44px; border-radius: 22px; background: #0D1020; color: #F4F1EA; display: flex; align-items: center; justify-content: center">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </a>
+    </div>
+
+    <div style="display: flex; gap: 16px; margin-top: -12px">
+      <div style="position: relative; width: 108px; height: 160px; flex: none; border-radius: {{coverRadius}}; background: {{coverBg}}; color: {{coverFg}}; padding: 10px 10px 10px {{coverPadL}}; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-shadow: {{coverShadow}}">
+        <span style="font-family: Anton, sans-serif; font-size: 17px; line-height: 1.02">{{titleCaps}}</span>
+        <span style="font-size: 8px; font-weight: 600; letter-spacing: 0.1em; opacity: 0.85">{{creatorCaps}}</span>
+        <sc-if value="{{done}}" hint-placeholder-val="{{false}}">
+          <span style="position: absolute; inset: 0; background: rgba(13,16,32,0.62)"></span>
+          <span class="mq-stamp" style="position: absolute; left: 50%; top: 50%; margin: -19px 0 0 -46px; width: 92px; height: 38px; box-sizing: border-box; border: 3px solid #F2B83B; border-radius: 8px; color: #F2B83B; font-family: Anton, sans-serif; font-size: {{stampSize}}; letter-spacing: 0.06em; display: flex; align-items: center; justify-content: center">{{stampWord}}</span>
+        </sc-if>
+      </div>
+      <div style="min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 4px">
+        <span style="align-self: flex-start; height: 22px; padding: 0 8px; border-radius: 6px; background: #0D1020; color: #F2B83B; font: 700 10px/22px Inter, sans-serif; letter-spacing: 0.1em">{{kindLabel}}</span>
+        <h2 id="dt-title" style="margin: 2px 0 0; font-family: Anton, sans-serif; font-weight: 400; font-size: 28px; line-height: 1.02">{{titleCaps}}</h2>
+
+        <sc-if value="{{isBook}}" hint-placeholder-val="{{true}}">
+          <p style="margin: 0; font-size: 15px; font-weight: 600">Mandy Robotham</p>
+        </sc-if>
+
+        <sc-if value="{{showPlatformRead}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; align-items: center; gap: 4px">
+            <span style="font-size: 15px; font-weight: 600">{{platform}}</span>
+            <button aria-label="Edit platform" onClick="{{startEdit}}" style="width: 36px; height: 36px; border: 0; border-radius: 18px; background: transparent; color: #A3A9C2; display: flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg>
+            </button>
+          </div>
+          <p style="margin: -4px 0 0; font-size: 12px; color: #8C93AE">Checked 6 days ago</p>
+        </sc-if>
+        <sc-if value="{{showPlatformEdit}}" hint-placeholder-val="{{false}}">
+          <div class="mq-rise" style="display: flex; align-items: center; gap: 6px">
+            <label for="dt-plat" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Streaming platform</label>
+            <input id="dt-plat" autofocus value="{{draft}}" onChange="{{onDraft}}" style="width: 110px; height: 40px; box-sizing: border-box; padding: 0 10px; border-radius: 10px; border: 1px solid #F2B83B; background: #0D1020; color: #F4F1EA; font: 600 14px Inter, sans-serif; outline: none">
+            <button aria-label="Save platform" onClick="{{saveEdit}}" style="width: 40px; height: 40px; border: 0; border-radius: 10px; background: #F2B83B; color: #0D1020; display: flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></button>
+            <button aria-label="Cancel" onClick="{{cancelEdit}}" style="width: 40px; height: 40px; border: 1px solid #2A3050; border-radius: 10px; background: transparent; color: #F4F1EA; display: flex; align-items: center; justify-content: center; cursor: pointer">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+          </div>
+        </sc-if>
+
+        <span style="align-self: flex-start; margin-top: 2px; height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid #2A3050; color: #A3A9C2; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center">{{genre}}</span>
+      </div>
+    </div>
+
+    <p style="margin: 20px 0 0; font-size: 16px; line-height: 1.55; color: #D9DCE8">{{hook}}</p>
+
+    <sc-if value="{{warn}}" hint-placeholder-val="{{false}}">
+      <div role="note" style="margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: rgba(255,154,107,0.1); border: 1px solid #7A3B26; display: flex; gap: 10px; align-items: flex-start">
+        <svg aria-hidden="true" style="flex: none; margin-top: 1px; color: #FF9A6B" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 17h-19z"></path><path d="M12 10v4M12 17.5v.01"></path></svg>
+        <p style="margin: 0; font-size: 14px; line-height: 1.45; color: #FFC2A3"><b style="color: #FF9A6B">Not currently streaming.</b> [Note from your list on where to find it, e.g. rent or buy]</p>
+      </div>
+    </sc-if>
+
+    <button onClick="{{toggleDone}}" aria-pressed="{{donePressed}}" style="margin-top: 22px; width: 100%; height: 56px; border: {{doneBorder}}; border-radius: 16px; background: {{doneBg}}; color: {{doneFg}}; font: 700 16px Inter, sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>{{doneLabel}}</button>
+
+    <sc-if value="{{done}}" hint-placeholder-val="{{false}}">
+      <div class="mq-rise" style="margin-top: 14px">
+        <p style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #A3A9C2">How was it? This shapes Suggest more.</p>
+        <div role="group" aria-label="Rate it" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <sc-for list="{{rates}}" as="r" hint-placeholder-count="3">
+            <button aria-pressed="{{r.pressed}}" onClick="{{r.pick}}" style="height: 48px; border-radius: 14px; border: 1px solid {{r.border}}; background: {{r.bg}}; color: {{r.fg}}; font: 600 13px Inter, sans-serif; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="{{r.fill}}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{r.icon}}"></path></svg>{{r.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","options":["book","show"],"default":"book"},"notStreaming":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { done: true, rating: 'loved', editing: false, platform: 'Stan', draft: 'Stan' };
+  }
+  renderVals() {
+    const isBook = (this.props.variant ?? 'book') === 'book';
+    const { done, rating, editing, platform, draft } = this.state;
+    const d = isBook
+      ? { title: 'The Secret Messenger', creator: 'Mandy Robotham', kind: 'FROM YOUR LIST', genre: 'WWII & Historical Fiction', bg: '#E4572E', fg: '#FFF6F2',
+          hook: 'A Venice typist leads a double life as a resistance courier by night.', word: 'READ', mark: 'Mark as read', undo: 'Read · tap to undo' }
+      : { title: 'The Loudest Voice', creator: platform, kind: 'YOUR LIST', genre: 'Drama', bg: '#7A2E27', fg: '#FFF1EC',
+          hook: '[Hook from your list: one or two lines on what the show is about]', word: 'WATCHED', mark: 'Mark as watched', undo: 'Watched · tap to undo' };
+    const icons = {
+      liked: 'M7 10v11H4V10zM7 10l4-7a2.5 2.5 0 0 1 3 3l-1 4h6a2 2 0 0 1 2 2.3l-1.3 7A2 2 0 0 1 17.7 21H7',
+      disliked: 'M17 14V3h3v11zM17 14l-4 7a2.5 2.5 0 0 1-3-3l1-4H5a2 2 0 0 1-2-2.3l1.3-7A2 2 0 0 1 6.3 3H17',
+      loved: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z'
+    };
+    const rates = [['liked', 'Liked'], ['disliked', 'Not for me'], ['loved', 'Loved']].map(([id, label]) => {
+      const on = rating === id;
+      const col = id === 'loved' ? '#FF6B8A' : '#F2B83B';
+      return { label, icon: icons[id], pressed: on ? 'true' : 'false', fill: id === 'loved' && on ? 'currentColor' : 'none',
+        border: on ? col : '#2A3050', bg: on ? col : '#0D1020', fg: on ? '#0D1020' : '#F4F1EA',
+        pick: () => this.setState({ rating: on ? null : id }) };
+    });
+    return {
+      isBook, done, rates, draft, platform,
+      backHref: isBook ? 'A-Books.dc.html' : 'A-Shows.dc.html',
+      titleCaps: d.title.toUpperCase(), creatorCaps: d.creator.toUpperCase(),
+      kindLabel: d.kind, genre: d.genre, hook: d.hook, stampWord: d.word, stampSize: isBook ? '22px' : '17px',
+      coverBg: d.bg, coverFg: d.fg,
+      coverRadius: isBook ? '4px 12px 12px 4px' : '12px', coverPadL: isBook ? '16px' : '10px',
+      coverShadow: isBook ? 'inset 6px 0 0 rgba(0,0,0,0.18), 0 12px 26px rgba(0,0,0,0.45)' : '0 12px 26px rgba(0,0,0,0.45)',
+      warn: !isBook && !!this.props.notStreaming,
+      showPlatformRead: !isBook && !editing, showPlatformEdit: !isBook && editing,
+      startEdit: () => this.setState({ editing: true, draft: platform }),
+      cancelEdit: () => this.setState({ editing: false }),
+      saveEdit: () => this.setState({ editing: false, platform: (draft || '').trim() || platform }),
+      onDraft: e => this.setState({ draft: e.target.value }),
+      toggleDone: () => this.setState({ done: !done, rating: done ? null : rating }),
+      donePressed: done ? 'true' : 'false',
+      doneLabel: done ? d.undo : d.mark,
+      doneBg: done ? 'transparent' : '#F2B83B', doneFg: done ? '#F2B83B' : '#0D1020', doneBorder: done ? '1px solid #F2B83B' : '0'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -4,14 +4,23 @@ import { groupShowItems } from "@/lib/shows/groupItems";
 import { seedJuzShows } from "@/lib/actions/seedJuzShows";
 import { ShowsShelvesView } from "@/components/shows/ShowsShelvesView";
 import { TabNav } from "@/components/nav/TabNav";
+import { MarqueeLights } from "@/components/ui/MarqueeLights";
+import type { StatusView } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
 // No onboarding for Shows — the original static feature never had genre
 // preferences either, so there's nothing to ask new users. They land
-// straight here with an empty shelf and the "Add a show" FAB (see
-// AddShowFab.tsx) as their only way in. Only Juz gets anything
-// pre-populated, silently, same pattern as her book seed.
-export default async function ShowsPage() {
+// straight here with an empty shelf and the "Add a show" button in the
+// bottom nav (see AddShowFab.tsx) as their only way in. Only Juz gets
+// anything pre-populated, silently, same pattern as her book seed.
+export default async function ShowsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view } = await searchParams;
+  const initialView: StatusView = view === "finished" ? "finished" : "shelf";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,25 +53,13 @@ export default async function ShowsPage() {
 
   return (
     <>
-      <header>
-        <div className="spine-strip" />
-        <p className="eyebrow">Personal library · Est. Aug 2026</p>
-        <h1>
-          The <em>Shelf</em>
-        </h1>
-        <p className="sub">
-          Shows queued up across every app you pay for — sorted the way a
-          good shelf would, by genre rather than platform.
-        </p>
-        <TabNav active="shows" />
+      <MarqueeLights />
+      <header className="mq-shelf-header">
+        <h1 className="mq-title">The Shelf</h1>
       </header>
+      <TabNav active="shows" />
 
-      <ShowsShelvesView shelves={shelves} />
-
-      <footer>
-        Tap a card to mark it watched, then 👍 or 👎 it · Tap the + button
-        to add your own · Your list is saved to your account
-      </footer>
+      <ShowsShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />
     </>
   );
 }

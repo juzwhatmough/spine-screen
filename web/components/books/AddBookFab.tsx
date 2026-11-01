@@ -1,20 +1,28 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Fab } from "@/components/ui/Fab";
 import { Modal } from "@/components/ui/Modal";
 import { AddBookForm } from "./AddBookForm";
 
-export function AddBookFab({ activeGenre }: { activeGenre?: string }) {
-  const [open, setOpen] = useState(false);
-  const fabRef = useRef<HTMLButtonElement>(null);
-
+// No longer renders its own FAB trigger — the bottom nav's "+" button
+// (components/nav/BottomNav.tsx) opens this now, see
+// web/REDESIGN_SPEC.md section 4.3. `open`/`onClose` are owned by the
+// parent *ShelvesView, which also owns the ref the nav button passes in
+// as `returnFocusRef`, so closing still returns focus to the button that
+// opened it.
+export function AddBookFab({
+  activeGenre,
+  open,
+  onClose,
+  returnFocusRef,
+}: {
+  activeGenre?: string;
+  open: boolean;
+  onClose: () => void;
+  returnFocusRef: React.RefObject<HTMLElement | null>;
+}) {
   return (
-    <>
-      <Fab ref={fabRef} label="Add a book" onClick={() => setOpen(true)} />
-      <Modal open={open} onClose={() => setOpen(false)} title="Add a book" returnFocusRef={fabRef}>
-        <AddBookForm initialGenre={activeGenre} onSuccess={() => setOpen(false)} />
-      </Modal>
-    </>
+    <Modal open={open} onClose={onClose} title="Add a book" returnFocusRef={returnFocusRef}>
+      <AddBookForm initialGenre={activeGenre} onSuccess={onClose} />
+    </Modal>
   );
 }
