@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ShelfNav } from "./ShelfNav";
 import { BookShelf } from "./BookShelf";
-import { AddBookFab } from "./AddBookFab";
 import { AuthorSheet } from "./AuthorSheet";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ShelfHeader } from "@/components/nav/ShelfHeader";
+import { AddSheet } from "@/components/shared/AddSheet";
 import { DetailSheet } from "@/components/shared/DetailSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { matchesQuery } from "@/lib/search/matchesQuery";
@@ -286,7 +286,8 @@ export function BooksShelvesView({
         addButtonRef={addButtonRef}
         userEmail={userEmail}
       />
-      <AddBookFab
+      <AddSheet
+        defaultKind="book"
         activeGenre={activeGenre}
         initialTitle={addInitialTitle}
         open={addOpen}

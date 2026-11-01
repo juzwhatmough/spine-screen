@@ -436,16 +436,6 @@ footer{
   padding: 10px 12px;
 }
 .field textarea{ resize: vertical; min-height: 70px; }
-.field select{
-  width: 100%;
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink);
-  background: #FBF8F1;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 10px 12px;
-}
 .primary-btn{
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
@@ -1335,3 +1325,99 @@ footer{
 @media (max-width: 400px){
   .detail-thumb{ width: 88px; height: 132px; }
 }
+
+/* ---------- Add sheet (web/REDESIGN_SPEC.md section 8.2) ----------
+   .mq-add-form scopes every override below to AddBookForm/AddShowForm
+   as rendered inside AddSheet.tsx specifically — .field, .chip-group,
+   .primary-btn, .form-error, .search-hint and .autocomplete-* are also
+   used by OnboardingForm.tsx (untouched, a later PR), so these can't be
+   bare overrides. */
+.mq-add-heading{
+  margin: 14px 0 20px;
+  font-family: var(--font-anton), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--mq-text);
+}
+.mq-add-kind-toggle{ margin: 0 0 20px; }
+
+.mq-add-form .field{ margin-bottom: 18px; }
+.mq-add-form .field label{
+  display: block;
+  font: 600 13px var(--font-inter), Inter, sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--mq-muted);
+  margin-bottom: 8px;
+}
+.mq-add-form .field input[type="text"]{
+  width: 100%;
+  height: 52px;
+  box-sizing: border-box;
+  font: 500 16px var(--font-inter), Inter, sans-serif;
+  color: var(--mq-text);
+  background: var(--mq-bg);
+  border: 1px solid var(--mq-line);
+  border-radius: 14px;
+  padding: 0 14px;
+}
+.mq-add-form .field input[type="text"]::placeholder{ color: #7F86A3; }
+.mq-add-form .field input[type="text"]:focus-visible{
+  outline: none;
+  border-color: var(--mq-gold);
+  box-shadow: 0 0 0 3px rgba(242,184,59,.25);
+}
+.mq-add-chip-group{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mq-add-chip{
+  font: 600 13px var(--font-inter), Inter, sans-serif;
+  background: transparent;
+  border: 1.5px solid var(--mq-line);
+  color: var(--mq-text);
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.mq-add-chip.on{ background: var(--mq-text); border-color: var(--mq-text); color: var(--mq-bg); }
+.mq-add-form .primary-btn{
+  width: 100%;
+  height: 56px;
+  margin-top: 4px;
+  border-radius: 16px;
+  background: var(--mq-gold);
+  color: var(--mq-bg);
+  font: 700 15px var(--font-inter), Inter, sans-serif;
+  border: 0;
+}
+.mq-add-form .form-error{
+  font-family: var(--font-inter), Inter, sans-serif;
+  color: var(--mq-warn);
+}
+.mq-add-form .search-hint{
+  font-family: var(--font-inter), Inter, sans-serif;
+  color: var(--mq-dim);
+}
+.mq-add-form .autocomplete-dropdown{
+  background: var(--mq-surface);
+  border: 1px solid var(--mq-line);
+  border-radius: 14px;
+  box-shadow: none;
+}
+.mq-add-form .autocomplete-item{
+  font-family: var(--font-inter), Inter, sans-serif;
+  color: var(--mq-text);
+  border-bottom: 1px solid var(--mq-line);
+  min-height: 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.mq-add-form .autocomplete-item:hover,
+.mq-add-form .autocomplete-item:focus-visible{ background: rgba(255,255,255,0.06); }
+.mq-add-form .autocomplete-item .ac-meta{ color: var(--mq-muted); }

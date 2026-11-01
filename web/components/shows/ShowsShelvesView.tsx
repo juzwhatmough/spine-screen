@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ShelfNav } from "@/components/books/ShelfNav";
 import { ShowShelf } from "./ShowShelf";
-import { AddShowFab } from "./AddShowFab";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ShelfHeader } from "@/components/nav/ShelfHeader";
+import { AddSheet } from "@/components/shared/AddSheet";
 import { DetailSheet } from "@/components/shared/DetailSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { matchesQuery } from "@/lib/search/matchesQuery";
@@ -287,7 +287,8 @@ export function ShowsShelvesView({
         addButtonRef={addButtonRef}
         userEmail={userEmail}
       />
-      <AddShowFab
+      <AddSheet
+        defaultKind="show"
         activeGenre={activeGenre}
         initialTitle={addInitialTitle}
         open={addOpen}

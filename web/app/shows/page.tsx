@@ -9,7 +9,7 @@ import type { ListItemRow } from "@/types/database";
 // No onboarding for Shows — the original static feature never had genre
 // preferences either, so there's nothing to ask new users. They land
 // straight here with an empty shelf and the "Add a show" button in the
-// bottom nav (see AddShowFab.tsx) as their only way in. Only Juz gets
+// bottom nav (see components/shared/AddSheet.tsx) as their only way in. Only Juz gets
 // anything pre-populated, silently, same pattern as her book seed.
 export default async function ShowsPage({
   searchParams,

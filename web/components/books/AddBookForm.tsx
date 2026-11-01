@@ -8,13 +8,14 @@ import { searchGoogleBooks, type BookSuggestion } from "@/lib/books/googleBooksS
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-// Lives inside a Modal now (see components/books/AddBookFab.tsx) — no
-// longer renders its own section/title, the modal provides that. Fields,
-// validation, and submit logic are unchanged from the inline version.
-// `initialGenre` pre-fills from whichever shelf is currently active in
-// the scroll-spy nav; the form remounts fresh each time the modal opens
-// (Modal doesn't render children while closed), so a plain useState
-// initializer is enough — no effect needed to keep it in sync.
+// Lives inside the shared Add sheet now (see
+// components/shared/AddSheet.tsx) — no longer renders its own
+// section/title, the sheet provides that. Fields, validation, and
+// submit logic are unchanged from the inline version. `initialGenre`
+// pre-fills from whichever shelf is currently active in the scroll-spy
+// nav; the form remounts fresh each time the sheet opens (Modal doesn't
+// render children while closed), so a plain useState initializer is
+// enough — no effect needed to keep it in sync.
 //
 // Typing in Title debounces a Google Books search (see
 // lib/books/googleBooksSearch.ts) and offers matches in a dropdown —
@@ -149,17 +150,23 @@ export function AddBookForm({
           />
         </div>
         <div className="field">
-          <label htmlFor="book-genre">Genre</label>
-          <select id="book-genre" value={genre} onChange={(e) => setGenre(e.target.value)}>
+          <label id="book-genre-label">Genre</label>
+          <div className="mq-add-chip-group" role="group" aria-labelledby="book-genre-label">
             {GENRE_TAGS.map((tag) => (
-              <option key={tag} value={tag}>
+              <button
+                key={tag}
+                type="button"
+                aria-pressed={genre === tag}
+                className={`mq-add-chip${genre === tag ? " on" : ""}`}
+                onClick={() => setGenre(tag)}
+              >
                 {tag}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
         <button type="submit" className="primary-btn" disabled={isPending}>
-          {isPending ? "Adding…" : "Add"}
+          {isPending ? "Adding…" : "+ Add book"}
         </button>
       </form>
     </>
