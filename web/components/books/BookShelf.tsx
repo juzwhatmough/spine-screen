@@ -10,6 +10,7 @@ export function BookShelf({
   getRating,
   onItemStatusChange,
   onItemRatingChange,
+  onOpenDetail,
 }: {
   shelf: BookShelfData;
   animatingOut: Set<string>;
@@ -17,6 +18,7 @@ export function BookShelf({
   getRating: (item: ListItemRow) => ListItemRow["rating"];
   onItemStatusChange: (itemId: string, nowDone: boolean, title?: string) => void;
   onItemRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
+  onOpenDetail: (itemId: string, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <section
@@ -41,6 +43,7 @@ export function BookShelf({
           getRating={getRating}
           onItemStatusChange={onItemStatusChange}
           onItemRatingChange={onItemRatingChange}
+          onOpenDetail={onOpenDetail}
         />
       ))}
 

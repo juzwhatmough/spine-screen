@@ -13,10 +13,10 @@ import type { ListItemRow } from "@/types/database";
 // `<button>` and tapping it no longer marks the item read — that's a
 // sibling "quick-mark" tick (section 6.2), matching the accessibility
 // checklist's "the cover and the quick-mark tick are sibling buttons, not
-// nested" (section 12). The cover's own click handler opens the detail
-// sheet, which doesn't exist until a later PR (section 8.1) — it's
-// intentionally inert for now rather than falling back to the old
-// tap-to-mark behaviour the spec explicitly says to drop.
+// nested" (section 12). The cover opens the detail sheet, rendered by the
+// parent *ShelvesView (not here — see DetailSheet.tsx for why), via
+// `onOpenDetail`, which also hands back the cover button itself so the
+// sheet's Modal can return focus to it on close.
 //
 // `done`/`rating` stay CONTROLLED props from useStatusTransitions (see
 // that file for why) — unchanged by this redesign. So does the
@@ -29,6 +29,7 @@ export function BookCard({
   exiting = false,
   onStatusChange,
   onRatingChange,
+  onOpenDetail,
 }: {
   item: ListItemRow;
   done: boolean;
@@ -36,6 +37,7 @@ export function BookCard({
   exiting?: boolean;
   onStatusChange: (itemId: string, nowDone: boolean, title?: string) => void;
   onRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
+  onOpenDetail: (itemId: string, trigger: HTMLButtonElement) => void;
 }) {
   const [, startTransition] = useTransition();
   const { requestDelete } = useDelete();
@@ -70,6 +72,7 @@ export function BookCard({
           className="mq-cover mq-cover-book"
           style={{ background: color.bg, color: color.fg }}
           aria-label={`Open details for ${item.title}`}
+          onClick={(e) => onOpenDetail(item.id, e.currentTarget)}
         >
           <span
             className="mq-cover-tag"

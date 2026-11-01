@@ -10,6 +10,7 @@ export function ShowShelf({
   getRating,
   onItemStatusChange,
   onItemRatingChange,
+  onOpenDetail,
 }: {
   shelf: ShowShelfData;
   animatingOut: Set<string>;
@@ -17,6 +18,7 @@ export function ShowShelf({
   getRating: (item: ListItemRow) => ListItemRow["rating"];
   onItemStatusChange: (itemId: string, nowDone: boolean, title?: string) => void;
   onItemRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
+  onOpenDetail: (itemId: string, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <section
@@ -42,6 +44,7 @@ export function ShowShelf({
             exiting={animatingOut.has(item.id)}
             onStatusChange={onItemStatusChange}
             onRatingChange={onItemRatingChange}
+            onOpenDetail={onOpenDetail}
           />
         ))}
       </div>

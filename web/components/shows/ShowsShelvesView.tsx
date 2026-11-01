@@ -5,6 +5,7 @@ import { ShelfNav } from "@/components/books/ShelfNav";
 import { ShowShelf } from "./ShowShelf";
 import { AddShowFab } from "./AddShowFab";
 import { BottomNav } from "@/components/nav/BottomNav";
+import { DetailSheet } from "@/components/shared/DetailSheet";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { SearchBox, matchesQuery } from "@/components/filters/SearchBox";
 import {
@@ -35,6 +36,23 @@ export function ShowsShelvesView({
   const [activeGenre, setActiveGenre] = useState<string | undefined>(shelves[0]?.tag);
   const [addOpen, setAddOpen] = useState(false);
   const addButtonRef = useRef<HTMLButtonElement>(null);
+  // See the matching comment in BooksShelvesView.tsx.
+  const [detailItemId, setDetailItemId] = useState<string | null>(null);
+  const detailReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+
+  function openDetail(itemId: string, trigger: HTMLButtonElement) {
+    detailReturnFocusRef.current = trigger;
+    setDetailItemId(itemId);
+  }
+
+  const detailItem = useMemo(() => {
+    if (!detailItemId) return null;
+    for (const shelf of shelves) {
+      const found = shelf.items.find((item) => item.id === detailItemId);
+      if (found) return found;
+    }
+    return null;
+  }, [shelves, detailItemId]);
 
   const {
     isDone,
@@ -170,6 +188,7 @@ export function ShowsShelvesView({
               getRating={getRating}
               onItemStatusChange={handleStatusChange}
               onItemRatingChange={handleRatingChange}
+              onOpenDetail={openDetail}
             />
           ))
         )}
@@ -189,6 +208,20 @@ export function ShowsShelvesView({
         onClose={() => setAddOpen(false)}
         returnFocusRef={addButtonRef}
       />
+      {detailItem && (
+        <DetailSheet
+          key={detailItem.id}
+          item={detailItem}
+          kind="show"
+          open={!!detailItemId}
+          onClose={() => setDetailItemId(null)}
+          returnFocusRef={detailReturnFocusRef}
+          done={isDone(detailItem)}
+          rating={getRating(detailItem)}
+          onStatusChange={handleStatusChange}
+          onRatingChange={handleRatingChange}
+        />
+      )}
     </>
   );
 }

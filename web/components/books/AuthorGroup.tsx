@@ -9,6 +9,7 @@ export function AuthorGroup({
   getRating,
   onItemStatusChange,
   onItemRatingChange,
+  onOpenDetail,
 }: {
   group: AuthorGroupData;
   animatingOut: Set<string>;
@@ -16,6 +17,7 @@ export function AuthorGroup({
   getRating: (item: ListItemRow) => ListItemRow["rating"];
   onItemStatusChange: (itemId: string, nowDone: boolean, title?: string) => void;
   onItemRatingChange: (itemId: string, rating: ListItemRow["rating"]) => void;
+  onOpenDetail: (itemId: string, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <div className="author-group">
@@ -32,6 +34,7 @@ export function AuthorGroup({
             exiting={animatingOut.has(item.id)}
             onStatusChange={onItemStatusChange}
             onRatingChange={onItemRatingChange}
+            onOpenDetail={onOpenDetail}
           />
         ))}
       </div>

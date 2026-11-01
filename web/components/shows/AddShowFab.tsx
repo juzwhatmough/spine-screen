@@ -19,6 +19,7 @@ export function AddShowFab({
 }) {
   return (
     <Modal open={open} onClose={onClose} title="Add a show" returnFocusRef={returnFocusRef}>
+      <h2 className="sheet-title">Add a show</h2>
       <AddShowForm initialGenre={activeGenre} onSuccess={onClose} />
     </Modal>
   );
