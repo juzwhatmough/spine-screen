@@ -982,13 +982,34 @@ footer{
 }
 .mq-cover-tag{
   align-self: flex-start;
-  height: 22px;
-  padding: 0 8px;
+  box-sizing: border-box;
+  /* Leave room for the 44px quick-mark tick at the top-right; wrap inside
+     the pill (grow taller) rather than spilling out of it. */
+  max-width: calc(100% - 50px);
+  padding: 4px 8px;
   border-radius: 6px;
   background: rgba(13,16,32,0.78);
-  font: 700 10px/22px var(--font-inter), Inter, sans-serif;
+  font: 700 10px/1.3 var(--font-inter), Inter, sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+/* On cards with artwork the label sits just under the cover instead, so it
+   never covers a title. Same pill look, one line. */
+.mq-tag-below{
+  align-self: flex-start;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(244,241,234,0.1);
+  border: 1px solid rgba(244,241,234,0.18);
+  font: 700 10px/1.3 var(--font-inter), Inter, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mq-cover-title{
   font-family: var(--font-anton), Impact, sans-serif;

@@ -65,6 +65,7 @@ export function BookCard({
   }
 
   const tag = kindLabel(item.meta?.source_status);
+  const tagStyle = { color: tag === "From your list" ? "var(--mq-gold)" : "var(--mq-text)" };
 
   return (
     <SwipeDelete onDelete={() => requestDelete(item)}>
@@ -91,12 +92,11 @@ export function BookCard({
               onError={() => setCoverFailed(true)}
             />
           )}
-          <span
-            className="mq-cover-tag"
-            style={{ color: tag === "From your list" ? "var(--mq-gold)" : "var(--mq-text)" }}
-          >
-            {tag}
-          </span>
+          {!showCover && (
+            <span className="mq-cover-tag" style={tagStyle}>
+              {tag}
+            </span>
+          )}
           {/* The cover art already carries title and author, so only show them as text on the coloured fallback. */}
           {!showCover && <span className="mq-cover-title">{item.title}</span>}
           {!showCover && item.creator && (
@@ -112,6 +112,12 @@ export function BookCard({
           )}
           <div className="mark-remove-bar" />
         </button>
+
+        {showCover && (
+          <span className="mq-tag-below" style={tagStyle}>
+            {tag}
+          </span>
+        )}
 
         <button
           type="button"

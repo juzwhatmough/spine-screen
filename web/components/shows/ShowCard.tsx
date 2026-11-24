@@ -63,6 +63,7 @@ export function ShowCard({
   const currentlyStreaming = item.meta?.currentlyStreaming !== false;
   const platform = item.creator ?? "Unknown platform";
   const tagLabel = unconfirmed ? "UNCONFIRMED" : platform.toUpperCase();
+  const tagStyle = { color: unconfirmed ? "var(--mq-warn)" : "var(--mq-text)" };
 
   return (
     <SwipeDelete onDelete={() => requestDelete(item)}>
@@ -90,12 +91,11 @@ export function ShowCard({
               onError={() => setPosterFailed(true)}
             />
           )}
-          <span
-            className="mq-cover-tag"
-            style={{ color: unconfirmed ? "var(--mq-warn)" : "var(--mq-text)" }}
-          >
-            {tagLabel}
-          </span>
+          {!showPoster && (
+            <span className="mq-cover-tag" style={tagStyle}>
+              {tagLabel}
+            </span>
+          )}
           {/* The poster already carries the title, so only show it as text on the coloured fallback. */}
           {!showPoster && <span className="mq-cover-title">{item.title}</span>}
           {watched && (
@@ -116,6 +116,12 @@ export function ShowCard({
           )}
           <div className="mark-remove-bar" />
         </button>
+
+        {showPoster && (
+          <span className="mq-tag-below" style={tagStyle}>
+            {tagLabel}
+          </span>
+        )}
 
         <button
           type="button"
