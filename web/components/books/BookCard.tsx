@@ -1,6 +1,7 @@
 "use client";
 
-import { useContext, useTransition } from "react";
+import { useContext, useState, useTransition } from "react";
+import { coverUrl } from "@/lib/books/cover";
 import { toggleRead, setRating } from "@/lib/actions/listItems";
 import { kindLabel } from "@/lib/books/kindLabel";
 import { coverColor } from "@/lib/ui/coverColor";
@@ -43,6 +44,9 @@ export function BookCard({
   const { requestDelete } = useDelete();
   const pending = useContext(PendingExitContext).has(item.id) && !exiting;
   const color = coverColor(item.id);
+  const [coverFailed, setCoverFailed] = useState(false);
+  const coverId = item.meta?.coverId;
+  const showCover = !!coverId && !coverFailed;
 
   function handleToggle() {
     const nowDone = !done;
@@ -69,19 +73,35 @@ export function BookCard({
       >
         <button
           type="button"
-          className="mq-cover mq-cover-book"
+          className={`mq-cover mq-cover-book${showCover ? " has-poster" : ""}`}
           style={{ background: color.bg, color: color.fg }}
           aria-label={`Open details for ${item.title}`}
           onClick={(e) => onOpenDetail(item.id, e.currentTarget)}
         >
+          {showCover && (
+            // Plain <img>: covers come straight from Open Library's CDN.
+            // Falls back to the coloured card if the image fails to load.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="mq-poster"
+              src={coverUrl(coverId)}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={() => setCoverFailed(true)}
+            />
+          )}
           <span
             className="mq-cover-tag"
             style={{ color: tag === "From your list" ? "var(--mq-gold)" : "var(--mq-text)" }}
           >
             {tag}
           </span>
-          <span className="mq-cover-title">{item.title}</span>
-          {item.creator && <span className="mq-cover-author">{item.creator.toUpperCase()}</span>}
+          {/* The cover art already carries title and author, so only show them as text on the coloured fallback. */}
+          {!showCover && <span className="mq-cover-title">{item.title}</span>}
+          {!showCover && item.creator && (
+            <span className="mq-cover-author">{item.creator.toUpperCase()}</span>
+          )}
           {done && (
             <>
               <span className="mq-cover-dim" aria-hidden="true" />

@@ -41,8 +41,8 @@ export function AccountSheet({
         {signingOut ? "Signing out…" : "Sign out"}
       </button>
       <p className="sheet-account-email" style={{ fontSize: 11, opacity: 0.7, marginTop: 16 }}>
-        Show posters and data from TMDB. This product uses the TMDB API but is not endorsed or
-        certified by TMDB.
+        Book covers from Open Library. Show posters and data from TMDB. This product uses the TMDB
+        API but is not endorsed or certified by TMDB.
       </p>
     </Modal>
   );

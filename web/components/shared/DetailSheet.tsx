@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { coverColor } from "@/lib/ui/coverColor";
 import { kindLabel } from "@/lib/books/kindLabel";
 import { posterUrl } from "@/lib/shows/poster";
+import { coverUrl } from "@/lib/books/cover";
 import { formatRelativeTime, isStale } from "@/lib/shows/relativeTime";
 import { toggleRead, setRating, updateShowPlatform } from "@/lib/actions/listItems";
 import type { ListItemRow } from "@/types/database";
@@ -53,6 +54,15 @@ export function DetailSheet({
   const [, startSaveTransition] = useTransition();
   const color = coverColor(item.id);
   const [posterFailed, setPosterFailed] = useState(false);
+  // Show poster (TMDB) or book cover (Open Library), whichever this item has.
+  const imageSrc =
+    kind === "show"
+      ? item.meta?.posterPath
+        ? posterUrl(item.meta.posterPath)
+        : null
+      : item.meta?.coverId
+        ? coverUrl(item.meta.coverId)
+        : null;
   const verb = kind === "book" ? "read" : "watched";
 
   // Shows-only platform editing state — see the file comment above. Keyed
@@ -125,11 +135,11 @@ export function DetailSheet({
           style={{ background: color.bg, color: color.fg }}
           aria-hidden="true"
         >
-          {kind === "show" && item.meta?.posterPath && !posterFailed ? (
+          {imageSrc && !posterFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               className="mq-poster"
-              src={posterUrl(item.meta.posterPath)}
+              src={imageSrc}
               alt=""
               onError={() => setPosterFailed(true)}
             />

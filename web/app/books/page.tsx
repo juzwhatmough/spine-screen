@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { groupItems } from "@/lib/books/groupItems";
 import { seedJuzLibrary } from "@/lib/actions/seedJuz";
 import { BooksShelvesView } from "@/components/books/BooksShelvesView";
+import { CoverBackfill } from "@/components/books/CoverBackfill";
 import type { StatusView } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
@@ -49,5 +50,12 @@ export default async function BooksPage({
   const rows = (items ?? []) as ListItemRow[];
   const shelves = groupItems(rows);
 
-  return <BooksShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />;
+  const needCovers = rows.filter((r) => !r.meta?.coverId && !r.meta?.coverCheckedAt).length;
+
+  return (
+    <>
+      <CoverBackfill pending={needCovers} />
+      <BooksShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />
+    </>
+  );
 }

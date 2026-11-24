@@ -6,6 +6,7 @@ import { GENRE_TAGS } from "@/lib/books/genres";
 import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
 import { describeTitle } from "@/lib/anthropic/describeTitle";
 import { findPosterPath } from "@/lib/shows/poster";
+import { findCoverId } from "@/lib/books/cover";
 import type { ListItemRow } from "@/types/database";
 
 // Card tap-to-toggle stays binary in v1 (want <-> done) even though the
@@ -93,7 +94,10 @@ export async function addManualBook(input: {
     throw new Error("Genre must match an existing shelf");
   }
 
-  const hook = await describeTitle({ kind: "book", title, creator: author });
+  const [hook, cover] = await Promise.all([
+    describeTitle({ kind: "book", title, creator: author }),
+    findCoverId(title, author),
+  ]);
 
   const { error } = await supabase.from("list_items").upsert(
     [
@@ -104,7 +108,12 @@ export async function addManualBook(input: {
         creator: author,
         genre: input.genre,
         status: "want" as const,
-        meta: { source_status: "want", ...(hook ? { hook } : {}) },
+        meta: {
+          source_status: "want",
+          ...(hook ? { hook } : {}),
+          ...(cover.status === "found" ? { coverId: cover.id } : {}),
+          ...(cover.status !== "error" ? { coverCheckedAt: new Date().toISOString() } : {}),
+        },
       },
     ],
     { onConflict: "user_id,media_type,title,creator", ignoreDuplicates: true }
