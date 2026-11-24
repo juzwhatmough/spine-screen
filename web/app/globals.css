@@ -951,6 +951,24 @@ footer{
   border-radius: 16px;
   box-shadow: 0 12px 26px rgba(0,0,0,.45);
 }
+/* Show poster: fills the cover edge to edge, sitting under the tag, stamp,
+   dim layer and warning badge (all of which are positioned/stacked above). */
+.mq-poster{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  z-index: 0;
+  animation: mq-fade-in 320ms ease-out both;
+}
+.mq-cover.has-poster{ justify-content: flex-start; }
+.mq-cover.has-poster > :not(.mq-poster){ position: relative; z-index: 1; }
+.mq-cover.has-poster > .mq-cover-dim,
+.mq-cover.has-poster > .mq-stamp,
+.mq-cover.has-poster > .mq-warn-badge-cover,
+.mq-cover.has-poster > .mark-remove-bar{ position: absolute; }
 .mq-cover-tag{
   align-self: flex-start;
   height: 22px;

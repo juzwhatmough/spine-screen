@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { GENRE_TAGS } from "@/lib/books/genres";
 import { SHOW_GENRE_TAGS } from "@/lib/shows/genres";
 import { describeTitle } from "@/lib/anthropic/describeTitle";
+import { findPosterPath } from "@/lib/shows/poster";
 import type { ListItemRow } from "@/types/database";
 
 // Card tap-to-toggle stays binary in v1 (want <-> done) even though the
@@ -135,7 +136,10 @@ export async function addManualShow(input: {
     throw new Error("Genre must match an existing shelf");
   }
 
-  const hook = await describeTitle({ kind: "show", title });
+  const [hook, poster] = await Promise.all([
+    describeTitle({ kind: "show", title }),
+    findPosterPath(title),
+  ]);
 
   const { error } = await supabase.from("list_items").upsert(
     [
@@ -148,6 +152,8 @@ export async function addManualShow(input: {
         status: "want" as const,
         meta: {
           currentlyStreaming: true,
+          ...(poster.status === "found" ? { posterPath: poster.path } : {}),
+          ...(poster.status !== "error" ? { posterCheckedAt: new Date().toISOString() } : {}),
           ...(input.platformFromSuggestion ? {} : { platformVerifiedAt: new Date().toISOString() }),
           ...(hook ? { hook } : {}),
         },

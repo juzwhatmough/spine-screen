@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { suggestShows } from "@/lib/anthropic/suggestShows";
+import { findPosterPath } from "@/lib/shows/poster";
 import type { ListItemRow } from "@/types/database";
 
 // Mirrors app/api/books/suggest/route.ts's architecture exactly (auth
@@ -65,17 +66,25 @@ export async function POST(request: Request) {
   }
 
   const avoidSet = new Set(avoidTitles.map((t) => t.toLowerCase()));
-  const toInsert = suggestions
-    .filter((s) => s.title && !avoidSet.has(s.title.toLowerCase()))
-    .map((s) => ({
+  const fresh = suggestions.filter((s) => s.title && !avoidSet.has(s.title.toLowerCase()));
+  const posters = await Promise.all(fresh.map((s) => findPosterPath(s.title)));
+  const toInsert = fresh.map((s, i) => {
+    const poster = posters[i];
+    return {
       user_id: user.id,
       media_type: "show" as const,
       title: s.title,
       creator: "Unconfirmed",
       genre,
       status: "want" as const,
-      meta: { hook: s.hook ?? "", unconfirmed: true },
-    }));
+      meta: {
+        hook: s.hook ?? "",
+        unconfirmed: true,
+        ...(poster.status === "found" ? { posterPath: poster.path } : {}),
+        ...(poster.status !== "error" ? { posterCheckedAt: new Date().toISOString() } : {}),
+      },
+    };
+  });
 
   if (toInsert.length === 0) {
     return NextResponse.json({ inserted: 0 });

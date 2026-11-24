@@ -1,6 +1,7 @@
 "use client";
 
-import { useContext, useTransition } from "react";
+import { useContext, useState, useTransition } from "react";
+import { posterUrl } from "@/lib/shows/poster";
 import { toggleRead, setRating } from "@/lib/actions/listItems";
 import { coverColor } from "@/lib/ui/coverColor";
 import { SwipeDelete } from "@/components/ui/SwipeDelete";
@@ -38,6 +39,9 @@ export function ShowCard({
   const { requestDelete } = useDelete();
   const pending = useContext(PendingExitContext).has(item.id) && !exiting;
   const color = coverColor(item.id);
+  const [posterFailed, setPosterFailed] = useState(false);
+  const posterPath = item.meta?.posterPath;
+  const showPoster = !!posterPath && !posterFailed;
 
   function handleToggle() {
     const nowWatched = !watched;
@@ -67,18 +71,33 @@ export function ShowCard({
       >
         <button
           type="button"
-          className="mq-cover mq-cover-show"
+          className={`mq-cover mq-cover-show${showPoster ? " has-poster" : ""}`}
           style={{ background: color.bg, color: color.fg }}
           aria-label={`Open details for ${item.title}`}
           onClick={(e) => onOpenDetail(item.id, e.currentTarget)}
         >
+          {showPoster && (
+            // Plain <img>: posters come straight from TMDB's CDN, so there's
+            // nothing for Next's image optimiser to add. Falls back to the
+            // coloured card if the image fails to load.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="mq-poster"
+              src={posterUrl(posterPath)}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={() => setPosterFailed(true)}
+            />
+          )}
           <span
             className="mq-cover-tag"
             style={{ color: unconfirmed ? "var(--mq-warn)" : "var(--mq-text)" }}
           >
             {tagLabel}
           </span>
-          <span className="mq-cover-title">{item.title}</span>
+          {/* The poster already carries the title, so only show it as text on the coloured fallback. */}
+          {!showPoster && <span className="mq-cover-title">{item.title}</span>}
           {watched && (
             <>
               <span className="mq-cover-dim" aria-hidden="true" />
