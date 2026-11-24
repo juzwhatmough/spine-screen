@@ -969,6 +969,17 @@ footer{
 .mq-cover.has-poster > .mq-stamp,
 .mq-cover.has-poster > .mq-warn-badge-cover,
 .mq-cover.has-poster > .mark-remove-bar{ position: absolute; }
+/* Book cover art would hide the book's spine shading (an inset shadow paints
+   underneath child images), so redraw the same shading on top. */
+.mq-cover-book.has-poster::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 8px 0 0 rgba(0,0,0,.18), inset 10px 0 0 rgba(255,255,255,.12);
+  pointer-events: none;
+  z-index: 2;
+}
 .mq-cover-tag{
   align-self: flex-start;
   height: 22px;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { suggestBooks } from "@/lib/anthropic/suggestBooks";
+import { findCoverId } from "@/lib/books/cover";
 import type { ListItemRow } from "@/types/database";
 
 // Ported from the-to-read-shelf/api/suggest.js. Deviation from a pure 1:1
@@ -61,9 +62,13 @@ export async function POST(request: Request) {
   }
 
   const avoidSet = new Set(avoidTitles.map((t) => t.toLowerCase()));
-  const toInsert = suggestions
-    .filter((s) => s.title && s.author && !avoidSet.has(s.title.toLowerCase()))
-    .map((s) => {
+  const fresh = suggestions.filter(
+    (s) => s.title && s.author && !avoidSet.has(s.title.toLowerCase())
+  );
+  const covers = await Promise.all(fresh.map((s) => findCoverId(s.title, s.author)));
+  const toInsert = fresh
+    .map((s, i) => {
+      const cover = covers[i];
       const isKnownAuthor = authorsOnShelf.some(
         (a) => a.toLowerCase() === s.author.toLowerCase()
       );
@@ -79,6 +84,8 @@ export async function POST(request: Request) {
           source_status: isKnownAuthor
             ? ("ai-known" as const)
             : ("ai" as const),
+          ...(cover.status === "found" ? { coverId: cover.id } : {}),
+          ...(cover.status !== "error" ? { coverCheckedAt: new Date().toISOString() } : {}),
         },
       };
     });

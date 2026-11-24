@@ -32,6 +32,11 @@ export type ListItemMeta = {
   // Shows only. ISO timestamp of the last poster lookup that got a real
   // answer from TMDB (found or no match) so we don't re-ask on every visit.
   posterCheckedAt?: string;
+  // Books only. Open Library cover id; full URL built by lib/books/cover.ts's
+  // coverUrl(). Absent = coloured-card fallback.
+  coverId?: number;
+  // Books only. ISO timestamp of the last cover lookup that got a real answer.
+  coverCheckedAt?: string;
 };
 
 export type ListItemRow = {
