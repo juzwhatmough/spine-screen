@@ -1059,22 +1059,28 @@ footer{
 .mq-foot{
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .mq-foot > .mq-rating-row{
   flex: 1;
   min-width: 0;
+  gap: 4px;
 }
 /* Not yet done: the tick grows into a full-width "Mark as read" button. */
 .mq-quickmark.wide{
   flex: 1;
   width: auto;
-  padding: 0 10px;
+  min-width: 0;
+  gap: 6px;
+  padding: 0 8px;
+  overflow: hidden;
   font: 700 11px var(--font-inter), Inter, sans-serif;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
 }
+.mq-quickmark.wide > span{ overflow: hidden; text-overflow: ellipsis; }
+.mq-quickmark svg{ flex: none; }
 .mq-quickmark.on{
   background: var(--mq-gold);
   border-color: var(--mq-gold);
@@ -1091,6 +1097,8 @@ footer{
 @keyframes mq-rise-in{ from{ opacity: 0; transform: translateY(6px); } to{ opacity: 1; transform: none; } }
 .mq-rate-btn{
   height: 44px;
+  padding: 0;
+  min-width: 0;
   border-radius: 12px;
   border: 1px solid var(--mq-line);
   background: var(--mq-surface);
@@ -1100,6 +1108,7 @@ footer{
   justify-content: center;
   cursor: pointer;
 }
+.mq-rate-btn svg{ width: 22px; height: 22px; flex: none; }
 .mq-rate-btn.up.on, .mq-rate-btn.down.on{ background: var(--mq-gold); border-color: var(--mq-gold); color: var(--mq-bg); }
 .mq-rate-btn.love.on{ background: var(--mq-love); border-color: var(--mq-love); color: var(--mq-bg); }
 .mq-rate-btn:focus-visible{ outline: 2px solid var(--mq-gold); outline-offset: 2px; }
