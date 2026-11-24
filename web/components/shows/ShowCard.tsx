@@ -87,7 +87,7 @@ export function ShowCard({
       >
         <path d="M5 12l5 5 9-10" />
       </svg>
-      {!watched && <span>Mark watched</span>}
+      {!watched && <span>Seen it</span>}
     </button>
   );
 
