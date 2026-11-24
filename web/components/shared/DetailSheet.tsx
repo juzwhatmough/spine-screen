@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { coverColor } from "@/lib/ui/coverColor";
 import { kindLabel } from "@/lib/books/kindLabel";
+import { posterUrl } from "@/lib/shows/poster";
 import { formatRelativeTime, isStale } from "@/lib/shows/relativeTime";
 import { toggleRead, setRating, updateShowPlatform } from "@/lib/actions/listItems";
 import type { ListItemRow } from "@/types/database";
@@ -51,6 +52,7 @@ export function DetailSheet({
   const [, startTransition] = useTransition();
   const [, startSaveTransition] = useTransition();
   const color = coverColor(item.id);
+  const [posterFailed, setPosterFailed] = useState(false);
   const verb = kind === "book" ? "read" : "watched";
 
   // Shows-only platform editing state — see the file comment above. Keyed
@@ -123,7 +125,17 @@ export function DetailSheet({
           style={{ background: color.bg, color: color.fg }}
           aria-hidden="true"
         >
-          <span className="detail-thumb-title">{item.title}</span>
+          {kind === "show" && item.meta?.posterPath && !posterFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="mq-poster"
+              src={posterUrl(item.meta.posterPath)}
+              alt=""
+              onError={() => setPosterFailed(true)}
+            />
+          ) : (
+            <span className="detail-thumb-title">{item.title}</span>
+          )}
           {done && (
             <>
               <span className="mq-cover-dim" aria-hidden="true" />

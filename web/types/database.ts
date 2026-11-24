@@ -26,6 +26,12 @@ export type ListItemMeta = {
   // Deliberately absent for freshly AI-suggested shows (nothing's been
   // human-verified yet) — see components/shows/ShowCard.tsx.
   platformVerifiedAt?: string;
+  // Shows only. TMDB poster path (e.g. "/abc.jpg"); full URL is built by
+  // lib/shows/poster.ts's posterUrl(). Absent = coloured-card fallback.
+  posterPath?: string;
+  // Shows only. ISO timestamp of the last poster lookup that got a real
+  // answer from TMDB (found or no match) so we don't re-ask on every visit.
+  posterCheckedAt?: string;
 };
 
 export type ListItemRow = {

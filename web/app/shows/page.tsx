@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { groupShowItems } from "@/lib/shows/groupItems";
 import { seedJuzShows } from "@/lib/actions/seedJuzShows";
 import { ShowsShelvesView } from "@/components/shows/ShowsShelvesView";
+import { PosterBackfill } from "@/components/shows/PosterBackfill";
 import type { StatusView } from "@/lib/hooks/useStatusTransitions";
 import type { ListItemRow } from "@/types/database";
 
@@ -49,5 +50,12 @@ export default async function ShowsPage({
   const rows = (items ?? []) as ListItemRow[];
   const shelves = groupShowItems(rows);
 
-  return <ShowsShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />;
+  const needPosters = rows.filter((r) => !r.meta?.posterPath && !r.meta?.posterCheckedAt).length;
+
+  return (
+    <>
+      <PosterBackfill pending={needPosters} />
+      <ShowsShelvesView shelves={shelves} userEmail={user.email ?? ""} initialView={initialView} />
+    </>
+  );
 }
