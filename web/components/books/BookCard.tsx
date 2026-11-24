@@ -3,7 +3,6 @@
 import { useContext, useState, useTransition } from "react";
 import { coverUrl } from "@/lib/books/cover";
 import { toggleRead, setRating } from "@/lib/actions/listItems";
-import { kindLabel } from "@/lib/books/kindLabel";
 import { coverColor } from "@/lib/ui/coverColor";
 import { SwipeDelete } from "@/components/ui/SwipeDelete";
 import { useDelete } from "@/lib/hooks/useDeleteWithUndo";
@@ -64,13 +63,11 @@ export function BookCard({
     });
   }
 
-  const tag = kindLabel(item.meta?.source_status);
-  const tagStyle = { color: tag === "From your list" ? "var(--mq-gold)" : "var(--mq-text)" };
 
   const tick = (
     <button
       type="button"
-      className={`mq-quickmark${done ? " on" : ""}${showCover ? " in-foot" : ""}`}
+      className={`mq-quickmark in-foot${done ? " on" : " wide"}`}
       aria-pressed={done}
       aria-label={done ? `${item.title}, read. Tap to undo` : `Mark ${item.title} as read`}
       onClick={handleToggle}
@@ -78,6 +75,7 @@ export function BookCard({
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
         <path d="M5 12l5 5 9-10" />
       </svg>
+      {!done && <span>Mark as read</span>}
     </button>
   );
 
@@ -118,12 +116,7 @@ export function BookCard({
           </svg>
         </button>
       </div>
-    ) : (
-      <p className="mq-unread">
-        <span className="mq-unread-ring" aria-hidden="true" />
-        To read
-      </p>
-    )
+    ) : null
   );
 
   return (
@@ -151,11 +144,6 @@ export function BookCard({
               onError={() => setCoverFailed(true)}
             />
           )}
-          {!showCover && (
-            <span className="mq-cover-tag" style={tagStyle}>
-              {tag}
-            </span>
-          )}
           {/* The cover art already carries title and author, so only show them as text on the coloured fallback. */}
           {!showCover && <span className="mq-cover-title">{item.title}</span>}
           {!showCover && item.creator && (
@@ -172,23 +160,10 @@ export function BookCard({
           <div className="mark-remove-bar" />
         </button>
 
-        {showCover && (
-          <span className="mq-tag-below" style={tagStyle}>
-            {tag}
-          </span>
-        )}
-
-        {showCover ? (
-          <div className="mq-foot">
-            {status}
-            {tick}
-          </div>
-        ) : (
-          <>
-            {tick}
-            {status}
-          </>
-        )}
+        <div className="mq-foot">
+          {status}
+          {tick}
+        </div>
 
         <p className="mark-hint">Rate it — leaving the shelf in a few seconds…</p>
       </div>

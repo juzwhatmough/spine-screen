@@ -61,14 +61,11 @@ export function ShowCard({
 
   const unconfirmed = !!item.meta?.unconfirmed;
   const currentlyStreaming = item.meta?.currentlyStreaming !== false;
-  const platform = item.creator ?? "Unknown platform";
-  const tagLabel = unconfirmed ? "UNCONFIRMED" : platform.toUpperCase();
-  const tagStyle = { color: unconfirmed ? "var(--mq-warn)" : "var(--mq-text)" };
 
   const tick = (
     <button
       type="button"
-      className={`mq-quickmark${watched ? " on" : ""}${showPoster ? " in-foot" : ""}`}
+      className={`mq-quickmark in-foot${watched ? " on" : " wide"}`}
       aria-pressed={watched}
       aria-label={
         watched
@@ -90,6 +87,7 @@ export function ShowCard({
       >
         <path d="M5 12l5 5 9-10" />
       </svg>
+      {!watched && <span>Mark as watched</span>}
     </button>
   );
 
@@ -158,12 +156,7 @@ export function ShowCard({
         </svg>
       </button>
     </div>
-  ) : (
-    <p className="mq-unread">
-      <span className="mq-unread-ring" aria-hidden="true" />
-      To watch
-    </p>
-  );
+  ) : null;
 
   return (
     <SwipeDelete onDelete={() => requestDelete(item)}>
@@ -191,11 +184,6 @@ export function ShowCard({
               onError={() => setPosterFailed(true)}
             />
           )}
-          {!showPoster && (
-            <span className="mq-cover-tag" style={tagStyle}>
-              {tagLabel}
-            </span>
-          )}
           {/* The poster already carries the title, so only show it as text on the coloured fallback. */}
           {!showPoster && <span className="mq-cover-title">{item.title}</span>}
           {watched && (
@@ -206,7 +194,7 @@ export function ShowCard({
               </span>
             </>
           )}
-          {!unconfirmed && !currentlyStreaming && (
+          {(unconfirmed || !currentlyStreaming) && (
             <span className="mq-warn-badge-cover" aria-hidden="true">
               <svg
                 width="11"
@@ -226,23 +214,10 @@ export function ShowCard({
           <div className="mark-remove-bar" />
         </button>
 
-        {showPoster && (
-          <span className="mq-tag-below" style={tagStyle}>
-            {tagLabel}
-          </span>
-        )}
-
-        {showPoster ? (
-          <div className="mq-foot">
-            {status}
-            {tick}
-          </div>
-        ) : (
-          <>
-            {tick}
-            {status}
-          </>
-        )}
+        <div className="mq-foot">
+          {status}
+          {tick}
+        </div>
 
         <p className="mark-hint">
           Rate it — leaving the shelf in a few seconds…
