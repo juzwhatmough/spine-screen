@@ -1086,6 +1086,22 @@ footer{
   border: 2px solid rgba(244,241,234,0.55);
   color: var(--mq-text);
 }
+/* Show cards with a poster: the tick moves out of the artwork into a footer
+   row under it — status / rating on the left, tick on the right. */
+.mq-foot{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mq-foot > .mq-unread,
+.mq-foot > .mq-rating-row{
+  flex: 1;
+  min-width: 0;
+}
+.mq-quickmark.in-foot{
+  position: static;
+  flex: none;
+}
 .mq-quickmark.on{
   background: var(--mq-gold);
   border-color: var(--mq-gold);
